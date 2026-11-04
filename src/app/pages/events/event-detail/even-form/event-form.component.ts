@@ -39,7 +39,7 @@ import { Client } from '../../../../models/client.model';
   styleUrl: './event-form.component.css'
 })
 export class EventFormComponent implements OnInit, OnDestroy {
-
+//hola
   private readonly eventsService = inject(EventsService);
   private readonly clientsService = inject(ClientsService);
   private readonly router = inject(Router);
