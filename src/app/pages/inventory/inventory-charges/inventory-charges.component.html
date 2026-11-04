@@ -1,0 +1,221 @@
+
+<div class="p-4 md:p-6 space-y-6">
+
+  <div class="flex flex-wrap justify-between items-center gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+        Cargos por daños y pérdidas
+      </h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        Administración de cargos y conciliación financiera.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      (click)="loadCharges()"
+      class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800">
+      Actualizar
+    </button>
+  </div>
+
+  @if (error()) {
+    <div role="alert" class="rounded-lg bg-red-50 p-4 text-red-700">
+      {{ error() }}
+    </div>
+  }
+
+  @if (success()) {
+    <div role="status" class="rounded-lg bg-green-50 p-4 text-green-700">
+      {{ success() }}
+    </div>
+  }
+
+  <div class="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+
+    <div class="border-b border-gray-200 p-4 dark:border-gray-700">
+      <label for="statusFilter" class="mb-2 block text-sm font-medium dark:text-white">
+        Filtrar por estado
+      </label>
+
+      <select
+        id="statusFilter"
+        [ngModel]="statusFilter()"
+        (ngModelChange)="changeFilter($event)"
+        class="rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm dark:bg-gray-700 dark:text-white">
+        <option value="all">Todos</option>
+        <option value="pending">Pendientes</option>
+        <option value="approved">Aprobados</option>
+        <option value="paid">Pagados</option>
+        <option value="waived">Condonados</option>
+      </select>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-gray-600 dark:text-gray-300">
+        <thead class="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+          <tr>
+            <th class="px-4 py-3">Cargo</th>
+            <th class="px-4 py-3">Evento</th>
+            <th class="px-4 py-3">Incidencia</th>
+            <th class="px-4 py-3">Importe</th>
+            <th class="px-4 py-3">Estado</th>
+            <th class="px-4 py-3">Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (charge of filteredCharges(); track charge.id) {
+            <tr class="border-t border-gray-200 dark:border-gray-700">
+              <td class="px-4 py-3">#{{ charge.id }}</td>
+              <td class="px-4 py-3">#{{ charge.event_id }}</td>
+              <td class="px-4 py-3">#{{ charge.incident_id }}</td>
+              <td class="px-4 py-3 font-semibold">
+                {{ charge.amount | currency:charge.currency }}
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  class="rounded-full px-2.5 py-1 text-xs font-medium"
+                  [ngClass]="{
+                    'bg-yellow-100 text-yellow-800': charge.status === 'pending',
+                    'bg-blue-100 text-blue-800': charge.status === 'approved',
+                    'bg-green-100 text-green-800': charge.status === 'paid',
+                    'bg-gray-100 text-gray-800': charge.status === 'waived'
+                  }">
+                  {{ statusLabel(charge.status) }}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex flex-wrap gap-2">
+                  @if (charge.status === 'pending') {
+                    <button type="button"
+                      (click)="openAction(charge, 'approve')"
+                      class="text-blue-700 hover:underline">
+                      Aprobar
+                    </button>
+                  }
+
+                  @if (charge.status === 'pending' || charge.status === 'approved') {
+                    <button type="button"
+                      (click)="openAction(charge, 'waive')"
+                      class="text-red-700 hover:underline">
+                      Condonar
+                    </button>
+                  }
+
+                  @if (charge.status === 'approved') {
+                    <button type="button"
+                      (click)="openAction(charge, 'pay')"
+                      class="text-green-700 hover:underline">
+                      Registrar pago
+                    </button>
+                  }
+
+                  <button type="button"
+                    (click)="showAudit(charge)"
+                    class="text-gray-700 hover:underline dark:text-gray-200">
+                    Historial
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                {{ loading() ? 'Cargando cargos...' : 'No hay cargos para mostrar.' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  @if (selectedCharge(); as charge) {
+    <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <div class="mb-4 flex justify-between items-center">
+        <h2 class="text-lg font-semibold dark:text-white">
+          Cargo #{{ charge.id }}
+        </h2>
+        <button type="button"
+          (click)="closeAction()"
+          class="text-gray-500 hover:text-gray-900 dark:text-gray-300">
+          Cerrar
+        </button>
+      </div>
+
+      @if (selectedAction(); as action) {
+        <form (ngSubmit)="submitAction()" class="space-y-4">
+
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Acción: {{ action === 'approve' ? 'Aprobar' :
+              action === 'waive' ? 'Condonar' : 'Registrar pago' }}
+          </p>
+
+          @if (action === 'pay') {
+            <div>
+              <label for="paymentReference" class="mb-2 block text-sm font-medium dark:text-white">
+                Referencia de pago
+              </label>
+              <input id="paymentReference"
+                name="paymentReference"
+                [(ngModel)]="paymentReference"
+                required maxlength="120"
+                class="w-full rounded-lg border border-gray-300 p-2.5 dark:bg-gray-700 dark:text-white">
+            </div>
+
+            <div>
+              <label for="paymentMethod" class="mb-2 block text-sm font-medium dark:text-white">
+                Método de pago
+              </label>
+              <select id="paymentMethod"
+                name="paymentMethod"
+                [(ngModel)]="paymentMethod"
+                class="w-full rounded-lg border border-gray-300 p-2.5 dark:bg-gray-700 dark:text-white">
+                <option value="cash">Efectivo</option>
+                <option value="transfer">Transferencia</option>
+                <option value="card">Tarjeta</option>
+                <option value="other">Otro</option>
+              </select>
+            </div>
+          }
+
+          <div>
+            <label for="chargeNotes" class="mb-2 block text-sm font-medium dark:text-white">
+              Observaciones
+            </label>
+            <textarea id="chargeNotes"
+              name="notes"
+              [(ngModel)]="notes"
+              [required]="action === 'waive'"
+              rows="3"
+              maxlength="2000"
+              class="w-full rounded-lg border border-gray-300 p-2.5 dark:bg-gray-700 dark:text-white">
+            </textarea>
+          </div>
+
+          <button type="submit"
+            [disabled]="saving()"
+            class="rounded-lg bg-blue-700 px-5 py-2.5 text-white disabled:opacity-50">
+            {{ saving() ? 'Guardando...' : 'Confirmar operación' }}
+          </button>
+        </form>
+      } @else {
+        <h3 class="mb-3 font-medium dark:text-white">Historial de cambios</h3>
+
+        @for (audit of audits(); track audit.id) {
+          <div class="border-b border-gray-200 py-3 text-sm dark:border-gray-700 dark:text-gray-300">
+            <strong>{{ audit.previous_status }} → {{ audit.new_status }}</strong>
+            <p>{{ audit.created_at | date:'medium' }}</p>
+            <p>Usuario #{{ audit.changed_by }}</p>
+            @if (audit.notes) {
+              <p>{{ audit.notes }}</p>
+            }
+          </div>
+        } @empty {
+          <p class="text-sm text-gray-500">No hay cambios registrados.</p>
+        }
+      }
+    </div>
+  }
+</div>

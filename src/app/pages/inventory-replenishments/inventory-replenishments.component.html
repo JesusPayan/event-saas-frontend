@@ -1,0 +1,582 @@
+
+<div class="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
+
+  <!-- ========================================= -->
+  <!-- ENCABEZADO -->
+  <!-- ========================================= -->
+
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+        Reposiciones de inventario
+      </h1>
+
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Registra nuevas existencias, consulta movimientos de
+        reposición y supervisa la recuperación de capacidad.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      (click)="loadItems()"
+      [disabled]="loading() || saving()"
+      class="inline-flex items-center justify-center gap-2 rounded-lg
+             border border-gray-300 bg-white px-4 py-2 text-sm
+             font-medium text-gray-700 hover:bg-gray-50
+             disabled:cursor-not-allowed disabled:opacity-50
+             dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+    >
+      <svg
+        class="h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 4v6h6M20 20v-6h-6M5.5 14A7 7 0 0018 17M18.5 10A7 7 0 006 7"
+        />
+      </svg>
+
+      {{ loading() ? 'Actualizando...' : 'Actualizar inventario' }}
+    </button>
+  </div>
+
+  <!-- ========================================= -->
+  <!-- MENSAJES -->
+  <!-- ========================================= -->
+
+  @if (error()) {
+    <div
+      role="alert"
+      class="flex items-start justify-between gap-3 rounded-lg
+             border border-red-200 bg-red-50 p-4
+             text-sm text-red-800
+             dark:border-red-800 dark:bg-red-950 dark:text-red-300"
+    >
+      <span>{{ error() }}</span>
+
+      <button
+        type="button"
+        (click)="clearMessages()"
+        aria-label="Cerrar mensaje"
+        class="font-bold"
+      >
+        ×
+      </button>
+    </div>
+  }
+
+  @if (success()) {
+    <div
+      role="status"
+      class="flex items-start justify-between gap-3 rounded-lg
+             border border-green-200 bg-green-50 p-4
+             text-sm text-green-800
+             dark:border-green-800 dark:bg-green-950 dark:text-green-300"
+    >
+      <span>{{ success() }}</span>
+
+      <button
+        type="button"
+        (click)="clearMessages()"
+        aria-label="Cerrar mensaje"
+        class="font-bold"
+      >
+        ×
+      </button>
+    </div>
+  }
+
+  <!-- ========================================= -->
+  <!-- SELECCIÓN DE ARTÍCULO -->
+  <!-- ========================================= -->
+
+  <section
+    class="rounded-xl border border-gray-200 bg-white p-5
+           shadow-sm dark:border-gray-700 dark:bg-gray-800"
+  >
+    <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+      Seleccionar artículo
+    </h2>
+
+    <label
+      for="inventoryItem"
+      class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+    >
+      Artículo de inventario
+    </label>
+
+    <select
+      id="inventoryItem"
+      name="inventoryItem"
+      [(ngModel)]="selectedItemId"
+      (ngModelChange)="onItemChange()"
+      [disabled]="loading() || saving()"
+      class="block w-full rounded-lg border border-gray-300
+             bg-gray-50 p-2.5 text-sm text-gray-900
+             focus:border-blue-500 focus:ring-blue-500
+             dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+    >
+      <option [ngValue]="null">
+        Selecciona un artículo
+      </option>
+
+      @for (item of items(); track item.id) {
+        <option [ngValue]="item.id">
+          {{ item.sku }} — {{ item.name }}
+        </option>
+      }
+    </select>
+
+    @if (loading()) {
+      <p class="mt-2 text-sm text-gray-500">
+        Cargando artículos...
+      </p>
+    }
+
+    @if (!loading() && items().length === 0) {
+      <p class="mt-2 text-sm text-amber-600">
+        No hay artículos disponibles.
+      </p>
+    }
+  </section>
+
+  <!-- ========================================= -->
+  <!-- INDICADORES DE INVENTARIO -->
+  <!-- ========================================= -->
+
+  @if (selectedItem; as item) {
+    <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+      <div
+        class="rounded-xl border border-gray-200 bg-white p-5
+               shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      >
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Existencias totales
+        </p>
+
+        <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
+          {{ formatQuantity(item.quantity_total) }}
+        </p>
+      </div>
+
+      <div
+        class="rounded-xl border border-gray-200 bg-white p-5
+               shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      >
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          No disponibles
+        </p>
+
+        <p class="mt-2 text-3xl font-bold text-amber-600">
+          {{ formatQuantity(item.quantity_unavailable) }}
+        </p>
+      </div>
+
+      <div
+        class="rounded-xl border border-gray-200 bg-white p-5
+               shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      >
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Capacidad utilizable
+        </p>
+
+        <p class="mt-2 text-3xl font-bold text-blue-600">
+          {{
+            formatQuantity(
+              item.quantity_total - item.quantity_unavailable
+            )
+          }}
+        </p>
+      </div>
+
+      <div
+        class="rounded-xl border border-gray-200 bg-white p-5
+               shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      >
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Estado del artículo
+        </p>
+
+        <span
+          class="mt-3 inline-flex rounded-full px-3 py-1
+                 text-sm font-medium"
+          [class.bg-green-100]="item.is_active !== false"
+          [class.text-green-700]="item.is_active !== false"
+          [class.bg-red-100]="item.is_active === false"
+          [class.text-red-700]="item.is_active === false"
+        >
+          {{ item.is_active === false ? 'Inactivo' : 'Activo' }}
+        </span>
+      </div>
+
+    </section>
+  }
+
+  <!-- ========================================= -->
+  <!-- FORMULARIO DE REPOSICIÓN -->
+  <!-- ========================================= -->
+
+  <section
+    class="rounded-xl border border-gray-200 bg-white p-5
+           shadow-sm dark:border-gray-700 dark:bg-gray-800"
+  >
+    <div class="mb-5">
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+        Nueva reposición
+      </h2>
+
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Las cantidades ingresadas incrementarán las existencias
+        del artículo seleccionado.
+      </p>
+    </div>
+
+    <form
+      #replenishmentForm="ngForm"
+      (ngSubmit)="save()"
+      class="space-y-5"
+    >
+
+      <div class="grid gap-5 md:grid-cols-2">
+
+        <!-- CANTIDAD -->
+
+        <div>
+          <label
+            for="quantity"
+            class="mb-2 block text-sm font-medium
+                   text-gray-700 dark:text-gray-300"
+          >
+            Cantidad a reponer *
+          </label>
+
+          <input
+            id="quantity"
+            name="quantity"
+            type="number"
+            min="1"
+            step="1"
+            required
+            [(ngModel)]="quantity"
+            [disabled]="saving() || !selectedItemId"
+            placeholder="Ej. 5"
+            class="block w-full rounded-lg border border-gray-300
+                   bg-gray-50 p-2.5 text-sm text-gray-900
+                   focus:border-blue-500 focus:ring-blue-500
+                   dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          />
+        </div>
+
+        <!-- REFERENCIA -->
+
+        <div>
+          <label
+            for="reference"
+            class="mb-2 block text-sm font-medium
+                   text-gray-700 dark:text-gray-300"
+          >
+            Referencia
+          </label>
+
+          <input
+            id="reference"
+            name="reference"
+            type="text"
+            maxlength="100"
+            [(ngModel)]="reference"
+            [disabled]="saving() || !selectedItemId"
+            placeholder="Ej. COMPRA-2026-001"
+            class="block w-full rounded-lg border border-gray-300
+                   bg-gray-50 p-2.5 text-sm text-gray-900
+                   focus:border-blue-500 focus:ring-blue-500
+                   dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          />
+        </div>
+
+      </div>
+
+      <!-- MOTIVO -->
+
+      <div>
+        <label
+          for="reason"
+          class="mb-2 block text-sm font-medium
+                 text-gray-700 dark:text-gray-300"
+        >
+          Motivo de la reposición *
+        </label>
+
+        <textarea
+          id="reason"
+          name="reason"
+          rows="3"
+          maxlength="2000"
+          required
+          [(ngModel)]="reason"
+          [disabled]="saving() || !selectedItemId"
+          placeholder="Describe el motivo de la reposición..."
+          class="block w-full rounded-lg border border-gray-300
+                 bg-gray-50 p-2.5 text-sm text-gray-900
+                 focus:border-blue-500 focus:ring-blue-500
+                 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        ></textarea>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+
+        <button
+          type="submit"
+          [disabled]="
+            saving() ||
+            !selectedItemId ||
+            replenishmentForm.invalid
+          "
+          class="inline-flex items-center justify-center
+                 rounded-lg bg-blue-600 px-5 py-2.5
+                 text-sm font-medium text-white
+                 hover:bg-blue-700
+                 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          @if (saving()) {
+            Registrando reposición...
+          } @else {
+            Registrar reposición
+          }
+        </button>
+
+        <span class="text-xs text-gray-500 dark:text-gray-400">
+          * Campos obligatorios
+        </span>
+      </div>
+
+    </form>
+  </section>
+
+  <!-- ========================================= -->
+  <!-- RESULTADO DEL RECÁLCULO DE CAPACIDAD -->
+  <!-- ========================================= -->
+
+  @if (capacity(); as c) {
+    <section
+      class="rounded-xl border border-blue-200 bg-blue-50 p-5
+             dark:border-blue-800 dark:bg-gray-800"
+    >
+      <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+        Resultado de la última reposición
+      </h2>
+
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+        <div>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Existencias actualizadas
+          </p>
+          <p class="text-2xl font-bold text-gray-900 dark:text-white">
+            {{ formatQuantity(c.quantity_total) }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Capacidad utilizable
+          </p>
+          <p class="text-2xl font-bold text-blue-600">
+            {{ formatQuantity(c.quantity_usable) }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Demanda máxima reservada
+          </p>
+          <p class="text-2xl font-bold text-gray-900 dark:text-white">
+            {{ formatQuantity(c.max_reserved) }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Déficit actual
+          </p>
+          <p
+            class="text-2xl font-bold"
+            [class.text-red-600]="c.shortage_quantity > 0"
+            [class.text-green-600]="c.shortage_quantity === 0"
+          >
+            {{ formatQuantity(c.shortage_quantity) }}
+          </p>
+        </div>
+
+      </div>
+
+      @if (c.shortage_quantity > 0) {
+        <p class="mt-4 text-sm font-medium text-red-700">
+          El artículo todavía presenta un déficit de capacidad.
+        </p>
+      } @else {
+        <p class="mt-4 text-sm font-medium text-green-700">
+          El artículo no presenta déficit de capacidad.
+        </p>
+      }
+
+      @if (c.audit_events_created !== undefined) {
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          Eventos de auditoría generados:
+          {{ c.audit_events_created }}
+        </p>
+      }
+    </section>
+  }
+
+  <!-- ========================================= -->
+  <!-- HISTORIAL DE REPOSICIONES -->
+  <!-- ========================================= -->
+
+  <section
+    class="rounded-xl border border-gray-200 bg-white p-5
+           shadow-sm dark:border-gray-700 dark:bg-gray-800"
+  >
+    <div class="mb-4 flex flex-col gap-3 sm:flex-row
+                sm:items-center sm:justify-between">
+
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          Historial de reposiciones
+        </h2>
+
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          @if (selectedItemId) {
+            {{ totalRecords() }} movimientos registrados
+          } @else {
+            Selecciona un artículo para consultar su historial.
+          }
+        </p>
+      </div>
+
+      <button
+        type="button"
+        (click)="loadHistory(currentPage())"
+        [disabled]="!selectedItemId || loadingHistory() || saving()"
+        class="rounded-lg border border-gray-300 px-4 py-2
+               text-sm font-medium text-gray-700
+               hover:bg-gray-50
+               disabled:cursor-not-allowed disabled:opacity-50
+               dark:border-gray-600 dark:text-gray-200"
+      >
+        {{ loadingHistory() ? 'Cargando...' : 'Actualizar historial' }}
+      </button>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+
+        <thead class="bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+          <tr>
+            <th class="px-4 py-3">ID</th>
+            <th class="px-4 py-3">Cantidad</th>
+            <th class="px-4 py-3">Referencia</th>
+            <th class="px-4 py-3">Motivo</th>
+            <th class="px-4 py-3">Usuario</th>
+            <th class="px-4 py-3">Fecha</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (r of history(); track r.id) {
+            <tr
+              class="border-b border-gray-100
+                     hover:bg-gray-50
+                     dark:border-gray-700 dark:hover:bg-gray-700"
+            >
+              <td class="px-4 py-3 font-medium">
+                #{{ r.id }}
+              </td>
+
+              <td class="px-4 py-3 font-semibold text-green-600">
+                +{{ formatQuantity(r.quantity) }}
+              </td>
+
+              <td class="px-4 py-3">
+                {{ r.reference || '—' }}
+              </td>
+
+              <td class="px-4 py-3">
+                {{ r.reason }}
+              </td>
+
+              <td class="px-4 py-3">
+                #{{ r.created_by }}
+              </td>
+
+              <td class="px-4 py-3">
+                {{ r.created_at | date:'dd/MM/yyyy HH:mm':'UTC' }}
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td
+                colspan="6"
+                class="px-4 py-8 text-center text-gray-500"
+              >
+                @if (loadingHistory()) {
+                  Cargando historial...
+                } @else if (!selectedItemId) {
+                  Selecciona un artículo.
+                } @else {
+                  No hay reposiciones registradas.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINACIÓN -->
+
+    @if (totalPages() > 1) {
+      <div class="mt-5 flex flex-wrap items-center
+                  justify-between gap-3">
+
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Página {{ currentPage() }} de {{ totalPages() }}
+        </p>
+
+        <div class="flex gap-2">
+
+          <button
+            type="button"
+            (click)="previousPage()"
+            [disabled]="currentPage() <= 1 || loadingHistory()"
+            class="rounded-lg border border-gray-300 px-4 py-2
+                   text-sm disabled:opacity-50
+                   dark:border-gray-600"
+          >
+            Anterior
+          </button>
+
+          <button
+            type="button"
+            (click)="nextPage()"
+            [disabled]="currentPage() >= totalPages() || loadingHistory()"
+            class="rounded-lg border border-gray-300 px-4 py-2
+                   text-sm disabled:opacity-50
+                   dark:border-gray-600"
+          >
+            Siguiente
+          </button>
+
+        </div>
+      </div>
+    }
+
+  </section>
+
+</div>

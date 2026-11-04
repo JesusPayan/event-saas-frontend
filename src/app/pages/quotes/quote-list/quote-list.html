@@ -1,0 +1,98 @@
+
+<section class="quotes-page">
+
+  <header class="page-header">
+    <div>
+      <h1>Gestión de cotizaciones</h1>
+      <p>Administra las cotizaciones de tu empresa.</p>
+    </div>
+
+    <a routerLink="/quotes/new" class="btn-primary">
+      + Nueva cotización
+    </a>
+  </header>
+
+  @if (loading()) {
+    <p>Cargando cotizaciones...</p>
+  }
+
+  @if (error()) {
+    <div class="error-message">
+      {{ error() }}
+      <button type="button" (click)="loadQuotes()">
+        Reintentar
+      </button>
+    </div>
+  }
+
+  @if (!loading() && !error()) {
+
+    @if (quotes().length === 0) {
+      <div class="empty-state">
+        <h3>No hay cotizaciones registradas</h3>
+        <p>Crea tu primera cotización para comenzar.</p>
+        <a routerLink="/quotes/new">
+          Crear cotización
+        </a>
+      </div>
+    } @else {
+
+      <table class="quotes-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Cliente</th>
+            <th>Evento</th>
+            <th>Estado</th>
+            <th>Total</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (quote of quotes(); track quote.id) {
+            <tr>
+              <td>#{{ quote.id }}</td>
+              <td>{{ quote.client_id ?? '—' }}</td>
+              <td>{{ quote.event_id ?? '—' }}</td>
+              <td>{{ quote.status ?? '—' }}</td>
+              <td>
+                {{ quote.total ?? 0 | currency:'MXN' }}
+              </td>
+              <td>
+                {{ quote.created_at | date:'dd/MM/yyyy' }}
+              </td>
+              <td>
+                <a [routerLink]="['/quotes', quote.id]">
+                  Ver detalle
+                </a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <div class="pagination">
+        <button
+          type="button"
+          (click)="previousPage()"
+          [disabled]="page() === 1">
+          Anterior
+        </button>
+
+        <span>
+          Página {{ page() }} · Total: {{ total() }}
+        </span>
+
+        <button
+          type="button"
+          (click)="nextPage()"
+          [disabled]="page() * perPage >= total()">
+          Siguiente
+        </button>
+      </div>
+    }
+  }
+
+</section>

@@ -1,0 +1,46 @@
+import { Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+@Component({standalone:true,imports:[RouterLink],template:`
+<section class="panel">
+    <div class="eyebrow">PANEL DE CONTROL</div>
+    <h1>
+        {{auth.tenant()?.name}}
+
+    </h1>
+<p>Bienvenido, {{auth.me()?.email}}. El núcleo de identidad multiempresa está listo.</p>
+<div class="tiles">
+    <article>
+        <!-- <h2>Clientes</h2>
+        <p>Próximo sprint: CRM</p> -->
+        <a routerLink="/clients" class="module-card">
+            <h2>Clientes</h2>
+            <p>Administrar cartera de clientes</p>
+            <span>Ir al CRM →</span>
+        </a>
+    </article>
+    <article>
+        <!-- <h2>Eventos</h2>
+        <p>Próximo sprint: calendario</p> -->
+        <a routerLink="/events">Gestión de eventos</a>
+        <a routerLink="/events/calendar">Calendario</a>
+    </article>
+    <article>
+        <h2>Inventario</h2>
+        <a routerLink="/inventory">
+            Ir al inventario
+        </a>
+    </article>
+    <article>
+        <h2>Inventario</h2>
+        <p>Próximo sprint: reservas</p>
+    </article>
+</div>
+@if(auth.hasPermission('members.read')){<a routerLink="/members">Administrar miembros →</a>}
+</section>`})
+export class DashboardComponent {
+    auth=inject(AuthService);
+  ngOnInit(): void {
+    this.auth.debugAuth();
+  }
+}

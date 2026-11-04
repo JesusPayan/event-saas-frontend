@@ -1,0 +1,163 @@
+<div class="space-y-6 p-4 md:p-6">
+  <header class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Incidencias de inventario</h1>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Registro y conciliación de daños, pérdidas y faltantes.</p>
+    </div>
+    <button type="button" (click)="load()" class="btn-primary">Actualizar</button>
+  </header>
+
+  @if (error()) {
+    <div role="alert" class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-gray-800 dark:text-red-400">{{ error() }}</div>
+  }
+  @if (success()) {
+    <div role="status" class="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800 dark:border-green-800 dark:bg-gray-800 dark:text-green-400">{{ success() }}</div>
+  }
+
+  <form (ngSubmit)="create()" class="grid gap-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm md:grid-cols-2 dark:border-gray-700 dark:bg-gray-800">
+    <h2 class="text-lg font-semibold text-gray-900 md:col-span-2 dark:text-white">Registrar incidencia</h2>
+
+    <div>
+      <label for="incident-event" class="field-label">Evento</label>
+      <select id="incident-event" name="selectedEventId" [(ngModel)]="selectedEventId" (ngModelChange)="onEventChange()" [disabled]="loadingEvents() || saving()" required class="field-control">
+        <option [ngValue]="null">Selecciona un evento</option>
+        @for (event of events(); track event.id) {
+          <option [ngValue]="event.id">{{ eventLabel(event) }}</option>
+        }
+      </select>
+    </div>
+
+    <div>
+      <label for="incident-reservation" class="field-label">Artículo reservado</label>
+      <select id="incident-reservation" name="reservationId" [(ngModel)]="reservationId" [disabled]="!selectedEventId || loadingReservations() || saving()" required class="field-control">
+        <option [ngValue]="null">Selecciona un artículo</option>
+        @for (reservation of eventReservations(); track reservation.id) {
+          <option [ngValue]="reservation.id">{{ reservationLabel(reservation) }}</option>
+        }
+      </select>
+      @if (loadingReservations()) {
+        <p class="mt-1 text-xs text-gray-500">Consultando reservaciones...</p>
+      } @else if (selectedEventId && eventReservations().length === 0) {
+        <p class="mt-1 text-xs text-amber-700">No hay reservaciones activas para este evento.</p>
+      }
+    </div>
+
+    <div>
+      <label for="incident-type" class="field-label">Tipo de incidencia</label>
+      <select id="incident-type" name="incidentType" [(ngModel)]="incidentType" class="field-control">
+        <option value="damaged">Dañado</option>
+        <option value="lost">Perdido</option>
+        <option value="missing">Faltante</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="incident-quantity" class="field-label">Cantidad</label>
+      <input id="incident-quantity" type="number" name="quantity" [(ngModel)]="quantity" min="1" step="1" required class="field-control" />
+    </div>
+
+    <div class="md:col-span-2">
+      <label for="incident-description" class="field-label">Descripción</label>
+      <textarea id="incident-description" name="description" [(ngModel)]="description" rows="3" required placeholder="Describe el daño, pérdida o faltante..." class="field-control"></textarea>
+    </div>
+
+    <div class="md:col-span-2">
+      <button type="submit" [disabled]="saving() || loadingReservations()" class="btn-primary disabled:cursor-not-allowed disabled:opacity-50">
+        {{ saving() ? 'Guardando...' : 'Registrar incidencia' }}
+      </button>
+    </div>
+  </form>
+
+  <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <table class="w-full text-left text-sm text-gray-600 dark:text-gray-300">
+      <thead class="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+        <tr>
+          <th scope="col" class="px-4 py-3">ID</th>
+          <th scope="col" class="px-4 py-3">Reservación</th>
+          <th scope="col" class="px-4 py-3">Tipo</th>
+          <th scope="col" class="px-4 py-3">Cantidad</th>
+          <th scope="col" class="px-4 py-3">Estado</th>
+          <th scope="col" class="px-4 py-3">Costo</th>
+          <th scope="col" class="px-4 py-3">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (incident of incidents(); track incident.id) {
+          <tr class="border-t border-gray-200 dark:border-gray-700">
+            <td class="px-4 py-3">#{{ incident.id }}</td>
+            <td class="px-4 py-3">#{{ incident.reservation_id }}</td>
+            <td class="px-4 py-3">{{ incidentTypeLabel(incident.incident_type) }}</td>
+            <td class="px-4 py-3">{{ incident.quantity }}</td>
+            <td class="px-4 py-3">
+              <span class="rounded-full px-2.5 py-1 text-xs font-medium"
+                [ngClass]="{
+                  'bg-yellow-100 text-yellow-800': incident.status === 'reported',
+                  'bg-blue-100 text-blue-800': incident.status === 'assessed',
+                  'bg-green-100 text-green-800': incident.status === 'resolved',
+                  'bg-gray-100 text-gray-800': incident.status === 'cancelled'
+                }">{{ incident.status }}</span>
+            </td>
+            <td class="px-4 py-3">
+              @if (incident.total_cost != null) {
+                {{ incident.total_cost | currency:'MXN' }}
+              } @else { Sin evaluar }
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex flex-wrap gap-2">
+                @if (incident.status === 'reported' || incident.status === 'assessed') {
+                  <button type="button" (click)="openReconciliation(incident)" class="btn-primary btn-small">Conciliar</button>
+                }
+                <button type="button" (click)="viewIncidentCharges(incident)" class="btn-outline btn-small">Ver cargos</button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">No hay incidencias registradas.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (selectedIncident(); as incident) {
+    <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Incidencia #{{ incident.id }}</h2>
+        <button type="button" (click)="closeReconciliation()" class="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white">Cerrar</button>
+      </div>
+      <div class="mb-5 grid gap-4 sm:grid-cols-3">
+        <div><p class="text-xs text-gray-500">Tipo</p><p class="font-semibold dark:text-white">{{ incidentTypeLabel(incident.incident_type) }}</p></div>
+        <div><p class="text-xs text-gray-500">Cantidad</p><p class="font-semibold dark:text-white">{{ incident.quantity }}</p></div>
+        <div><p class="text-xs text-gray-500">Estado</p><p class="font-semibold dark:text-white">{{ incident.status }}</p></div>
+      </div>
+      @if (incident.status === 'reported' || incident.status === 'assessed') {
+        <form (ngSubmit)="confirmReconciliation()" novalidate class="space-y-4">
+          <div>
+            <label for="reconciliation-cost" class="field-label">Costo unitario (MXN)</label>
+            <input id="reconciliation-cost" type="number" name="reconciliationCost" [(ngModel)]="reconciliationCost" min="0" step="0.01" required class="field-control" />
+          </div>
+          <p class="text-sm dark:text-white">Importe estimado: <strong>{{ estimatedReconciliationTotal | currency:'MXN' }}</strong></p>
+          <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:bg-gray-700 dark:text-amber-300">
+            La conciliación modificará las existencias. Verifica las unidades y el costo antes de confirmar.
+          </div>
+          <button type="submit" [disabled]="reconciling()" class="btn-primary disabled:opacity-50">{{ reconciling() ? 'Conciliando...' : 'Confirmar conciliación' }}</button>
+        </form>
+      }
+      <div class="mt-6">
+        <h3 class="mb-3 font-semibold dark:text-white">Cargos relacionados</h3>
+        @if (loadingCharges()) {
+          <p class="text-sm text-gray-500">Consultando cargos...</p>
+        } @else {
+          @for (charge of incidentCharges(); track charge.id) {
+            <div class="flex items-center justify-between border-t border-gray-200 py-3 text-sm dark:border-gray-700">
+              <span class="dark:text-white">Cargo #{{ charge.id }} — {{ charge.status }}</span>
+              <strong class="dark:text-white">{{ charge.amount | currency:charge.currency }}</strong>
+            </div>
+          } @empty {
+            <p class="text-sm text-gray-500">No hay cargos cargados para esta incidencia.</p>
+          }
+        }
+        <a routerLink="/inventory/charges" class="mt-4 inline-block text-sm font-medium text-blue-700 hover:underline dark:text-blue-400">Ir a cargos por daños</a>
+      </div>
+    </section>
+  }
+</div>

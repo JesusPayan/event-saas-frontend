@@ -1,0 +1,107 @@
+<!-- Reservaciones de inventario del evento -->
+<!-- <app-event-inventory-reservations
+  *ngIf="event"
+  [eventId]="event.id"
+  [startsAt]="event.starts_at"
+  [endsAt]="event.ends_at">
+</app-event-inventory-reservations> -->
+
+
+
+     <section class="event-detail">
+       <a routerLink="/events">← Volver a eventos</a>
+
+       @if (loading()) {
+         <p>Cargando evento...</p>
+       }
+
+       @if (error()) {
+         <p class="error" role="alert">{{ error() }}</p>
+       }
+
+       @if (event(); as e) {
+         <header>
+           <h1>{{ e.name }}</h1>
+           <p>Estado: <strong>{{ statusLabel(e.status) }}</strong></p>
+         </header>
+
+         <div class="detail-grid">
+           <article>
+             <h2>Información general</h2>
+
+             <dl>
+               <dt>Tipo</dt>
+               <dd>{{ e.event_type }}</dd>
+
+               <dt>Cliente</dt>
+               <dd>
+                 <a [routerLink]="['/clients', e.client_id]">
+                   Ver cliente #{{ e.client_id }}
+                 </a>
+               </dd>
+
+               <dt>Ubicación</dt>
+               <dd>{{ e.location || 'Sin ubicación' }}</dd>
+
+               <dt>Invitados estimados</dt>
+               <dd>{{ e.estimated_guests ?? 'Sin definir' }}</dd>
+
+               <dt>Descripción</dt>
+               <dd>{{ e.description || 'Sin descripción' }}</dd>
+             </dl>
+           </article>
+
+           <article>
+             <h2>Programación</h2>
+
+             <dl>
+               <dt>Inicio</dt>
+               <dd>{{ e.starts_at | date:'dd/MM/yyyy HH:mm' }}</dd>
+
+               <dt>Finalización</dt>
+               <dd>{{ e.ends_at | date:'dd/MM/yyyy HH:mm' }}</dd>
+
+               <dt>Creado</dt>
+               <dd>{{ e.created_at | date:'dd/MM/yyyy HH:mm' }}</dd>
+             </dl>
+           </article>
+         </div>
+
+         @if (auth.hasPermission('events.update')) {
+           <section>
+             <h2>Administrar evento</h2>
+
+             @if (e.status !== 'completed' && e.status !== 'cancelled') {
+               <a [routerLink]="['/events', e.id, 'edit']">
+                 Editar evento
+               </a>
+             }
+
+             @if (availableStatuses(e.status).length > 0) {
+               <h3>Cambiar estado</h3>
+
+               <div class="status-actions">
+                 @for (status of availableStatuses(e.status); track status) {
+                   <button
+                     type="button"
+                     [disabled]="saving()"
+                     (click)="changeStatus(status)">
+                     {{ statusLabel(status) }}
+                   </button>
+                 }
+               </div>
+             }
+           </section>
+         }
+       }
+  @if (event(); as e) {
+   @if (auth.hasPermission('inventory.read')) {
+     <app-event-inventory-reservations
+       [eventId]="e.id"
+       [startsAt]="e.starts_at"
+       [endsAt]="e.ends_at"
+       [eventStatus]="e.status">
+     </app-event-inventory-reservations>
+   }
+ }
+     </section>

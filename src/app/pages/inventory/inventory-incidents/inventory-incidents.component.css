@@ -1,0 +1,17 @@
+/* Estilo Flowbite/Tailwind: componentes de formulario reutilizables. */
+@reference "../../../../styles.css";
+:host { display: block; }
+
+.field-label {
+  @apply mb-2 block text-sm font-medium text-gray-900 dark:text-white;
+}
+.field-control {
+  @apply block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500;
+}
+.btn-primary {
+  @apply rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800;
+}
+.btn-outline {
+  @apply rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700;
+}
+.btn-small { @apply px-3 py-2 text-xs; }

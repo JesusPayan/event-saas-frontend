@@ -1,0 +1,313 @@
+
+<div class="w-full space-y-6">
+
+  <!-- ENCABEZADO -->
+  <div class="flex flex-wrap items-start justify-between gap-3">
+
+    <div class="min-w-0">
+      <h3 class="break-words text-xl font-semibold text-gray-900">
+        {{ operation.item_name }}
+      </h3>
+
+      <p class="mt-1 text-sm text-gray-500">
+        Reservación #{{ operation.reservation_id }}
+        · Evento #{{ operation.event_id }}
+      </p>
+    </div>
+
+    <button
+      type="button"
+      (click)="loadHistory()"
+      [disabled]="loading() || saving()"
+      class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-100 disabled:cursor-not-allowed disabled:opacity-50">
+      <svg class="me-2 h-4 w-4" fill="none"
+           viewBox="0 0 24 24" stroke="currentColor"
+           aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v6h6M20 20v-6h-6M5 10a7 7 0 0 1 12-4l3 3M19 14a7 7 0 0 1-12 4l-3-3"/>
+      </svg>
+      Actualizar
+    </button>
+  </div>
+
+  <!-- MENSAJES -->
+  <div
+    *ngIf="error()"
+    role="alert"
+    class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+    {{ error() }}
+  </div>
+
+  <div
+    *ngIf="success()"
+    role="status"
+    class="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+    {{ success() }}
+  </div>
+
+  <!-- INDICADORES -->
+  <div class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+
+    <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+      <p class="text-xs font-medium text-gray-500">
+        Reservadas
+      </p>
+      <p class="mt-2 text-2xl font-bold text-gray-900">
+        {{ operation.quantity_reserved }}
+      </p>
+    </div>
+
+    <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
+      <p class="text-xs font-medium text-blue-700">
+        Entregadas
+      </p>
+      <p class="mt-2 text-2xl font-bold text-blue-800">
+        {{ summary()?.quantity_dispatched ?? operation.quantity_dispatched }}
+      </p>
+    </div>
+
+    <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+      <p class="text-xs font-medium text-amber-700">
+        Por entregar
+      </p>
+      <p class="mt-2 text-2xl font-bold text-amber-800">
+        {{ remainingDispatch }}
+      </p>
+    </div>
+
+    <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+      <p class="text-xs font-medium text-emerald-700">
+        Por devolver
+      </p>
+      <p class="mt-2 text-2xl font-bold text-emerald-800">
+        {{ outstanding }}
+      </p>
+    </div>
+
+  </div>
+
+  <!-- FORMULARIO DE MOVIMIENTOS -->
+  <section
+    *ngIf="canUpdate"
+    class="rounded-xl border border-gray-200 bg-white shadow-sm">
+
+    <div class="border-b border-gray-200 px-5 py-4">
+      <h4 class="text-base font-semibold text-gray-900">
+        Registrar movimiento
+      </h4>
+      <p class="mt-1 text-sm text-gray-500">
+        Registra una entrega o devolución de artículos.
+      </p>
+    </div>
+
+    <div class="space-y-5 p-5">
+
+      <!-- TIPO DE MOVIMIENTO -->
+      <div class="grid grid-cols-2 gap-3">
+
+        <button
+          type="button"
+          (click)="setMovementType('dispatch')"
+          [disabled]="saving() || loading() || !canDispatch"
+          [class.bg-blue-700]="movementType === 'dispatch'"
+          [class.text-white]="movementType === 'dispatch'"
+          [class.border-blue-700]="movementType === 'dispatch'"
+          [class.bg-white]="movementType !== 'dispatch'"
+          [class.text-gray-700]="movementType !== 'dispatch'"
+          [class.border-gray-300]="movementType !== 'dispatch'"
+          class="rounded-lg border px-4 py-3 text-sm font-semibold transition-colors hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-40">
+          Entrega
+        </button>
+
+        <button
+          type="button"
+          (click)="setMovementType('return')"
+          [disabled]="saving() || loading() || !canReturn"
+          [class.bg-emerald-700]="movementType === 'return'"
+          [class.text-white]="movementType === 'return'"
+          [class.border-emerald-700]="movementType === 'return'"
+          [class.bg-white]="movementType !== 'return'"
+          [class.text-gray-700]="movementType !== 'return'"
+          [class.border-gray-300]="movementType !== 'return'"
+          class="rounded-lg border px-4 py-3 text-sm font-semibold transition-colors hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:opacity-40">
+          Devolución
+        </button>
+
+      </div>
+
+      <!-- FORMULARIO -->
+      <form (ngSubmit)="save()" class="space-y-5">
+
+        <div>
+          <label
+            for="movement-quantity"
+            class="mb-2 block text-sm font-medium text-gray-900">
+            Cantidad
+          </label>
+
+          <input
+            id="movement-quantity"
+            type="number"
+            name="quantity"
+            [(ngModel)]="quantity"
+            [min]="1"
+            [max]="maxQuantity"
+            step="1"
+            required
+            [disabled]="saving() || loading() || maxQuantity <= 0"
+            class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100">
+
+          <p class="mt-2 text-xs text-gray-500">
+            Máximo permitido:
+            <span class="font-semibold text-gray-700">
+              {{ maxQuantity }}
+            </span>
+          </p>
+        </div>
+
+        <div>
+          <label
+            for="movement-notes"
+            class="mb-2 block text-sm font-medium text-gray-900">
+            Observaciones
+          </label>
+
+          <textarea
+            id="movement-notes"
+            name="notes"
+            rows="3"
+            maxlength="2000"
+            [(ngModel)]="notes"
+            [disabled]="saving() || loading()"
+            placeholder="Ej. Entrega parcial al encargado"
+            class="block w-full resize-y rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100">
+          </textarea>
+
+          <p class="mt-1 text-xs text-gray-500">
+            Máximo 2000 caracteres.
+          </p>
+        </div>
+
+        <button
+          type="submit"
+          [disabled]="saving() || loading() || maxQuantity <= 0 ||
+            (movementType === 'dispatch' ? !canDispatch : !canReturn)"
+          class="inline-flex w-full items-center justify-center rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-50">
+
+          <svg
+            *ngIf="saving()"
+            class="me-2 h-4 w-4 animate-spin"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true">
+            <circle
+              class="opacity-25"
+              cx="12" cy="12" r="10"
+              stroke="currentColor"
+              stroke-width="4">
+            </circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z">
+            </path>
+          </svg>
+
+          {{
+            saving()
+              ? 'Guardando...'
+              : movementType === 'dispatch'
+                ? 'Registrar entrega'
+                : 'Registrar devolución'
+          }}
+        </button>
+
+      </form>
+
+    </div>
+
+  </section>
+
+  <!-- HISTORIAL -->
+  <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+
+    <div class="border-b border-gray-200 px-5 py-4">
+      <h4 class="text-base font-semibold text-gray-900">
+        Historial de movimientos
+      </h4>
+      <p class="mt-1 text-sm text-gray-500">
+        Registro de entregas y devoluciones.
+      </p>
+    </div>
+
+    <div
+      *ngIf="loading()"
+      role="status"
+      class="px-5 py-4 text-sm text-gray-500">
+      Consultando historial...
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[540px] text-left text-sm text-gray-600">
+
+        <thead class="bg-gray-50 text-xs uppercase text-gray-700">
+          <tr>
+            <th scope="col" class="px-4 py-3">Fecha</th>
+            <th scope="col" class="px-4 py-3">Movimiento</th>
+            <th scope="col" class="px-4 py-3">Cantidad</th>
+            <th scope="col" class="px-4 py-3">Observaciones</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-gray-100">
+
+          <tr
+            *ngFor="let movement of movements()"
+            class="bg-white hover:bg-gray-50">
+
+            <td class="whitespace-nowrap px-4 py-3">
+              {{ movement.created_at | date:'short' }}
+            </td>
+
+            <td class="px-4 py-3">
+              <span
+                [class.bg-blue-100]="movement.movement_type === 'dispatch'"
+                [class.text-blue-800]="movement.movement_type === 'dispatch'"
+                [class.bg-green-100]="movement.movement_type === 'return'"
+                [class.text-green-800]="movement.movement_type === 'return'"
+                class="inline-flex rounded-md px-2.5 py-1 text-xs font-semibold">
+
+                {{
+                  movement.movement_type === 'dispatch'
+                    ? 'Entrega'
+                    : 'Devolución'
+                }}
+
+              </span>
+            </td>
+
+            <td class="px-4 py-3 font-semibold text-gray-900">
+              {{ movement.quantity }}
+            </td>
+
+            <td class="max-w-xs break-words px-4 py-3">
+              {{ movement.notes || '—' }}
+            </td>
+
+          </tr>
+
+          <tr *ngIf="!movements().length && !loading()">
+            <td colspan="4" class="px-4 py-8 text-center text-gray-500">
+              Sin movimientos registrados.
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+    </div>
+
+  </section>
+
+</div>

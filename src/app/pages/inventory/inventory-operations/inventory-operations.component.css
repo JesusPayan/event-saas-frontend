@@ -1,0 +1,6 @@
+/* Diseño de operaciones: utilidades Tailwind + Flowbite en el HTML.
+   Se mantiene este archivo para ajustes locales futuros. */
+:host {
+  display: block;
+  min-width: 0;
+}

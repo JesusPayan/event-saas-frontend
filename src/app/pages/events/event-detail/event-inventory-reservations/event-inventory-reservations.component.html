@@ -1,0 +1,256 @@
+
+<section class="space-y-6">
+
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+        Inventario del evento
+      </h2>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Administra artículos, cantidades, entregas y devoluciones.
+      </p>
+    </div>
+
+    <span class="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800">
+      {{ activeReservations().length }} reservaciones activas
+    </span>
+  </div>
+
+  @if (error()) {
+    <div role="alert" class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+      {{ error() }}
+    </div>
+  }
+
+  @if (success()) {
+    <div role="status" class="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+      {{ success() }}
+    </div>
+  }
+
+  @if (canCreate()) {
+    <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+
+      <h3 class="mb-5 text-lg font-semibold text-gray-900 dark:text-white">
+        Agregar o actualizar artículo
+      </h3>
+
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+
+        <div>
+          <label for="inventory-item" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+            Artículo
+          </label>
+
+          <select
+            id="inventory-item"
+            class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            [ngModel]="selectedItemId()"
+            (ngModelChange)="onItemChange($event)"
+            [disabled]="loading() || saving()">
+
+            <option [ngValue]="null">Selecciona un artículo</option>
+
+            @for (item of items(); track item.id) {
+              <option [ngValue]="item.id">
+                {{ item.name }} ({{ item.sku }})
+              </option>
+            }
+          </select>
+
+          @if (!loading() && items().length === 0) {
+            <p class="mt-2 text-sm text-amber-700">
+              No hay artículos activos disponibles en el catálogo.
+            </p>
+          }
+        </div>
+
+        <div>
+          <label for="inventory-quantity" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+            Cantidad
+          </label>
+
+          <input
+            id="inventory-quantity"
+            type="number"
+            min="1"
+            step="1"
+            class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            [ngModel]="quantity()"
+            (ngModelChange)="quantity.set($event)"
+            [disabled]="loading() || saving()">
+        </div>
+      </div>
+
+      @if (checking()) {
+        <p class="mt-4 text-sm text-blue-700" role="status">
+          Consultando disponibilidad...
+        </p>
+      }
+
+      @if (availability(); as a) {
+        <div class="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+
+          <div class="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
+            <p class="text-xs text-gray-500 dark:text-gray-300">Existencias</p>
+            <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
+              {{ a.quantity_total }}
+            </p>
+          </div>
+
+          <div class="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
+            <p class="text-xs text-gray-500 dark:text-gray-300">Reservadas</p>
+            <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
+              {{ a.quantity_reserved }}
+            </p>
+          </div>
+
+          <div class="rounded-lg bg-blue-50 p-4 dark:bg-blue-900">
+            <p class="text-xs text-blue-700 dark:text-blue-200">Disponibles</p>
+            <p class="mt-1 text-2xl font-bold text-blue-800 dark:text-white">
+              {{ a.quantity_available }}
+            </p>
+          </div>
+
+          <div class="rounded-lg bg-emerald-50 p-4 dark:bg-emerald-900">
+            <p class="text-xs text-emerald-700 dark:text-emerald-200">
+              Máximo para este evento
+            </p>
+            <p class="mt-1 text-2xl font-bold text-emerald-800 dark:text-white">
+              {{ availableForEvent() }}
+            </p>
+          </div>
+        </div>
+
+        @if (quantity() > availableForEvent()) {
+          <p class="mt-3 text-sm text-red-600" role="alert">
+            La cantidad solicitada supera la disponibilidad calculada.
+          </p>
+        }
+      }
+
+      <div class="mt-5 flex justify-end">
+        <button
+          type="button"
+          class="rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="!canSave()"
+          (click)="save()">
+
+          {{ saving()
+            ? 'Guardando...'
+            : currentReservation()
+              ? 'Actualizar reservación'
+              : 'Guardar reservación'
+          }}
+        </button>
+      </div>
+    </div>
+  } @else {
+    <div class="rounded-lg bg-gray-100 p-4 text-sm text-gray-600">
+      Las reservaciones no pueden modificarse en el estado actual
+      o no cuentas con los permisos necesarios.
+    </div>
+  }
+
+  <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+
+    <div class="flex items-center justify-between border-b border-gray-200 p-5">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+        Reservaciones del evento
+      </h3>
+
+      <button
+        type="button"
+        class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        [disabled]="loading()"
+        (click)="loadData()">
+        Actualizar
+      </button>
+    </div>
+
+    @if (loading()) {
+      <p class="p-5 text-sm text-gray-500" role="status">
+        Cargando inventario...
+      </p>
+    } @else if (reservations().length === 0) {
+      <div class="p-8 text-center text-sm text-gray-500">
+        Este evento todavía no tiene artículos reservados.
+      </div>
+    } @else {
+      <div class="divide-y divide-gray-200">
+
+        @for (r of reservations(); track r.id) {
+          <div class="p-5">
+
+            <div class="flex flex-wrap items-center justify-between gap-4">
+
+              <div class="min-w-0">
+                <p class="font-semibold text-gray-900 dark:text-white">
+                  {{ itemName(r.inventory_item_id) }}
+                </p>
+
+                <p class="mt-1 text-xs text-gray-500">
+                  SKU: {{ itemSku(r.inventory_item_id) || 'N/D' }}
+                  · Reservación #{{ r.id }}
+                </p>
+              </div>
+
+              <div class="text-center">
+                <p class="text-xs text-gray-500">Cantidad</p>
+                <p class="text-xl font-bold text-gray-900 dark:text-white">
+                  {{ r.quantity }}
+                </p>
+              </div>
+
+              <span
+                class="rounded-full px-3 py-1 text-xs font-semibold"
+                [ngClass]="{
+                  'bg-green-100 text-green-800': r.status === 'reserved',
+                  'bg-gray-100 text-gray-700': r.status !== 'reserved'
+                }">
+                {{ r.status === 'reserved' ? 'Reservado' : 'Cancelado' }}
+              </span>
+
+              <div class="flex flex-wrap gap-2">
+
+                @if (r.status === 'reserved') {
+                  <button
+                    type="button"
+                    class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    [attr.aria-expanded]="expandedReservationId() === r.id"
+                    (click)="toggleMovements(r.id)">
+                    {{ expandedReservationId() === r.id
+                      ? 'Ocultar movimientos'
+                      : 'Entregas y devoluciones'
+                    }}
+                  </button>
+                }
+
+                @if (canCancel() && r.status === 'reserved') {
+                  <button
+                    type="button"
+                    class="rounded-lg border border-red-300 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+                    [disabled]="saving()"
+                    (click)="cancel(r)">
+                    Cancelar
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (r.status === 'reserved' && expandedReservationId() === r.id) {
+              <div class="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <app-event-inventory-movements
+                  [reservationId]="r.id"
+                  [reservedQuantity]="r.quantity"
+                  [reservationStatus]="r.status"
+                  [eventStatus]="eventStatus">
+                </app-event-inventory-movements>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</section>

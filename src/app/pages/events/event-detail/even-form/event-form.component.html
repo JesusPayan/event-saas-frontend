@@ -1,0 +1,293 @@
+
+<main class="max-w-5xl mx-auto px-4 py-8">
+
+  <a
+    routerLink="/events"
+    class="inline-flex items-center text-sm font-medium text-blue-600 hover:underline mb-6">
+    ← Volver a eventos
+  </a>
+
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">
+      {{ editing() ? 'Editar evento' : 'Nuevo evento' }}
+    </h1>
+
+    <p class="mt-2 text-sm text-gray-500">
+      Completa la información general del evento.
+    </p>
+  </div>
+
+  @if (error()) {
+    <div
+      role="alert"
+      class="mb-6 p-4 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200">
+      {{ error() }}
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="p-6 text-gray-500">
+      Cargando información del evento...
+    </div>
+  } @else {
+
+    <form #form="ngForm" (ngSubmit)="save()" class="space-y-6">
+
+      <section class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+
+        <h2 class="text-lg font-semibold text-gray-900 mb-6">
+          Información general
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <div class="md:col-span-2">
+            <label
+              for="event-name"
+              class="block mb-2 text-sm font-medium text-gray-900">
+              Nombre del evento *
+            </label>
+
+            <input
+              id="event-name"
+              name="name"
+              type="text"
+              [(ngModel)]="model.name"
+              required
+              maxlength="180"
+              placeholder="Ej. Boda de María y Carlos"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            />
+          </div>
+
+          <div>
+            <label
+              for="event-type"
+              class="block mb-2 text-sm font-medium text-gray-900">
+              Tipo de evento *
+            </label>
+
+            <select
+              id="event-type"
+              name="event_type"
+              [(ngModel)]="model.event_type"
+              required
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+
+              <option value="wedding">Boda</option>
+              <option value="quinceanera">XV años</option>
+              <option value="birthday">Cumpleaños</option>
+              <option value="corporate">Corporativo</option>
+              <option value="other">Otro</option>
+
+            </select>
+          </div>
+
+          <div class="relative">
+
+            <label
+              for="client-search"
+              class="block mb-2 text-sm font-medium text-gray-900">
+              Cliente *
+            </label>
+
+            <div class="flex gap-2">
+
+              <input
+                id="client-search"
+                name="clientSearch"
+                type="text"
+                autocomplete="off"
+                [ngModel]="clientSearch()"
+                (ngModelChange)="onClientSearch($event)"
+                (focus)="clientDropdownOpen.set(true)"
+                placeholder="Buscar por nombre o empresa..."
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+              />
+
+              @if (selectedClient()) {
+                <button
+                  type="button"
+                  (click)="clearClient()"
+                  class="px-3 text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200">
+                  ✕
+                </button>
+              }
+
+            </div>
+
+            @if (clientsLoading()) {
+              <p class="mt-2 text-xs text-gray-500">
+                Buscando clientes...
+              </p>
+            }
+
+            @if (clientDropdownOpen() && !selectedClient()) {
+
+              <div
+                class="absolute z-30 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+
+                @for (client of clients(); track client.id) {
+
+                  <button
+                    type="button"
+                    (click)="selectClient(client)"
+                    class="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-gray-100">
+
+                    <span class="block text-sm font-medium text-gray-900">
+                      {{ clientLabel(client) }}
+                    </span>
+
+                    <span class="block text-xs text-gray-500">
+                      {{ client.email || client.phone || 'Sin contacto registrado' }}
+                    </span>
+
+                  </button>
+
+                } @empty {
+                  <p class="p-4 text-sm text-gray-500">
+                    No se encontraron clientes.
+                  </p>
+                }
+
+              </div>
+            }
+
+            @if (selectedClient()) {
+              <p class="mt-2 text-xs text-green-700">
+                ✓ Cliente seleccionado: {{ clientLabel(selectedClient()!) }}
+              </p>
+            }
+
+          </div>
+
+        </div>
+      </section>
+
+      <section class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+
+        <h2 class="text-lg font-semibold text-gray-900 mb-6">
+          Fecha y ubicación
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <div>
+            <label
+              for="starts-at"
+              class="block mb-2 text-sm font-medium text-gray-900">
+              Inicio *
+            </label>
+
+            <input
+              id="starts-at"
+              name="starts_at"
+              type="datetime-local"
+              [(ngModel)]="startLocal"
+              required
+              class="bg-gray-50 border border-gray-300 rounded-lg block w-full p-2.5"
+            />
+          </div>
+
+          <div>
+            <label
+              for="ends-at"
+              class="block mb-2 text-sm font-medium text-gray-900">
+              Finalización *
+            </label>
+
+            <input
+              id="ends-at"
+              name="ends_at"
+              type="datetime-local"
+              [(ngModel)]="endLocal"
+              [min]="startLocal"
+              required
+              class="bg-gray-50 border border-gray-300 rounded-lg block w-full p-2.5"
+            />
+          </div>
+
+          <div>
+            <label
+              for="location"
+              class="block mb-2 text-sm font-medium text-gray-900">
+              Ubicación
+            </label>
+
+            <input
+              id="location"
+              name="location"
+              [(ngModel)]="model.location"
+              maxlength="255"
+              placeholder="Ej. Salón de eventos, Mazatlán"
+              class="bg-gray-50 border border-gray-300 rounded-lg block w-full p-2.5"
+            />
+          </div>
+
+          <div>
+            <label
+              for="estimated-guests"
+              class="block mb-2 text-sm font-medium text-gray-900">
+              Invitados estimados
+            </label>
+
+            <input
+              id="estimated-guests"
+              name="estimated_guests"
+              type="number"
+              min="0"
+              step="1"
+              [(ngModel)]="model.estimated_guests"
+              class="bg-gray-50 border border-gray-300 rounded-lg block w-full p-2.5"
+            />
+          </div>
+
+        </div>
+      </section>
+
+      <section class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">
+          Información adicional
+        </h2>
+
+        <label
+          for="description"
+          class="block mb-2 text-sm font-medium text-gray-900">
+          Descripción
+        </label>
+
+        <textarea
+          id="description"
+          name="description"
+          rows="4"
+          [(ngModel)]="model.description"
+          placeholder="Agrega detalles importantes del evento..."
+          class="bg-gray-50 border border-gray-300 rounded-lg block w-full p-2.5">
+        </textarea>
+
+      </section>
+
+      <div class="flex justify-end gap-3">
+
+        <a
+          routerLink="/events"
+          class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+          Cancelar
+        </a>
+
+        <button
+          type="submit"
+          [disabled]="form.invalid || !selectedClient() || saving() || loading()"
+          class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+
+          {{ saving() ? 'Guardando...' : 'Guardar evento' }}
+
+        </button>
+
+      </div>
+
+    </form>
+  }
+
+</main>

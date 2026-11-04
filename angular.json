@@ -1,0 +1,68 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "projects",
+  "projects": {
+    "eventos-saas-web": {
+      "projectType": "application",
+      "schematics": {},
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist/eventos-saas-web",
+            "index": "src/index.html",
+            "browser": "src/main.ts",
+            "tsConfig": "tsconfig.app.json",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
+            ],
+            "styles": [
+              "src/styles.css"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                }
+              ],
+              "outputHashing": "all"
+            }
+          }
+        },
+  
+        "serve": {
+  "builder": "@angular/build:dev-server",
+  "options": {
+    "buildTarget": "eventos-saas-web:build:development",
+    "proxyConfig": "proxy.conf.json",
+    "host": "127.0.0.1",
+    "port": 4200
+  },
+  "configurations": {
+    "production": {
+      "buildTarget": "eventos-saas-web:build:production"
+    },
+    "development": {
+      "buildTarget": "eventos-saas-web:build"
+    }
+  },
+  "defaultConfiguration": "development"
+}
+      }
+    }
+  },
+  "cli": {
+    "analytics": "8f6ea806-f6d0-4da2-801c-75c6f27bc431"
+  }
+}

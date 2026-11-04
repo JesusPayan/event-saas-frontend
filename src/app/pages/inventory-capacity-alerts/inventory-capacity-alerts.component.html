@@ -1,0 +1,613 @@
+
+<div class="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
+
+  <!-- ======================================= -->
+  <!-- ENCABEZADO -->
+  <!-- ======================================= -->
+
+  <header
+    class="flex flex-col gap-4 sm:flex-row
+           sm:items-center sm:justify-between"
+  >
+    <div>
+      <h1
+        class="text-2xl font-bold text-gray-900
+               dark:text-white"
+      >
+        Alertas de capacidad
+      </h1>
+
+      <p
+        class="mt-1 text-sm text-gray-500
+               dark:text-gray-400"
+      >
+        Supervisa déficits de inventario,
+        alertas resueltas y su historial de auditoría.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      (click)="loadAlerts()"
+      [disabled]="loading()"
+      class="inline-flex items-center justify-center
+             rounded-lg border border-gray-300
+             bg-white px-4 py-2.5 text-sm font-medium
+             text-gray-700 hover:bg-gray-50
+             disabled:cursor-not-allowed
+             disabled:opacity-50
+             dark:border-gray-600 dark:bg-gray-800
+             dark:text-gray-200"
+    >
+      {{ loading() ? 'Actualizando...' : 'Actualizar alertas' }}
+    </button>
+  </header>
+
+  <!-- ======================================= -->
+  <!-- ERRORES -->
+  <!-- ======================================= -->
+
+  @if (error()) {
+    <div
+      role="alert"
+      class="flex items-center justify-between gap-3
+             rounded-lg border border-red-200
+             bg-red-50 p-4 text-sm text-red-700
+             dark:border-red-800 dark:bg-red-950
+             dark:text-red-300"
+    >
+      <span>{{ error() }}</span>
+
+      <button
+        type="button"
+        (click)="clearError()"
+        aria-label="Cerrar error"
+        class="font-bold"
+      >
+        ×
+      </button>
+    </div>
+  }
+
+  <!-- ======================================= -->
+  <!-- INDICADORES -->
+  <!-- ======================================= -->
+
+  <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+    <!-- TOTAL DE ALERTAS -->
+
+    <div
+      class="rounded-xl border border-gray-200
+             bg-white p-5 shadow-sm
+             dark:border-gray-700 dark:bg-gray-800"
+    >
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        Total de alertas cargadas
+      </p>
+
+      <p
+        class="mt-2 text-3xl font-bold
+               text-gray-900 dark:text-white"
+      >
+        {{ formatQuantity(totalAlerts()) }}
+      </p>
+    </div>
+
+    <!-- ALERTAS ABIERTAS -->
+
+    <div
+      class="rounded-xl border border-red-200
+             bg-red-50 p-5 shadow-sm
+             dark:border-red-900 dark:bg-gray-800"
+    >
+      <p class="text-sm text-red-700 dark:text-red-400">
+        Alertas abiertas
+      </p>
+
+      <p class="mt-2 text-3xl font-bold text-red-600">
+        {{ formatQuantity(openAlerts()) }}
+      </p>
+    </div>
+
+    <!-- ALERTAS RESUELTAS -->
+
+    <div
+      class="rounded-xl border border-green-200
+             bg-green-50 p-5 shadow-sm
+             dark:border-green-900 dark:bg-gray-800"
+    >
+      <p class="text-sm text-green-700 dark:text-green-400">
+        Alertas resueltas
+      </p>
+
+      <p class="mt-2 text-3xl font-bold text-green-600">
+        {{ formatQuantity(resolvedAlerts()) }}
+      </p>
+    </div>
+
+    <!-- DÉFICIT -->
+
+    <div
+      class="rounded-xl border border-amber-200
+             bg-amber-50 p-5 shadow-sm
+             dark:border-amber-900 dark:bg-gray-800"
+    >
+      <p class="text-sm text-amber-700 dark:text-amber-400">
+        Suma de déficits abiertos
+      </p>
+
+      <p class="mt-2 text-3xl font-bold text-amber-600">
+        {{ formatQuantity(totalShortage()) }}
+      </p>
+    </div>
+
+  </section>
+
+  <!-- ======================================= -->
+  <!-- LISTADO DE ALERTAS -->
+  <!-- ======================================= -->
+
+  <section
+    class="rounded-xl border border-gray-200
+           bg-white shadow-sm
+           dark:border-gray-700 dark:bg-gray-800"
+  >
+
+    <div
+      class="flex flex-col gap-4 border-b
+             border-gray-200 p-5
+             sm:flex-row sm:items-center
+             sm:justify-between
+             dark:border-gray-700"
+    >
+      <div>
+        <h2
+          class="text-lg font-semibold
+                 text-gray-900 dark:text-white"
+        >
+          Alertas registradas
+        </h2>
+
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Selecciona una alerta para consultar
+          sus eventos de auditoría.
+        </p>
+      </div>
+
+      <!-- FILTROS -->
+
+      <div class="flex flex-wrap gap-2">
+
+        <button
+          type="button"
+          (click)="setFilter('all')"
+          [class.bg-blue-600]="statusFilter() === 'all'"
+          [class.text-white]="statusFilter() === 'all'"
+          [class.bg-gray-100]="statusFilter() !== 'all'"
+          [class.text-gray-700]="statusFilter() !== 'all'"
+          class="rounded-lg px-4 py-2 text-sm font-medium
+                 hover:opacity-90"
+        >
+          Todas
+        </button>
+
+        <button
+          type="button"
+          (click)="setFilter('open')"
+          [class.bg-red-600]="statusFilter() === 'open'"
+          [class.text-white]="statusFilter() === 'open'"
+          [class.bg-gray-100]="statusFilter() !== 'open'"
+          [class.text-gray-700]="statusFilter() !== 'open'"
+          class="rounded-lg px-4 py-2 text-sm font-medium
+                 hover:opacity-90"
+        >
+          Abiertas
+        </button>
+
+        <button
+          type="button"
+          (click)="setFilter('resolved')"
+          [class.bg-green-600]="statusFilter() === 'resolved'"
+          [class.text-white]="statusFilter() === 'resolved'"
+          [class.bg-gray-100]="statusFilter() !== 'resolved'"
+          [class.text-gray-700]="statusFilter() !== 'resolved'"
+          class="rounded-lg px-4 py-2 text-sm font-medium
+                 hover:opacity-90"
+        >
+          Resueltas
+        </button>
+
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+
+      <table class="w-full text-left text-sm">
+
+        <thead
+          class="bg-gray-50 text-xs uppercase
+                 text-gray-600 dark:bg-gray-700
+                 dark:text-gray-300"
+        >
+          <tr>
+            <th class="px-4 py-3">ID</th>
+            <th class="px-4 py-3">Artículo</th>
+            <th class="px-4 py-3">Reservación</th>
+            <th class="px-4 py-3">Requerido</th>
+            <th class="px-4 py-3">Disponible</th>
+            <th class="px-4 py-3">Déficit registrado</th>
+            <th class="px-4 py-3">Estado</th>
+            <th class="px-4 py-3">Detectada</th>
+            <th class="px-4 py-3">Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          @for (alert of filteredAlerts(); track alert.id) {
+
+            <tr
+              class="border-b border-gray-100
+                     hover:bg-gray-50
+                     dark:border-gray-700
+                     dark:hover:bg-gray-700"
+            >
+
+              <td class="px-4 py-3 font-medium">
+                #{{ alert.id }}
+              </td>
+
+              <td class="px-4 py-3">
+                #{{ alert.inventory_item_id }}
+              </td>
+
+              <td class="px-4 py-3">
+                #{{ alert.reservation_id }}
+              </td>
+
+              <td class="px-4 py-3">
+                {{ formatQuantity(alert.required_quantity) }}
+              </td>
+
+              <td class="px-4 py-3">
+                {{ formatQuantity(alert.available_quantity) }}
+              </td>
+
+              <td class="px-4 py-3 font-semibold">
+                {{ formatQuantity(alert.shortage_quantity) }}
+              </td>
+
+              <td class="px-4 py-3">
+                <span
+                  class="inline-flex rounded-full
+                         px-3 py-1 text-xs font-semibold"
+                  [ngClass]="statusClass(alert.status)"
+                >
+                  {{ statusLabel(alert.status) }}
+                </span>
+              </td>
+
+              <td class="px-4 py-3">
+                {{ alert.detected_at | date:'dd/MM/yyyy HH:mm':'UTC' }}
+              </td>
+
+              <td class="px-4 py-3">
+                <button
+                  type="button"
+                  (click)="viewHistory(alert)"
+                  class="rounded-lg border border-blue-200
+                         px-3 py-1.5 text-xs font-medium
+                         text-blue-700 hover:bg-blue-50
+                         dark:border-blue-800
+                         dark:text-blue-400"
+                >
+                  Ver auditoría
+                </button>
+              </td>
+
+            </tr>
+
+          } @empty {
+
+            <tr>
+              <td
+                colspan="9"
+                class="px-4 py-10 text-center
+                       text-gray-500 dark:text-gray-400"
+              >
+                @if (loading()) {
+                  Cargando alertas...
+                } @else {
+                  No hay alertas para el filtro seleccionado.
+                }
+              </td>
+            </tr>
+
+          }
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+  <!-- ======================================= -->
+  <!-- DETALLE DE AUDITORÍA -->
+  <!-- ======================================= -->
+
+  @if (selectedAlert(); as alert) {
+
+    <section
+      class="rounded-xl border border-blue-200
+             bg-white shadow-sm
+             dark:border-blue-900 dark:bg-gray-800"
+    >
+
+      <div
+        class="flex flex-col gap-4 border-b
+               border-gray-200 p-5
+               sm:flex-row sm:items-center
+               sm:justify-between
+               dark:border-gray-700"
+      >
+        <div>
+          <h2
+            class="text-lg font-semibold
+                   text-gray-900 dark:text-white"
+          >
+            Historial de auditoría — Alerta #{{ alert.id }}
+          </h2>
+
+          <p
+            class="mt-1 text-sm
+                   text-gray-500 dark:text-gray-400"
+          >
+            Artículo #{{ alert.inventory_item_id }}
+            · Reservación #{{ alert.reservation_id }}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          (click)="closeHistory()"
+          class="rounded-lg border border-gray-300
+                 px-4 py-2 text-sm font-medium
+                 text-gray-700 hover:bg-gray-50
+                 dark:border-gray-600
+                 dark:text-gray-200"
+        >
+          Cerrar historial
+        </button>
+      </div>
+
+      <!-- RESUMEN DE ALERTA -->
+
+      <div class="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
+
+        <div>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Estado
+          </p>
+
+          <span
+            class="mt-2 inline-flex rounded-full
+                   px-3 py-1 text-sm font-medium"
+            [ngClass]="statusClass(alert.status)"
+          >
+            {{ statusLabel(alert.status) }}
+          </span>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Cantidad requerida
+          </p>
+
+          <p class="mt-2 text-xl font-bold">
+            {{ formatQuantity(alert.required_quantity) }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Cantidad disponible registrada
+          </p>
+
+          <p class="mt-2 text-xl font-bold">
+            {{ formatQuantity(alert.available_quantity) }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Déficit registrado
+          </p>
+
+          <p class="mt-2 text-xl font-bold text-red-600">
+            {{ formatQuantity(alert.shortage_quantity) }}
+          </p>
+        </div>
+
+      </div>
+
+      @if (alert.resolved_at) {
+        <p class="px-5 pb-4 text-sm text-green-700">
+          Resuelta:
+          {{ alert.resolved_at | date:'dd/MM/yyyy HH:mm':'UTC' }}
+        </p>
+      }
+
+      <!-- ERROR DEL HISTORIAL -->
+
+      @if (historyError()) {
+        <div
+          role="alert"
+          class="mx-5 mb-4 rounded-lg border
+                 border-red-200 bg-red-50 p-4
+                 text-sm text-red-700"
+        >
+          {{ historyError() }}
+        </div>
+      }
+
+      <!-- TABLA DE EVENTOS -->
+
+      <div class="overflow-x-auto">
+
+        <table class="w-full text-left text-sm">
+
+          <thead
+            class="bg-gray-50 text-xs uppercase
+                   text-gray-600 dark:bg-gray-700
+                   dark:text-gray-300"
+          >
+            <tr>
+              <th class="px-4 py-3">Evento</th>
+              <th class="px-4 py-3">Acción</th>
+              <th class="px-4 py-3">Déficit anterior</th>
+              <th class="px-4 py-3">Déficit nuevo</th>
+              <th class="px-4 py-3">Origen</th>
+              <th class="px-4 py-3">Referencia</th>
+              <th class="px-4 py-3">Usuario</th>
+              <th class="px-4 py-3">Fecha</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            @for (event of events(); track event.id) {
+
+              <tr
+                class="border-b border-gray-100
+                       hover:bg-gray-50
+                       dark:border-gray-700
+                       dark:hover:bg-gray-700"
+              >
+
+                <td class="px-4 py-3 font-medium">
+                  #{{ event.id }}
+                </td>
+
+                <td class="px-4 py-3">
+                  <span
+                    class="inline-flex rounded-full
+                           px-3 py-1 text-xs font-semibold"
+                    [ngClass]="actionClass(event.action)"
+                  >
+                    {{ actionLabel(event.action) }}
+                  </span>
+                </td>
+
+                <td class="px-4 py-3">
+                  {{ formatQuantity(event.previous_shortage) }}
+                </td>
+
+                <td class="px-4 py-3 font-semibold">
+                  {{ formatQuantity(event.new_shortage) }}
+                </td>
+
+                <td class="px-4 py-3">
+                  {{ sourceLabel(event.source_type) }}
+                </td>
+
+                <td class="px-4 py-3">
+                  {{ event.source_id ?? '—' }}
+                </td>
+
+                <td class="px-4 py-3">
+                  {{ event.created_by ?? 'Sistema' }}
+                </td>
+
+                <td class="px-4 py-3">
+                  {{ event.created_at | date:'dd/MM/yyyy HH:mm':'UTC' }}
+                </td>
+
+              </tr>
+
+            } @empty {
+
+              <tr>
+                <td
+                  colspan="8"
+                  class="px-4 py-8 text-center
+                         text-gray-500 dark:text-gray-400"
+                >
+                  @if (loadingEvents()) {
+                    Cargando eventos de auditoría...
+                  } @else {
+                    No existen eventos de auditoría
+                    para esta alerta.
+                  }
+                </td>
+              </tr>
+
+            }
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+      <!-- PAGINACIÓN DE AUDITORÍA -->
+
+      @if (historyTotalPages() > 1) {
+
+        <div
+          class="flex flex-wrap items-center
+                 justify-between gap-3
+                 border-t border-gray-200 p-5
+                 dark:border-gray-700"
+        >
+
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            {{ historyTotalRecords() }} eventos
+            · Página {{ historyPage() }}
+            de {{ historyTotalPages() }}
+          </p>
+
+          <div class="flex gap-2">
+
+            <button
+              type="button"
+              (click)="previousHistoryPage()"
+              [disabled]="historyPage() <= 1 || loadingEvents()"
+              class="rounded-lg border border-gray-300
+                     px-4 py-2 text-sm
+                     disabled:cursor-not-allowed
+                     disabled:opacity-50
+                     dark:border-gray-600"
+            >
+              Anterior
+            </button>
+
+            <button
+              type="button"
+              (click)="nextHistoryPage()"
+              [disabled]="
+                historyPage() >= historyTotalPages() ||
+                loadingEvents()
+              "
+              class="rounded-lg border border-gray-300
+                     px-4 py-2 text-sm
+                     disabled:cursor-not-allowed
+                     disabled:opacity-50
+                     dark:border-gray-600"
+            >
+              Siguiente
+            </button>
+
+          </div>
+
+        </div>
+
+      }
+
+    </section>
+
+  }
+
+</div>

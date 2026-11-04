@@ -1,0 +1,12 @@
+
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+:host input,
+:host textarea,
+:host button {
+  font: inherit;
+}
