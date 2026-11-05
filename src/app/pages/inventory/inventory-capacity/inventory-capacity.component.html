@@ -1,0 +1,156 @@
+<section class="space-y-6 p-4 md:p-6">
+  <header class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Control de déficit de inventario</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400">Alertas persistentes y auditoría de conciliaciones.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <a routerLink="/inventory/incidents" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">Ver incidencias</a>
+      <button type="button" (click)="load()" [disabled]="loading()" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{{ loading() ? 'Cargando...' : 'Actualizar' }}</button>
+    </div>
+  </header>
+  <div class="grid gap-4 p-4 md:grid-cols-2">
+
+  <div>
+    <label
+      for="statusFilter"
+      class="mb-2 block text-sm font-medium
+             text-gray-900 dark:text-white">
+      Estado
+    </label>
+
+    <select
+      id="statusFilter"
+      [value]="statusFilter()"
+      (change)="statusFilter.set($any($event.target).value)"
+      class="block w-full rounded-lg border border-gray-300
+             bg-gray-50 p-2.5 text-sm dark:border-gray-600
+             dark:bg-gray-700 dark:text-white">
+
+      <option value="all">Todos</option>
+      <option value="open">Abiertas</option>
+      <option value="resolved">Resueltas</option>
+    </select>
+  </div>
+
+  <div>
+    <label
+      for="itemFilter"
+      class="mb-2 block text-sm font-medium
+             text-gray-900 dark:text-white">
+      Artículo
+    </label>
+
+    <select
+      id="itemFilter"
+      [value]="itemFilter() ?? ''"
+      (change)="itemFilter.set(
+        $any($event.target).value === ''
+          ? null
+          : +$any($event.target).value
+      )"
+      class="block w-full rounded-lg border border-gray-300
+             bg-gray-50 p-2.5 text-sm dark:border-gray-600
+             dark:bg-gray-700 dark:text-white">
+
+      <option value="">Todos los artículos</option>
+
+      @for (id of itemIds(); track id) {
+        <option [value]="id">
+          Artículo #{{ id }}
+        </option>
+      }
+    </select>
+  </div>
+
+</div>
+  @if (error()) {
+    <div role="alert" class="rounded-lg bg-red-50 p-3 text-red-700 dark:bg-red-950 dark:text-red-300">{{ error() }}</div>
+  }
+
+  <div class="grid gap-4 sm:grid-cols-3">
+    <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+      <p class="text-sm text-slate-500 dark:text-slate-400">Alertas abiertas</p>
+      <p class="mt-2 text-3xl font-bold text-red-600">{{ openAlerts().length }}</p>
+    </div>
+    <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+      <p class="text-sm text-slate-500 dark:text-slate-400">Alertas resueltas</p>
+      <p class="mt-2 text-3xl font-bold dark:text-white">{{ resolvedCount() }}</p>
+    </div>
+    <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+      <p class="text-sm text-slate-500 dark:text-slate-400">Conciliaciones auditadas</p>
+      <p class="mt-2 text-3xl font-bold dark:text-white">{{ audits().length }}</p>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <div class="border-b border-gray-200 p-5 dark:border-gray-700">
+      <h2 class="font-semibold text-slate-900 dark:text-white">Alertas de capacidad</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Una misma insuficiencia puede afectar varias reservaciones. No sumes los déficits por fila.</p>
+    </div>
+    <table class="w-full text-left text-sm text-gray-700 dark:text-gray-200">
+      <thead class="bg-slate-50 dark:bg-gray-700">
+        <tr>
+          <th scope="col" class="p-3">Artículo</th>
+          <th scope="col" class="p-3">Reservación</th>
+          <th scope="col" class="p-3">Demanda simultánea</th>
+          <th scope="col" class="p-3">Utilizable</th>
+          <th scope="col" class="p-3">Déficit</th>
+          <th scope="col" class="p-3">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (a of alerts(); track a.id) {
+          <tr class="border-t border-gray-200 dark:border-gray-700">
+            <td class="p-3">#{{ a.inventory_item_id }}</td>
+            <td class="p-3">#{{ a.reservation_id }}</td>
+            <td class="p-3">{{ a.required_quantity }}</td>
+            <td class="p-3">{{ a.available_quantity }}</td>
+            <td class="p-3 font-semibold text-red-600">{{ a.shortage_quantity }}</td>
+            <td class="p-3">
+              <span class="rounded-full px-2 py-1 text-xs" [ngClass]="a.status === 'open' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'">{{ a.status === 'open' ? 'Abierta' : 'Resuelta' }}</span>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6" class="p-6 text-center text-slate-500">No hay alertas registradas.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <div class="border-b border-gray-200 p-5 dark:border-gray-700">
+      <h2 class="font-semibold text-slate-900 dark:text-white">Auditoría de conciliaciones</h2>
+    </div>
+    <table class="w-full text-left text-sm text-gray-700 dark:text-gray-200">
+      <thead class="bg-slate-50 dark:bg-gray-700">
+        <tr>
+          <th scope="col" class="p-3">Incidencia</th>
+          <th scope="col" class="p-3">Artículo</th>
+          <th scope="col" class="p-3">Ajuste</th>
+          <th scope="col" class="p-3">Antes</th>
+          <th scope="col" class="p-3">Después</th>
+          <th scope="col" class="p-3">Déficit</th>
+          <th scope="col" class="p-3">Cargo</th>
+          <th scope="col" class="p-3">Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (a of audits(); track a.id) {
+          <tr class="border-t border-gray-200 dark:border-gray-700">
+            <td class="p-3">#{{ a.incident_id }}</td>
+            <td class="p-3">#{{ a.inventory_item_id }}</td>
+            <td class="p-3">{{ a.adjustment_type }} ({{ a.quantity }})</td>
+            <td class="p-3">{{ a.capacity_before }}</td>
+            <td class="p-3">{{ a.capacity_after }}</td>
+            <td class="p-3">{{ a.shortage_after }}</td>
+            <td class="p-3">{{ amount(a.total_cost) | currency:'MXN' }}</td>
+            <td class="p-3">{{ a.created_at | date:'short' }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="8" class="p-6 text-center text-slate-500">No hay conciliaciones auditadas.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

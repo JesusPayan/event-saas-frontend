@@ -1,10 +1,8 @@
-
 import { inject } from '@angular/core';
 import { HttpInterceptorFn } from '@angular/common/http';
 import { AuthService } from './auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  // Solo agregar credenciales a la API local.
   if (!req.url.startsWith('/api/v1/')) {
     return next(req);
   }
@@ -20,13 +18,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  if (tenantId !== null && tenantId !== undefined) {
+  if (tenantId !== null) {
     headers['X-Tenant-ID'] = String(tenantId);
   }
 
-  return next(
-    req.clone({
-      setHeaders: headers
-    })
-  );
+  return next(req.clone({ setHeaders: headers }));
 };

@@ -170,6 +170,7 @@ export const routes: Routes = [
   ]
 },
 
+     
       // =====================================
       // INVENTARIO
       // =====================================
@@ -242,3 +243,4 @@ export const routes: Routes = [
     redirectTo: 'login'
   }
 ];
+

@@ -46,8 +46,10 @@ export interface ItemCapacity {
   shortage_quantity: number;
 }
 
+
 @Injectable({ providedIn: 'root' })
 export class InventoryCapacityService {
+
   private readonly http = inject(HttpClient);
   private readonly base = '/api/v1/inventory';
 
