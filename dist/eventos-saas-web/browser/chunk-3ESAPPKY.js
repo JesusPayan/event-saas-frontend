@@ -1,0 +1,1 @@
+import{Ia as o,ab as n,bb as m,ob as s}from"./chunk-NAZRKPN7.js";var e=class e{};e.\u0275fac=function(t){return new(t||e)},e.\u0275cmp=o({type:e,selectors:[["app-quote-form"]],decls:2,vars:0,template:function(t,i){t&1&&(n(0,"p"),s(1,"quote-form works!"),m())},encapsulation:2});var a=e;export{a as QuoteForm};
