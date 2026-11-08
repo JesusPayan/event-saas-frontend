@@ -110,6 +110,15 @@ import { AuthService } from '../../services/auth.service';
           </button>
 
           @if (inventoryOpen()) {
+
+              <a
+              routerLink="/inventory/dashboard"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: true }">
+
+              <span class="nav-icon">▦</span>
+              Dashboard de inventario
+            </a>
             <div id="inventory-submenu" class="submenu">
 
               <a routerLink="/inventory"
@@ -147,10 +156,19 @@ import { AuthService } from '../../services/auth.service';
               routerLinkActive="active">
               <span>⚠</span> Déficit y auditoría
             </a>
-            <a routerLink="/inventory/replenishments">
+            <a
+              routerLink="/inventory/replenishments"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: true }">
+              <span class="nav-icon">↻</span>
               Reposiciones
             </a>
-            <a routerLink="/inventory/capacity-alerts">
+
+            <a
+              routerLink="/inventory/capacity-alerts"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: true }">
+              <span class="nav-icon">⚠</span>
               Alertas de capacidad
             </a>
             
