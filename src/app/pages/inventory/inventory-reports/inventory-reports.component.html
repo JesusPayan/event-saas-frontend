@@ -1,0 +1,443 @@
+
+<section class="space-y-6 p-6">
+
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+      Reportes de inventario
+    </h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400">
+      Consulta y exporta movimientos y disponibilidad.
+    </p>
+  </div>
+
+  @if (!canRead) {
+    <div class="rounded-lg bg-red-50 p-4 text-red-700" role="alert">
+      No tienes permiso para consultar reportes.
+    </div>
+  } @else {
+
+    <!-- FILTROS -->
+    <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm
+                dark:border-gray-700 dark:bg-gray-800">
+
+      <div class="mb-5 flex flex-wrap gap-3">
+        <button
+          type="button"
+          (click)="changeType('movements')"
+          [class.bg-blue-700]="reportType === 'movements'"
+          [class.text-white]="reportType === 'movements'"
+          [attr.aria-pressed]="reportType === 'movements'"
+          class="rounded-lg border border-gray-300 px-4 py-2 text-sm
+                 dark:border-gray-600">
+          Movimientos
+        </button>
+
+        <button
+          type="button"
+          (click)="changeType('availability')"
+          [class.bg-blue-700]="reportType === 'availability'"
+          [class.text-white]="reportType === 'availability'"
+          [attr.aria-pressed]="reportType === 'availability'"
+          class="rounded-lg border border-gray-300 px-4 py-2 text-sm
+                 dark:border-gray-600">
+          Disponibilidad
+        </button>
+      </div>
+
+      <div class="grid gap-4 md:grid-cols-3">
+
+        @if (reportType === 'movements') {
+
+          <label class="text-sm dark:text-gray-200">
+            Fecha inicial
+            <input
+              type="datetime-local"
+              [(ngModel)]="dateFrom"
+              class="mt-1 block w-full rounded-lg border
+                     border-gray-300 p-2 text-gray-900
+                     dark:border-gray-600 dark:bg-gray-700
+                     dark:text-white">
+          </label>
+
+          <label class="text-sm dark:text-gray-200">
+            Fecha final
+            <input
+              type="datetime-local"
+              [(ngModel)]="dateTo"
+              class="mt-1 block w-full rounded-lg border
+                     border-gray-300 p-2 text-gray-900
+                     dark:border-gray-600 dark:bg-gray-700
+                     dark:text-white">
+          </label>
+
+          <label class="text-sm dark:text-gray-200">
+            ID del evento
+            <input
+              type="number"
+              min="1"
+              [(ngModel)]="eventId"
+              class="mt-1 block w-full rounded-lg border
+                     border-gray-300 p-2 text-gray-900
+                     dark:border-gray-600 dark:bg-gray-700
+                     dark:text-white">
+          </label>
+
+          <label class="text-sm dark:text-gray-200">
+            Tipo de movimiento
+            <select
+              [(ngModel)]="movementType"
+              class="mt-1 block w-full rounded-lg border
+                     border-gray-300 p-2 text-gray-900
+                     dark:border-gray-600 dark:bg-gray-700
+                     dark:text-white">
+              <option value="">Todos</option>
+              <option value="dispatch">Entrega</option>
+              <option value="return">Devolución</option>
+            </select>
+          </label>
+
+        } @else {
+
+          <label class="text-sm dark:text-gray-200">
+            Inicio de disponibilidad
+            <input
+              type="datetime-local"
+              [(ngModel)]="startsAt"
+              class="mt-1 block w-full rounded-lg border
+                     border-gray-300 p-2 text-gray-900
+                     dark:border-gray-600 dark:bg-gray-700
+                     dark:text-white">
+          </label>
+
+          <label class="text-sm dark:text-gray-200">
+            Fin de disponibilidad
+            <input
+              type="datetime-local"
+              [(ngModel)]="endsAt"
+              class="mt-1 block w-full rounded-lg border
+                     border-gray-300 p-2 text-gray-900
+                     dark:border-gray-600 dark:bg-gray-700
+                     dark:text-white">
+          </label>
+
+          <label class="text-sm dark:text-gray-200">
+            ID de categoría
+            <input
+              type="number"
+              min="1"
+              [(ngModel)]="categoryId"
+              class="mt-1 block w-full rounded-lg border
+                     border-gray-300 p-2 text-gray-900
+                     dark:border-gray-600 dark:bg-gray-700
+                     dark:text-white">
+          </label>
+
+          <label class="text-sm dark:text-gray-200">
+            Buscar artículo
+            <input
+              type="text"
+              [(ngModel)]="search"
+              class="mt-1 block w-full rounded-lg border
+                     border-gray-300 p-2 text-gray-900
+                     dark:border-gray-600 dark:bg-gray-700
+                     dark:text-white">
+          </label>
+
+        }
+
+        <label class="text-sm dark:text-gray-200">
+          ID del artículo
+          <input
+            type="number"
+            min="1"
+            [(ngModel)]="itemId"
+            class="mt-1 block w-full rounded-lg border
+                   border-gray-300 p-2 text-gray-900
+                   dark:border-gray-600 dark:bg-gray-700
+                   dark:text-white">
+        </label>
+
+      </div>
+
+      <!-- ACCIONES -->
+      <div class="mt-5 flex flex-wrap gap-3">
+
+        <button
+          type="button"
+          (click)="searchReport()"
+          [disabled]="loading() || downloading()"
+          class="rounded-lg bg-blue-700 px-4 py-2 text-sm
+                 font-medium text-white disabled:opacity-50">
+          {{ loading() ? 'Consultando...' : 'Consultar' }}
+        </button>
+
+        <button
+          type="button"
+          (click)="download('csv')"
+          [disabled]="downloading() || loading()"
+          class="rounded-lg bg-emerald-700 px-4 py-2 text-sm
+                 font-medium text-white disabled:opacity-50">
+          Descargar CSV
+        </button>
+
+        <button
+          type="button"
+          (click)="download('xlsx')"
+          [disabled]="downloading() || loading()"
+          class="rounded-lg bg-green-800 px-4 py-2 text-sm
+                 font-medium text-white disabled:opacity-50">
+          Descargar Excel
+        </button>
+
+      </div>
+
+      @if (error()) {
+        <p role="alert" class="mt-4 text-sm text-red-600">
+          {{ error() }}
+        </p>
+      }
+
+    </div>
+
+    <!-- TARJETAS RESUMEN: SOLO PÁGINA ACTUAL -->
+    @if (reportType === 'availability' && hasSearched() && !loading() && !error()) {
+
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+
+        <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm
+                    dark:border-gray-700 dark:bg-gray-800">
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Artículos con déficit
+          </p>
+          <p class="mt-2 text-3xl font-bold text-red-600">
+            {{ totalDeficitItems }}
+          </p>
+          <p class="mt-1 text-xs text-gray-500">
+            Página actual
+          </p>
+        </div>
+
+        <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm
+                    dark:border-gray-700 dark:bg-gray-800">
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Unidades no disponibles
+          </p>
+          <p class="mt-2 text-3xl font-bold text-amber-600">
+            {{ totalUnavailableUnits }}
+          </p>
+          <p class="mt-1 text-xs text-gray-500">
+            Página actual
+          </p>
+        </div>
+
+        <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm
+                    dark:border-gray-700 dark:bg-gray-800">
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Unidades en déficit
+          </p>
+          <p class="mt-2 text-3xl font-bold text-red-600">
+            {{ totalShortageUnits }}
+          </p>
+          <p class="mt-1 text-xs text-gray-500">
+            Página actual
+          </p>
+        </div>
+
+      </div>
+
+    }
+
+    <!-- TABLA DE RESULTADOS -->
+    <div class="overflow-x-auto rounded-lg border border-gray-200
+                bg-white dark:border-gray-700 dark:bg-gray-800">
+
+      <table class="w-full text-left text-sm dark:text-gray-100">
+
+        <thead class="bg-gray-100 dark:bg-gray-700">
+
+          @if (reportType === 'movements') {
+            <tr>
+              <th class="p-3">Fecha</th>
+              <th class="p-3">SKU</th>
+              <th class="p-3">Artículo</th>
+              <th class="p-3">Movimiento</th>
+              <th class="p-3 text-right">Cantidad</th>
+            </tr>
+          } @else {
+            <tr>
+              <th class="p-3">SKU</th>
+              <th class="p-3">Artículo</th>
+              <th class="p-3 text-right">Total</th>
+              <th class="p-3 text-right">Reservado</th>
+              <th class="p-3 text-right">No disponible</th>
+              <th class="p-3 text-right">Disponible</th>
+              <th class="p-3 text-right">Déficit</th>
+              <th class="p-3 text-center">Estado</th>
+            </tr>
+          }
+
+        </thead>
+
+        <tbody>
+
+          @if (reportType === 'movements') {
+
+            @for (row of movements(); track row.movement_id) {
+
+              <tr class="border-t border-gray-200 hover:bg-gray-50
+                         dark:border-gray-700 dark:hover:bg-gray-700">
+
+                <td class="whitespace-nowrap p-3">
+                  {{ row.created_at | date:'dd/MM/yyyy HH:mm' }}
+                </td>
+
+                <td class="p-3">{{ row.sku }}</td>
+
+                <td class="p-3">{{ row.item_name }}</td>
+
+                <td class="p-3">
+                  @switch (row.movement_type) {
+                    @case ('dispatch') { Entrega }
+                    @case ('return') { Devolución }
+                    @default { {{ row.movement_type }} }
+                  }
+                </td>
+
+                <td class="p-3 text-right">
+                  {{ row.quantity }}
+                </td>
+
+              </tr>
+
+            } @empty {
+
+              <tr>
+                <td colspan="5" class="p-5 text-center text-gray-500">
+                  {{ loading()
+                    ? 'Consultando...'
+                    : hasSearched()
+                      ? 'No se encontraron movimientos.'
+                      : 'Selecciona filtros y presiona Consultar.' }}
+                </td>
+              </tr>
+
+            }
+
+          } @else {
+
+            @for (row of availability(); track row.inventory_item_id) {
+
+              <tr class="border-t border-gray-200 hover:bg-gray-50
+                         dark:border-gray-700 dark:hover:bg-gray-700">
+
+                <td class="p-3">{{ row.sku }}</td>
+
+                <td class="p-3 font-medium">{{ row.name }}</td>
+
+                <td class="p-3 text-right">
+                  {{ row.quantity_total }}
+                </td>
+
+                <td class="p-3 text-right">
+                  {{ row.quantity_reserved }}
+                </td>
+
+                <td class="p-3 text-right"
+                    [class.text-amber-600]="row.quantity_unavailable > 0"
+                    [class.font-semibold]="row.quantity_unavailable > 0">
+                  {{ row.quantity_unavailable }}
+                </td>
+
+                <td class="p-3 text-right"
+                    [class.text-red-600]="row.quantity_available === 0"
+                    [class.font-semibold]="row.quantity_available === 0">
+                  {{ row.quantity_available }}
+                </td>
+
+                <td class="p-3 text-right"
+                    [class.text-red-600]="row.inventory_shortage > 0"
+                    [class.font-bold]="row.inventory_shortage > 0">
+                  {{ row.inventory_shortage }}
+                </td>
+
+                <td class="p-3 text-center">
+
+                  @if (row.inventory_shortage > 0) {
+                    <span class="inline-flex rounded-full bg-red-100
+                                 px-3 py-1 text-xs font-semibold text-red-800">
+                      Déficit
+                    </span>
+                  } @else if (row.quantity_available === 0) {
+                    <span class="inline-flex rounded-full bg-amber-100
+                                 px-3 py-1 text-xs font-semibold text-amber-800">
+                      Sin disponibilidad
+                    </span>
+                  } @else {
+                    <span class="inline-flex rounded-full bg-green-100
+                                 px-3 py-1 text-xs font-semibold text-green-800">
+                      Disponible
+                    </span>
+                  }
+
+                </td>
+
+              </tr>
+
+            } @empty {
+
+              <tr>
+                <td colspan="8" class="p-5 text-center text-gray-500">
+                  {{ loading()
+                    ? 'Consultando...'
+                    : hasSearched()
+                      ? 'No se encontraron artículos.'
+                      : 'Selecciona un periodo y presiona Consultar.' }}
+                </td>
+              </tr>
+
+            }
+
+          }
+
+        </tbody>
+
+      </table>
+
+      <!-- PAGINACIÓN -->
+      <div class="flex items-center justify-between border-t
+                  border-gray-200 p-4 text-sm
+                  dark:border-gray-700 dark:text-gray-100">
+
+        <span>{{ total() }} registros</span>
+
+        <div class="flex items-center gap-3">
+
+          <button
+            type="button"
+            (click)="changePage(page - 1)"
+            [disabled]="page <= 1 || loading()"
+            class="rounded-lg bg-blue-600 px-3 py-2 text-white
+                   disabled:opacity-50">
+            Anterior
+          </button>
+
+          <span>{{ page }} / {{ totalPages }}</span>
+
+          <button
+            type="button"
+            (click)="changePage(page + 1)"
+            [disabled]="page >= totalPages || loading()"
+            class="rounded-lg bg-blue-600 px-3 py-2 text-white
+                   disabled:opacity-50">
+            Siguiente
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  }
+
+</section>

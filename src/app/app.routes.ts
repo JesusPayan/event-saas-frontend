@@ -231,16 +231,40 @@ export const routes: Routes = [
             .then(m => m.InventoryCapacityAlertsComponent),
         canActivate: [permissionGuard('inventory.read')]
       },
+      
+      // =====================================
+      // REPORTES DE INVENTARIO
+      // =====================================
+      {
+  path: 'inventory/reports',
+  loadComponent: () =>
+    import(
+      './pages/inventory/inventory-reports/inventory-reports.component'
+    ).then(m => m.InventoryReportsComponent),
+  canActivate: [
+    permissionGuard('inventory.read')
+  ]
+},
+
+      // =====================================
+      // EDITAR ARTICULO
+      // =====================================
       {
         path: 'inventory/:id/edit',
         component: InventoryFormComponent,
-        canActivate: [permissionGuard('inventory.update')]
+        canActivate: [
+          permissionGuard('inventory.update')
+        ]
       }
-    ]
-  },
+
+    ] // Fin de children de AdminLayoutComponent
+  }, // Fin de AdminLayoutComponent
+
+  // =====================================
+  // RUTA NO ENCONTRADA
+  // =====================================
   {
     path: '**',
     redirectTo: 'login'
   }
 ];
-
