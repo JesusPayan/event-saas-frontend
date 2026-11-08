@@ -238,6 +238,18 @@ export const routes: Routes = [
       }
     ]
   },
+  
+{
+  path: 'inventory/dashboard',
+  loadComponent: () =>
+    import(
+
+      // './pages/inventory-dashboard/inventory-dashboard.component'
+      './pages/inventory/inventory-dashboard/inventory-dashboard'
+    ).then(m => m.InventoryDashboardComponent),
+  canActivate: [permissionGuard('inventory.read')]
+},
+
   {
     path: '**',
     redirectTo: 'login'
