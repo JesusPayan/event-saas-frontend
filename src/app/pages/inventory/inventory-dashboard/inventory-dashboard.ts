@@ -10,7 +10,8 @@ import {
   InventoryMovementReportSummary,
   InventoryMovementType
 } from '../../../models/inventory-report.model';
-
+import { forkJoin } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 @Component({
   selector: 'app-inventory-dashboard',
   standalone: true,
@@ -44,29 +45,41 @@ export class InventoryDashboardComponent implements OnInit {
   }
 
   loadMovements(): void {
-    this.loading.set(true);
-    this.error.set(null);
+  this.loading.set(true);
+  this.error.set(null);
 
-    this.reportsService.getMovements({
-      page: this.page(),
-      per_page: this.perPage,
-      ...(this.movementType()
-        ? { movement_type: this.movementType() as InventoryMovementType }
-        : {})
-    }).subscribe({
-      next: response => {
-        this.movements.set(response.items);
-        this.summary.set(response.summary);
-        this.total.set(response.total);
-        this.pages.set(response.pages);
-        this.loading.set(false);
+  const filters = {
+    page: this.page(),
+    per_page: this.perPage,
+    ...(this.movementType()
+      ? { movement_type: this.movementType() as InventoryMovementType }
+      : {})
+  };
+
+  forkJoin({
+    global: this.reportsService.getMovements({
+      page: 1,
+      per_page: 1
+    }),
+    history: this.reportsService.getMovements(filters)
+  })
+    .pipe(finalize(() => this.loading.set(false)))
+    .subscribe({
+      next: ({ global, history }) => {
+        this.summary.set(global.summary);
+
+        this.movements.set(history.items);
+        this.total.set(history.total);
+        this.pages.set(history.pages);
       },
-      error: () => {
-        this.error.set('No fue posible consultar el reporte de movimientos.');
-        this.loading.set(false);
+      error: err => {
+        console.error('Inventory dashboard error:', err);
+        this.error.set(
+          'No fue posible consultar los reportes de inventario.'
+        );
       }
     });
-  }
+}
 
   changeMovementType(value: string): void {
     this.movementType.set(value as InventoryMovementType | '');
