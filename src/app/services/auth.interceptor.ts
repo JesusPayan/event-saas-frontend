@@ -3,6 +3,9 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { AuthService } from './auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  if (!req.url.startsWith('/api/v1/')) {
+    return next(req);
+  }
 
   const auth = inject(AuthService);
 
@@ -19,9 +22,5 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     headers['X-Tenant-ID'] = String(tenantId);
   }
 
-  return next(
-    req.clone({
-      setHeaders: headers
-    })
-  );
+  return next(req.clone({ setHeaders: headers }));
 };

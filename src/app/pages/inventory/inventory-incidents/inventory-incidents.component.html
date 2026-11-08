@@ -104,8 +104,16 @@
             </td>
             <td class="px-4 py-3">
               <div class="flex flex-wrap gap-2">
-                @if (incident.status === 'reported' || incident.status === 'assessed') {
-                  <button type="button" (click)="openReconciliation(incident)" class="btn-primary btn-small">Conciliar</button>
+                @if (
+                  canReconcile() &&
+                  (incident.status === 'reported' || incident.status === 'assessed')
+                ) {
+                  <button
+                    type="button"
+                    (click)="openReconciliation(incident)"
+                    class="btn-primary btn-small">
+                    Conciliar
+                  </button>
                 }
                 <button type="button" (click)="viewIncidentCharges(incident)" class="btn-outline btn-small">Ver cargos</button>
               </div>
@@ -117,6 +125,64 @@
       </tbody>
     </table>
   </div>
+
+  @if (deficitConfirmation(); as pending) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/70 p-4"
+    role="presentation">
+
+    <section
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="deficit-title"
+      aria-describedby="deficit-description"
+      class="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">
+
+      <h2
+        id="deficit-title"
+        class="text-xl font-bold text-red-700 dark:text-red-400">
+        Déficit de inventario
+      </h2>
+
+      <p
+        id="deficit-description"
+        class="mt-4 text-sm text-gray-700 dark:text-gray-300">
+        Esta conciliación dejará existencias insuficientes
+        para cubrir una o más reservaciones.
+
+        Si continúas, el sistema registrará el déficit
+        y generará las alertas correspondientes.
+      </p>
+      <div class="mt-4 rounded-lg bg-amber-50 p-4 dark:bg-gray-700">
+        <p class="text-sm font-medium text-gray-800 dark:text-white">
+          Incidencia #{{ pending.incidentId }}
+        </p>
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+          Costo unitario:
+          {{ +pending.unitCost | currency:'MXN' }}
+        </p>
+      </div>
+
+      <div class="mt-6 flex justify-end gap-3">
+        <button
+          type="button"
+          (click)="cancelInventoryDeficit()"
+          [disabled]="reconciling()"
+          class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium dark:text-white">
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          (click)="acceptInventoryDeficit()"
+          [disabled]="reconciling()"
+          class="rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-50">
+          Aceptar déficit
+        </button>
+      </div>
+    </section>
+  </div>
+}
 
   @if (selectedIncident(); as incident) {
     <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -131,6 +197,59 @@
       </div>
       @if (incident.status === 'reported' || incident.status === 'assessed') {
         <form (ngSubmit)="confirmReconciliation()" novalidate class="space-y-4">
+          <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+            <h3 class="mb-3 font-semibold dark:text-white">
+              Estado de la reservación
+            </h3>
+          
+            @if (loadingMovements()) {
+              <p class="text-sm text-gray-500">Consultando movimientos...</p>
+            } @else if (movementsError()) {
+              <p role="alert" class="text-sm text-red-600">
+                {{ movementsError() }}
+              </p>
+            } @else if (movementSummary(); as summary) {
+              <div class="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+                <div>
+                  <p class="text-gray-500">Entregadas</p>
+                  <p class="text-xl font-bold dark:text-white">
+                    {{ summary.quantity_dispatched }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-gray-500">Devueltas</p>
+                  <p class="text-xl font-bold dark:text-white">
+                    {{ summary.quantity_returned }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-gray-500">Pendientes</p>
+                  <p class="text-xl font-bold dark:text-white">
+                    {{ summary.quantity_physical_outstanding }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-gray-500">Pérdidas conciliadas</p>
+                  <p class="text-xl font-bold dark:text-white">
+                    {{ summary.quantity_lost }}
+                  </p>
+                </div>
+              </div>
+          
+              @if (
+                incident.incident_type === 'damaged' &&
+                summary.quantity_returned === 0
+              ) {
+                <div role="status" class="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+                  No existen devoluciones registradas para esta reservación.
+                  Registra la devolución física antes de conciliar el daño.
+                  <a routerLink="/inventory/operations" class="mt-2 block font-semibold text-blue-700 underline">Ir a Inventario → Operaciones</a>
+                </div>
+              }
+            } @else {
+              <p class="text-sm text-gray-500">No se recibió un resumen de movimientos.</p>
+            }
+          </div>
           <div>
             <label for="reconciliation-cost" class="field-label">Costo unitario (MXN)</label>
             <input id="reconciliation-cost" type="number" name="reconciliationCost" [(ngModel)]="reconciliationCost" min="0" step="0.01" required class="field-control" />
@@ -139,7 +258,7 @@
           <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:bg-gray-700 dark:text-amber-300">
             La conciliación modificará las existencias. Verifica las unidades y el costo antes de confirmar.
           </div>
-          <button type="submit" [disabled]="reconciling()" class="btn-primary disabled:opacity-50">{{ reconciling() ? 'Conciliando...' : 'Confirmar conciliación' }}</button>
+          <button type="submit" [disabled]="reconciling() || loadingMovements() || !!movementsError() || !movementSummary() || (incident.incident_type === 'damaged' && movementSummary()!.quantity_returned === 0)" class="btn-primary disabled:opacity-50">{{ reconciling() ? 'Conciliando...' : 'Confirmar conciliación' }}</button>
         </form>
       }
       <div class="mt-6">

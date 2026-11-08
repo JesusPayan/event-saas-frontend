@@ -1,0 +1,53 @@
+
+name: Frontend CI
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+      - "feature/**"
+      - "fix/**"
+
+  pull_request:
+    branches:
+      - master
+      - develop
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  angular-ci:
+    name: Angular 20 CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build production
+        run: npm run build -- --configuration production
+
+      - name: Upload production build
+        uses: actions/upload-artifact@v4
+        with:
+          name: eventos-saas-angular20
+          path: dist/eventos-saas-web/
+          retention-days: 7
+          if-no-files-found: error

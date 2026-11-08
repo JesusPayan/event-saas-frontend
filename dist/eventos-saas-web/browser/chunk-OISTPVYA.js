@@ -1,1 +1,0 @@
-import{Ia as o,ab as a,bb as i,ob as n}from"./chunk-6N67F5P2.js";var e=class e{};e.\u0275fac=function(t){return new(t||e)},e.\u0275cmp=o({type:e,selectors:[["app-quote-detail"]],decls:2,vars:0,template:function(t,p){t&1&&(a(0,"p"),n(1,"quote-detail works!"),i())},encapsulation:2});var s=e;export{s as QuoteDetail};

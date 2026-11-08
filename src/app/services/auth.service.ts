@@ -1,12 +1,14 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import {   Observable,
+import {
+  Observable,
   tap,
   catchError,
   throwError,
- switchMap } from 'rxjs';
-
+  switchMap,
+  map
+} from 'rxjs';
 export interface TenantRef { id: number; name?: string; slug?: string; }
 export interface MeResponse { id: number; email: string; tenants: number[]; }
 export interface LoginResponse { access_token: string; token_type: string; expires_in: number; }
@@ -16,7 +18,7 @@ export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
   // Access token remains in memory, not localStorage. Reload requires signing in again.
-  private hostUrl = 'http://127.0.0.1:5000/api/v1';
+  private readonly hostUrl = '/api/v1';
   private accessToken = signal<string | null>(null);
   readonly me = signal<MeResponse | null>(null);
   readonly tenantId = signal<number | null>(null);
@@ -34,7 +36,13 @@ export class AuthService {
     console.log('AuthService.register() called with email:', email);
     return this.http.post(`${this.hostUrl}/auth/register`, { email, password, company_name, slug });
   }
-  loadMe() { return this.http.get<MeResponse>(`${this.hostUrl}/auth/me`).pipe(tap(me => this.me.set(me))); }
+loadMe(): Observable<MeResponse> {
+  return this.http.get<MeResponse>(
+    `${this.hostUrl}/auth/me`
+  ).pipe(
+    tap(me => this.me.set(me))
+  );
+}
 //   chooseTenant(id: number): Observable<TenantRef> {
 //   this.tenantId.set(id);
 //   this.tenant.set(null);
@@ -89,9 +97,7 @@ chooseTenant(id: number): Observable<TenantRef> {
     switchMap(tenant =>
       this.loadPermissions().pipe(
         tap(() => this.tenant.set(tenant)),
-        // Conservamos TenantRef como resultado
-        // para no romper los componentes existentes.
-        switchMap(() => [tenant])
+        map(() => tenant)
       )
     ),
     catchError(error => {
