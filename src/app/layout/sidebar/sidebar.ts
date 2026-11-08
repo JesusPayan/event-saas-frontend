@@ -150,8 +150,18 @@ import { AuthService } from '../../services/auth.service';
             <a routerLink="/inventory/replenishments">
               Reposiciones
             </a>
-            <a routerLink="/inventory/capacity-alerts">
+            <a
+              routerLink="/inventory/capacity-alerts"
+              routerLinkActive="active">
               Alertas de capacidad
+            </a>
+
+            <a
+              routerLink="/inventory/reports"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: true }">
+              <span class="nav-icon">▤</span>
+              Reportes de inventario
             </a>
             
 
@@ -303,19 +313,19 @@ export class SidebarComponent {
   );
 
   constructor() {
-    this.router.events
-      .pipe(
-        filter(
-          (event): event is NavigationEnd =>
-            event instanceof NavigationEnd
-        )
+  this.router.events
+    .pipe(
+      filter(
+        (event): event is NavigationEnd =>
+          event instanceof NavigationEnd
       )
-      .subscribe(event => {
-        if (event.urlAfterRedirects.startsWith('/inventory')) {
-          this.inventoryOpen.set(true);
-        }
-      });
-  }
+    )
+    .subscribe(event => {
+      this.inventoryOpen.set(
+        event.urlAfterRedirects.startsWith('/inventory')
+      );
+    });
+}
 
   toggleInventory(): void {
     this.inventoryOpen.update(value => !value);
