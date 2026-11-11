@@ -287,6 +287,13 @@ export const routes: Routes = [
   // =====================================
   // RUTA NO ENCONTRADA
   // =====================================
+
+  {
+  path: 'quotes/:id',
+  loadComponent: () =>
+    import('./pages/quotes/quote-detail/quote-detail')
+      .then(m => m.QuoteDetail)
+},
   {
     path: '**',
     redirectTo: 'login'
