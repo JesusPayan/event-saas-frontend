@@ -1,0 +1,24 @@
+ <section class="panel">
+      <h1>Selecciona tu empresa</h1>
+      <p>Empresas asociadas a tu usuario.</p>
+
+      @if (error()) {
+        <p role="alert" class="error">
+          {{ error() }}
+        </p>
+      }
+
+      @for (id of auth.me()?.tenants ?? []; track id) {
+        <button
+          class="tenant"
+          type="button"
+          [disabled]="busy()"
+          (click)="select(id)">
+          Empresa #{{ id }} →
+        </button>
+      }
+
+      @if ((auth.me()?.tenants ?? []).length === 0) {
+        <p>No tienes empresas activas.</p>
+      }
+</section>

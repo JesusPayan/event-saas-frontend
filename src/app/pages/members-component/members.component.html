@@ -1,0 +1,14 @@
+<section class="panel">
+    <h1>Miembros de la empresa</h1>
+@if(error()){<p role="alert" class="error">{{error()}}
+
+</p>}
+<table>
+    <thead>
+        <tr><th>ID</th><th>Usuario</th><th>Rol</th><th>Estado</th></tr>
+    </thead>
+    <tbody>
+        @for(m of members();track m.id){<tr><td>{{m.id}}</td><td>{{m.user_id}}</td><td>{{m.role_id}}</td><td>{{m.status}}</td></tr>}
+    </tbody>
+</table>
+</section>

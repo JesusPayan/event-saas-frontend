@@ -3,36 +3,11 @@ import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { finalize, switchMap } from 'rxjs';
 
-import { AuthService } from '../services/auth.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   standalone: true,
-  template: `
-    <section class="panel">
-      <h1>Selecciona tu empresa</h1>
-      <p>Empresas asociadas a tu usuario.</p>
-
-      @if (error()) {
-        <p role="alert" class="error">
-          {{ error() }}
-        </p>
-      }
-
-      @for (id of auth.me()?.tenants ?? []; track id) {
-        <button
-          class="tenant"
-          type="button"
-          [disabled]="busy()"
-          (click)="select(id)">
-          Empresa #{{ id }} →
-        </button>
-      }
-
-      @if ((auth.me()?.tenants ?? []).length === 0) {
-        <p>No tienes empresas activas.</p>
-      }
-    </section>
-  `
+  templateUrl: './tenants.component.html'
 })
 export class TenantsComponent {
 

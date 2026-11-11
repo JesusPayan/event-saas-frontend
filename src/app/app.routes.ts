@@ -33,26 +33,26 @@ export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () =>
-      import('./pages/login.component')
+      import('./pages/login-component/login.component')
         .then(m => m.LoginComponent)
   },
   {
     path: 'register',
     loadComponent: () =>
-      import('./pages/register.component')
+      import('./pages/registrer-component/register.component')
         .then(m => m.RegisterComponent)
   },
   {
     path: 'tenants',
     loadComponent: () =>
-      import('./pages/tenants.component')
+      import('./pages/tenants-component/tenants.component')
         .then(m => m.TenantsComponent),
     canActivate: [authGuard]
   },
   {
     path: 'forbidden',
     loadComponent: () =>
-      import('./pages/forbidden.component')
+      import('./pages/forbidden-component/forbidden.component')
         .then(m => m.ForbiddenComponent),
     canActivate: [authGuard]
   },
@@ -68,13 +68,13 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () =>
-          import('./pages/dashboard.component')
+          import('./pages/dashboard-component/dashboard.component')
             .then(m => m.DashboardComponent)
       },
       {
         path: 'members',
         loadComponent: () =>
-          import('./pages/members.component')
+          import('./pages/members-component/members.component')
             .then(m => m.MembersComponent),
         canActivate: [permissionGuard('members.read')]
       },
@@ -244,6 +244,30 @@ export const routes: Routes = [
   canActivate: [
     permissionGuard('inventory.read')
   ]
+},
+// =====================================
+// INV-50-03 - LOGÍSTICA
+// =====================================
+{
+  path: 'logistics',
+  loadComponent: () =>
+    import('./pages/logistics/logistics-list.component/logistics-list.component')
+      .then(m => m.LogisticsListComponent),
+  canActivate: [permissionGuard('inventory.read')]
+},
+{
+  path: 'logistics/new',
+  loadComponent: () =>
+    import('./pages/logistics/logistics-create.component/logistics-create.component')
+      .then(m => m.LogisticsCreateComponent),
+  canActivate: [permissionGuard('inventory.create')]
+},
+{
+  path: 'logistics/:id',
+  loadComponent: () =>
+    import('./pages/logistics/logistics-detail.component/logistics-detail.component')
+      .then(m => m.LogisticsDetailComponent),
+  canActivate: [permissionGuard('inventory.read')]
 },
 
       // =====================================

@@ -1,0 +1,365 @@
+
+<section class="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
+
+  <!-- ENCABEZADO -->
+  <header class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <p class="mb-1 text-sm font-medium text-blue-600">
+        Gestión logística / Órdenes
+      </p>
+
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+        Nueva orden logística
+      </h1>
+
+      <p class="mt-2 text-sm text-gray-500">
+        Organiza y programa la preparación del inventario
+        necesario para un evento.
+      </p>
+    </div>
+
+    <a
+      routerLink="/logistics"
+      class="rounded-lg border border-gray-300 px-4 py-2
+             text-sm text-gray-700 hover:bg-gray-100
+             dark:border-gray-600 dark:text-gray-200
+             dark:hover:bg-gray-700">
+      Volver a órdenes
+    </a>
+  </header>
+
+  <!-- PASOS -->
+  <div class="flex flex-wrap items-center gap-3 text-sm">
+    <span class="rounded-full bg-blue-100 px-4 py-2
+                 font-semibold text-blue-700">
+      1. Evento
+    </span>
+
+    <span class="text-gray-400">→</span>
+
+    <span class="rounded-full bg-gray-100 px-4 py-2 text-gray-600">
+      2. Programación
+    </span>
+
+    <span class="text-gray-400">→</span>
+
+    <span class="rounded-full bg-gray-100 px-4 py-2 text-gray-600">
+      3. Confirmación
+    </span>
+  </div>
+
+  <form (ngSubmit)="save()" class="space-y-6">
+
+    <!-- ==========================================
+         1. INFORMACIÓN DEL EVENTO
+    ========================================== -->
+    <div class="rounded-xl border border-gray-200 bg-white
+                p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+        1. Información del evento
+      </h2>
+
+      <p class="mt-1 text-sm text-gray-500">
+        Selecciona el evento para el cual necesitas preparar
+        mobiliario, equipo y otros artículos reservados.
+      </p>
+
+      <div class="mt-5">
+        <label
+          for="eventId"
+          class="mb-2 block text-sm font-medium dark:text-white">
+          Nombre del evento
+          <span class="text-red-500">*</span>
+        </label>
+
+        <!-- SELECTOR DE EVENTOS -->
+        <select
+          id="eventId"
+          name="eventId"
+          [ngModel]="eventId()"
+          (ngModelChange)="onEventChange($event)"
+          [disabled]="loadingEvents() || saving()"
+          required
+          class="w-full rounded-lg border border-gray-300
+                 bg-gray-50 p-3 text-sm text-gray-900
+                 focus:border-blue-500 focus:ring-blue-500
+                 dark:border-gray-600 dark:bg-gray-700
+                 dark:text-white">
+
+          <option [ngValue]="null">
+            {{ loadingEvents()
+              ? 'Cargando eventos...'
+              : 'Selecciona un evento' }}
+          </option>
+
+          @for (event of events(); track event.id) {
+            <option [ngValue]="event.id">
+              {{ event.name }} —
+              {{ event.starts_at | date:'dd/MM/yyyy' }}
+            </option>
+          }
+        </select>
+
+        <p class="mt-2 text-xs text-gray-500">
+          El evento debe contar con reservas activas de inventario.
+        </p>
+
+        <!-- SIN EVENTOS -->
+        @if (!loadingEvents() && events().length === 0 && !eventError()) {
+          <p class="mt-3 text-sm text-amber-700">
+            No hay eventos disponibles en los primeros resultados.
+          </p>
+        }
+
+        <!-- CONSULTANDO EVENTO -->
+        @if (loadingEvent()) {
+          <div class="mt-3 flex items-center gap-2 text-sm text-blue-600">
+            <span class="h-4 w-4 animate-spin rounded-full
+                         border-2 border-blue-200 border-t-blue-600">
+            </span>
+            Consultando información del evento...
+          </div>
+        }
+
+        <!-- ERROR DE EVENTO -->
+        @if (eventError()) {
+          <p class="mt-3 text-sm text-red-600" role="alert">
+            {{ eventError() }}
+          </p>
+        }
+      </div>
+
+      <!-- VISTA PREVIA DEL EVENTO -->
+      @if (selectedEvent(); as event) {
+        <div class="mt-5 rounded-lg border border-green-200
+                    bg-green-50 p-5">
+
+          <p class="mb-4 font-semibold text-green-800">
+            ✓ Evento seleccionado correctamente
+          </p>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+
+            <div>
+              <p class="text-xs text-gray-500">Nombre</p>
+              <p class="font-medium text-gray-900">
+                {{ event.name }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-gray-500">Estado</p>
+              <p class="font-medium text-gray-900">
+                {{ event.status }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-gray-500">Fecha de inicio</p>
+              <p class="font-medium text-gray-900">
+                {{ event.starts_at | date:'dd/MM/yyyy HH:mm' }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-gray-500">Fecha de finalización</p>
+              <p class="font-medium text-gray-900">
+                {{ event.ends_at | date:'dd/MM/yyyy HH:mm' }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-gray-500">Ubicación</p>
+              <p class="font-medium text-gray-900">
+                {{ event.location || 'No especificada' }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-gray-500">Invitados estimados</p>
+              <p class="font-medium text-gray-900">
+                {{ event.estimated_guests ?? 'No especificado' }}
+              </p>
+            </div>
+
+          </div>
+        </div>
+      }
+
+    </div>
+
+    <!-- ==========================================
+         2. PROGRAMACIÓN
+    ========================================== -->
+    <div class="rounded-xl border border-gray-200 bg-white
+                p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+        2. Programación de preparación
+      </h2>
+
+      <p class="mt-1 text-sm text-gray-500">
+        Indica cuándo deberá comenzar la preparación del inventario.
+        Puedes dejar la fecha vacía y programarla posteriormente.
+      </p>
+
+      <div class="mt-5">
+        <label
+          for="scheduledAt"
+          class="mb-2 block text-sm font-medium dark:text-white">
+          Fecha y hora programadas
+        </label>
+
+        <input
+          id="scheduledAt"
+          type="datetime-local"
+          name="scheduledAt"
+          [(ngModel)]="scheduledAt"
+          [disabled]="saving()"
+          class="w-full rounded-lg border border-gray-300
+                 bg-gray-50 p-3 text-sm text-gray-900
+                 dark:border-gray-600 dark:bg-gray-700
+                 dark:text-white sm:max-w-md">
+
+        <p class="mt-2 text-xs text-gray-500">
+          Programa el momento en que el equipo deberá preparar
+          los artículos para el evento.
+        </p>
+      </div>
+
+      <div class="mt-6">
+        <label
+          for="notes"
+          class="mb-2 block text-sm font-medium dark:text-white">
+          Instrucciones y observaciones
+        </label>
+
+        <textarea
+          id="notes"
+          name="notes"
+          [(ngModel)]="notes"
+          [disabled]="saving()"
+          rows="5"
+          maxlength="5000"
+          placeholder="Ejemplo: Preparar mobiliario y equipo de sonido un día antes del evento. Revisar cantidades y condiciones de los artículos."
+          class="w-full rounded-lg border border-gray-300
+                 bg-gray-50 p-3 text-sm text-gray-900
+                 dark:border-gray-600 dark:bg-gray-700
+                 dark:text-white">
+        </textarea>
+
+        <p class="mt-1 text-right text-xs text-gray-500">
+          {{ notes.length }} / 5000 caracteres
+        </p>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         3. CONFIRMACIÓN
+    ========================================== -->
+    <div class="rounded-xl border border-gray-200 bg-white
+                p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+        3. Confirmación
+      </h2>
+
+      <div class="mt-4 rounded-lg border border-blue-200
+                  bg-blue-50 p-5 text-sm text-blue-900">
+
+        <p class="mb-3 font-semibold">
+          ¿Qué sucederá al crear la orden?
+        </p>
+
+        <ul class="list-disc space-y-2 pl-5">
+          <li>
+            Se consultarán las reservas activas del evento seleccionado.
+          </li>
+          <li>
+            Se generará automáticamente la lista de artículos
+            y cantidades requeridas.
+          </li>
+          <li>
+            La orden se registrará con estado Pendiente.
+          </li>
+          <li>
+            El personal podrá registrar las cantidades preparadas.
+          </li>
+          <li>
+            La orden podrá marcarse como Preparada cuando
+            todos los artículos estén completos.
+          </li>
+        </ul>
+      </div>
+
+      <!-- RESUMEN DE LA ORDEN -->
+      @if (selectedEvent(); as event) {
+        <div class="mt-5 rounded-lg bg-gray-50 p-4
+                    dark:bg-gray-700">
+
+          <p class="text-sm font-semibold text-gray-900 dark:text-white">
+            Resumen de la orden
+          </p>
+
+          <div class="mt-3 space-y-2 text-sm text-gray-600
+                      dark:text-gray-200">
+
+            <p>
+              <strong>Evento:</strong>
+              {{ event.name }}
+            </p>
+
+            <p>
+              <strong>Preparación:</strong>
+              {{ scheduledAt
+                ? (scheduledAt | date:'dd/MM/yyyy HH:mm')
+                : 'Sin fecha programada' }}
+            </p>
+
+            <p>
+              <strong>Estado inicial:</strong>
+              Pendiente
+            </p>
+          </div>
+        </div>
+      }
+
+      <!-- ERROR GENERAL -->
+      @if (error()) {
+        <div class="mt-5 rounded-lg border border-red-200
+                    bg-red-50 p-4 text-sm text-red-700"
+             role="alert">
+          {{ error() }}
+        </div>
+      }
+
+      <!-- ACCIONES -->
+      <div class="mt-6 flex flex-wrap justify-end gap-3">
+
+        <a
+          routerLink="/logistics"
+          class="rounded-lg border border-gray-300 px-5 py-3
+                 text-sm font-medium text-gray-700
+                 hover:bg-gray-100 dark:text-gray-200">
+          Cancelar
+        </a>
+
+        <button
+          type="submit"
+          [disabled]="!canCreate()"
+          class="rounded-lg bg-blue-700 px-6 py-3
+                 text-sm font-semibold text-white
+                 hover:bg-blue-800
+                 disabled:cursor-not-allowed disabled:opacity-50">
+
+          {{ saving() ? 'Creando orden...' : 'Crear orden logística' }}
+
+        </button>
+      </div>
+
+    </div>
+
+  </form>
+
+</section>
