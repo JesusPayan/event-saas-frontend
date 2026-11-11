@@ -1,0 +1,22 @@
+<section class="auth-card">
+    <h1>Registra tu empresa</h1>
+    <p>Crea tu espacio de trabajo.</p>
+<form (ngSubmit)="submit()">
+    <label>Nombre de la empresa<input name="company" [(ngModel)]="company" required minlength="3"></label>
+    <label>Identificador (letras, números y guiones)<input name="slug" [(ngModel)]="slug" required pattern="[a-z0-9-]{3,100}"></label>
+    <label>Correo del propietario<input name="email" type="email" [(ngModel)]="email" required></label>
+    <label>Contraseña (mínimo 12 caracteres)<input name="password" type="password" [(ngModel)]="password" required minlength="12"></label>
+    @if(error()){
+        <p role="alert" class="error">{{error()}}</p>
+    }
+    @if(success()){
+        <p role="status" class="success">Empresa creada. Ya puedes iniciar sesión.</p>
+    }
+    <button type="submit" [disabled]="busy()">
+        {{busy()?'Registrando…':'Crear empresa'}}
+    </button>
+    </form>
+    <p>
+        <a routerLink="/login">Volver al inicio de sesión</a>
+    </p>
+</section>

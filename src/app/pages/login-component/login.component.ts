@@ -2,17 +2,10 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize, switchMap } from 'rxjs';
-import { AuthService } from '../services/auth.service';
+import { AuthService } from '../../services/auth.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
-@Component({standalone:true, imports:[FormsModule, RouterLink], template:`
-<section class="auth-card"><h1>Iniciar sesión</h1><p>Accede a tu empresa de eventos.</p>
-<form (ngSubmit)="submit()">
-<label>Correo electrónico<input type="email" name="email" [(ngModel)]="email" required autocomplete="username"></label>
-<label>Contraseña<input type="password" name="password" [(ngModel)]="password" required autocomplete="current-password"></label>
-@if(error()){<p role="alert" class="error">{{error()}}</p>}
-<button [disabled]="busy()" type="submit">{{busy()?'Ingresando…':'Ingresar'}}</button>
-</form><p>¿No tienes empresa? <a routerLink="/register">Crear cuenta</a></p></section>`})
+@Component({standalone:true, imports:[FormsModule, RouterLink], templateUrl:'./login.component.html'})
 export class LoginComponent {
   private auth=inject(AuthService); private router=inject(Router);
   email='';password='';
