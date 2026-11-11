@@ -1,0 +1,56 @@
+<main class="min-h-screen bg-slate-50 px-4 py-8 text-slate-800">
+  <section class="mx-auto max-w-5xl rounded-xl bg-white p-5 shadow-sm md:p-8">
+    <div class="mb-6 border-b border-slate-200 pb-4">
+      <p class="text-xs font-semibold uppercase tracking-widest text-indigo-600">Eventos SaaS</p>
+      <h1 class="mt-2 text-2xl font-bold">Firma electrónica de contrato</h1>
+      <p class="mt-1 text-sm text-slate-500">Revisa el documento y verifica tu correo antes de firmar.</p>
+    </div>
+    @if (loading()) { <p role="status">Cargando invitación…</p> }
+    @if (error()) { <div role="alert" class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{{ error() }}</div> }
+    @if (info()) { <div role="status" class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">{{ info() }}</div> }
+    @if (invitation(); as inv) {
+      <div class="mb-5 grid gap-3 rounded-lg bg-slate-50 p-4 text-sm md:grid-cols-3">
+        <p><strong>Contrato:</strong> #{{ inv.contract_id }}</p>
+        <p><strong>Documento:</strong> versión {{ inv.document_version }}</p>
+        <p><strong>Estado:</strong> {{ inv.status }}</p>
+      </div>
+      @if (finished()) {
+        <div class="rounded-lg border border-green-200 p-6 text-center">
+          <h2 class="text-xl font-semibold">Firma registrada</h2>
+          <p class="mt-2 text-slate-600">Tu firma quedó registrada. Conserva el correo de invitación y solicita una constancia al proveedor.</p>
+        </div>
+      } @else if (inv.status === 'pending' || inv.status === 'verified') {
+        <h2 class="mb-2 text-lg font-semibold">1. Revisa el contrato</h2>
+        @if (pdfUrl()) {
+          <iframe [src]="pdfSafeUrl()!" title="Contrato PDF" class="mb-3 h-[480px] w-full rounded-lg border border-slate-200"></iframe>
+          <a [href]="pdfUrl()!" target="_blank" rel="noopener noreferrer" class="mb-6 inline-block text-sm font-medium text-indigo-700 underline">Abrir PDF en otra pestaña</a>
+        } @else { <p class="mb-6 text-sm text-amber-700">Cargando PDF…</p> }
+        <h2 class="mb-3 text-lg font-semibold">2. Verifica tu correo</h2>
+        @if (!verified()) {
+          <div class="mb-6 space-y-3">
+            <button type="button" (click)="requestOtp()" [disabled]="busy()" class="rounded-lg bg-indigo-700 px-4 py-2 text-white disabled:opacity-50">Enviar código OTP</button>
+            <div class="flex flex-wrap items-center gap-2">
+              <input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" [(ngModel)]="otp" placeholder="Código de 6 dígitos" aria-label="Código OTP" class="rounded-lg border border-slate-300 p-2" />
+              <button type="button" (click)="verifyOtp()" [disabled]="busy() || otp.length !== 6" class="rounded-lg border border-indigo-700 px-4 py-2 text-indigo-700 disabled:opacity-50">Verificar código</button>
+            </div>
+          </div>
+        } @else {
+          <p class="mb-5 font-medium text-green-700">Correo verificado correctamente.</p>
+          <h2 class="mb-3 text-lg font-semibold">3. Dibuja tu firma</h2>
+          <label for="signerName" class="mb-1 block text-sm font-medium">Nombre del firmante</label>
+          <input id="signerName" [(ngModel)]="signerName" maxlength="200" class="mb-4 w-full rounded-lg border border-slate-300 p-2" />
+          <canvas #signatureCanvas width="900" height="220" (pointerdown)="pointerDown($event)" (pointermove)="pointerMove($event)" (pointerup)="pointerUp()" (pointercancel)="pointerUp()" (lostpointercapture)="pointerUp()" class="h-44 w-full touch-none rounded-lg border-2 border-dashed border-slate-300 bg-white" aria-label="Área para dibujar la firma"></canvas>
+          <button type="button" (click)="clearSignature()" class="mt-2 text-sm text-indigo-700 underline">Borrar firma</button>
+          <h2 class="mb-2 mt-6 text-lg font-semibold">4. Consentimiento</h2>
+          <label class="flex items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm">
+            <input type="checkbox" [(ngModel)]="consent" class="mt-1" />
+            <span>{{ consentText }}</span>
+          </label>
+          <button type="button" (click)="sign()" [disabled]="busy() || !pdfUrl() || !consent || !hasInk() || !signerName.trim()" class="mt-5 w-full rounded-lg bg-indigo-700 px-4 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{{ busy() ? 'Procesando…' : 'Firmar contrato' }}</button>
+        }
+      } @else {
+        <p class="text-amber-700">Esta invitación no está disponible para firma.</p>
+      }
+    }
+  </section>
+</main>

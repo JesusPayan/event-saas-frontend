@@ -294,6 +294,12 @@ export const routes: Routes = [
     import('./pages/quotes/quote-detail/quote-detail')
       .then(m => m.QuoteDetail)
 },
+{
+  path: 'sign/:token',
+  loadComponent: () =>
+    import('./pages/contract-signing/contract-signing.component')
+      .then(m => m.ContractSigningComponent),
+},
   {
     path: '**',
     redirectTo: 'login'
