@@ -20,7 +20,8 @@ import { InventoryService } from '../../../services/inventory.service';
 
 import {
   LogisticsOrder,
-  LogisticsStatus
+  LogisticsStatus,
+  LogisticsStatusHistory
 } from '../../../models/logistics.model';
 
 import { Event } from '../../../models/event.model';
@@ -42,30 +43,45 @@ export class LogisticsDetailComponent implements OnInit {
   readonly order = signal<LogisticsOrder | null>(null);
   readonly event = signal<Event | null>(null);
 
-  readonly inventoryItems = signal<Record<number, InventoryItem>>({});
-  readonly quantities = signal<Record<number, number>>({});
+  readonly inventoryItems =
+    signal<Record<number, InventoryItem>>({});
+
+  readonly quantities =
+    signal<Record<number, number>>({});
+
+  readonly history = signal<LogisticsStatusHistory[]>([]);
 
   readonly loading = signal(false);
   readonly loadingNames = signal(false);
+  readonly loadingHistory = signal(false);
   readonly saving = signal(false);
 
   readonly error = signal('');
+  readonly success = signal('');
   readonly namesWarning = signal('');
+  readonly historyError = signal('');
+
+  readonly operationNotes = signal('');
 
   readonly totalRequired = computed(() =>
     this.order()?.items.reduce(
-      (sum, item) => sum + item.quantity_required, 0
+      (sum, item) => sum + item.quantity_required,
+      0
     ) ?? 0
   );
 
   readonly totalPrepared = computed(() =>
     this.order()?.items.reduce(
-      (sum, item) => sum + item.quantity_prepared, 0
+      (sum, item) => sum + item.quantity_prepared,
+      0
     ) ?? 0
   );
 
   readonly totalPending = computed(() =>
-    Math.max(0, this.totalRequired() - this.totalPrepared())
+    Math.max(
+      0,
+      this.totalRequired() - this.totalPrepared()
+    )
   );
 
   readonly progress = computed(() => {
@@ -81,12 +97,22 @@ export class LogisticsDetailComponent implements OnInit {
 
     return !!order?.items.length &&
       order.items.every(
-        item => item.quantity_prepared === item.quantity_required
+        item =>
+          item.quantity_prepared === item.quantity_required
       );
   });
 
+  readonly canEditPreparation = computed(() => {
+    const status = this.order()?.status;
+
+    return status === 'pending' ||
+      status === 'in_progress';
+  });
+
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
+    const id = Number(
+      this.route.snapshot.paramMap.get('id')
+    );
 
     if (!Number.isInteger(id) || id <= 0) {
       this.error.set('Identificador de orden inválido.');
@@ -99,16 +125,20 @@ export class LogisticsDetailComponent implements OnInit {
   load(id: number): void {
     this.loading.set(true);
     this.error.set('');
+    this.success.set('');
 
     this.logistics.get(id).subscribe({
       next: order => {
         this.setOrder(order);
         this.loading.set(false);
+
         this.loadNames(order);
+        this.loadHistory(order.id);
       },
       error: (err: HttpErrorResponse) => {
         this.error.set(
-          err.error?.message || 'No se pudo cargar la orden logística.'
+          err.error?.message ||
+          'No se pudo cargar la orden logística.'
         );
         this.loading.set(false);
       }
@@ -131,21 +161,33 @@ export class LogisticsDetailComponent implements OnInit {
     this.namesWarning.set('');
 
     const ids = [
-      ...new Set(order.items.map(item => item.inventory_item_id))
+      ...new Set(
+        order.items.map(
+          item => item.inventory_item_id
+        )
+      )
     ];
 
-    const eventRequest = this.eventsService.getById(order.event_id).pipe(
-      catchError(err => {
-        console.warn('No se pudo consultar el evento:', err);
-        return of(null);
-      })
-    );
+    const eventRequest = this.eventsService
+      .getById(order.event_id)
+      .pipe(
+        catchError(err => {
+          console.warn(
+            'No se pudo consultar el evento:',
+            err
+          );
+          return of(null);
+        })
+      );
 
     const itemRequests = ids.map(id =>
       this.inventoryService.getById(id).pipe(
         map(item => ({ id, item })),
         catchError(err => {
-          console.warn(`No se pudo consultar artículo ${id}:`, err);
+          console.warn(
+            `No se pudo consultar artículo ${id}:`,
+            err
+          );
           return of({ id, item: null });
         })
       )
@@ -160,7 +202,9 @@ export class LogisticsDetailComponent implements OnInit {
       next: result => {
         this.event.set(result.event);
 
-        const inventory: Record<number, InventoryItem> = {};
+        const inventory:
+          Record<number, InventoryItem> = {};
+
         let missing = 0;
 
         for (const entry of result.items) {
@@ -176,18 +220,54 @@ export class LogisticsDetailComponent implements OnInit {
         if (!result.event || missing > 0) {
           this.namesWarning.set(
             'Algunos nombres no pudieron consultarse. ' +
-            'Se muestran sus identificadores como alternativa.'
+            'Se muestran sus identificadores.'
           );
         }
 
         this.loadingNames.set(false);
       },
       error: err => {
-        console.error('Error consultando nombres:', err);
+        console.error(err);
+
         this.loadingNames.set(false);
         this.namesWarning.set(
-          'No se pudo completar la consulta de nombres.'
+          'No se pudieron consultar todos los nombres.'
         );
+      }
+    });
+  }
+
+  loadHistory(orderId: number): void {
+    this.loadingHistory.set(true);
+    this.historyError.set('');
+
+    this.logistics.history(orderId).subscribe({
+      next: entries => {
+        this.history.set(
+          [...entries].sort((a, b) => {
+            const dateA = Date.parse(a.created_at);
+            const dateB = Date.parse(b.created_at);
+
+            if (
+              Number.isFinite(dateA) &&
+              Number.isFinite(dateB) &&
+              dateA !== dateB
+            ) {
+              return dateB - dateA;
+            }
+
+            return b.id - a.id;
+          })
+        );
+
+        this.loadingHistory.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.historyError.set(
+          err.error?.message ||
+          'No se pudo consultar el historial.'
+        );
+        this.loadingHistory.set(false);
       }
     });
   }
@@ -200,7 +280,8 @@ export class LogisticsDetailComponent implements OnInit {
   }
 
   itemName(id: number): string {
-    return this.inventoryItems()[id]?.name || `Artículo #${id}`;
+    return this.inventoryItems()[id]?.name ||
+      `Artículo #${id}`;
   }
 
   itemSku(id: number): string {
@@ -216,25 +297,39 @@ export class LogisticsDetailComponent implements OnInit {
       pending: 'Pendiente',
       in_progress: 'En preparación',
       prepared: 'Preparada',
+      dispatched: 'Despachada',
+      delivered: 'Entregada',
       cancelled: 'Cancelada'
     };
 
     return labels[status];
   }
 
-  updateQuantity(itemId: number, value: number): void {
+  updateQuantity(
+    itemId: number,
+    value: number | string | null
+  ): void {
+    const quantity = value === null || value === ''
+      ? NaN
+      : Number(value);
+
     this.quantities.update(current => ({
       ...current,
-      [itemId]: Number(value)
+      [itemId]: quantity
     }));
   }
 
   saveItem(itemId: number): void {
     const order = this.order();
 
-    if (!order) return;
+    if (!order || this.saving() || !this.canEditPreparation()) {
+      return;
+    }
 
-    const item = order.items.find(x => x.id === itemId);
+    const item = order.items.find(
+      x => x.id === itemId
+    );
+
     const quantity = this.quantities()[itemId];
 
     if (
@@ -249,6 +344,7 @@ export class LogisticsDetailComponent implements OnInit {
 
     this.saving.set(true);
     this.error.set('');
+    this.success.set('');
 
     this.logistics.prepareItem(
       order.id,
@@ -258,10 +354,13 @@ export class LogisticsDetailComponent implements OnInit {
       next: updatedOrder => {
         this.setOrder(updatedOrder);
         this.saving.set(false);
+        this.success.set('Cantidad guardada correctamente.');
+        this.loadHistory(updatedOrder.id);
       },
       error: (err: HttpErrorResponse) => {
         this.error.set(
-          err.error?.message || 'Error al guardar el artículo.'
+          err.error?.message ||
+          'Error al guardar el artículo.'
         );
         this.saving.set(false);
       }
@@ -271,17 +370,20 @@ export class LogisticsDetailComponent implements OnInit {
   changeStatus(status: LogisticsStatus): void {
     const order = this.order();
 
-    if (!order) return;
+    if (!order || this.saving()) return;
 
     if (
       status === 'cancelled' &&
-      !confirm('¿Deseas cancelar esta orden logística?')
+      !window.confirm(
+        '¿Deseas cancelar esta orden logística?'
+      )
     ) {
       return;
     }
 
     this.saving.set(true);
     this.error.set('');
+    this.success.set('');
 
     this.logistics.changeStatus(
       order.id,
@@ -290,10 +392,109 @@ export class LogisticsDetailComponent implements OnInit {
       next: updatedOrder => {
         this.setOrder(updatedOrder);
         this.saving.set(false);
+        this.success.set(
+          `Estado actualizado: ${this.statusLabel(status)}.`
+        );
+        this.loadHistory(updatedOrder.id);
       },
       error: (err: HttpErrorResponse) => {
         this.error.set(
-          err.error?.message || 'Error al cambiar el estado.'
+          err.error?.message ||
+          'Error al cambiar el estado.'
+        );
+        this.saving.set(false);
+      }
+    });
+  }
+
+  dispatch(): void {
+    const order = this.order();
+
+    if (
+      !order ||
+      this.saving() ||
+      order.status !== 'prepared'
+    ) {
+      return;
+    }
+
+    if (
+      !window.confirm(
+        '¿Confirmas el despacho de esta orden logística?'
+      )
+    ) {
+      return;
+    }
+
+    this.saving.set(true);
+    this.error.set('');
+    this.success.set('');
+
+    const notes = this.operationNotes().trim() || null;
+
+    this.logistics.dispatch(order.id, notes).subscribe({
+      next: updatedOrder => {
+        this.setOrder(updatedOrder);
+        this.operationNotes.set('');
+        this.saving.set(false);
+
+        this.success.set(
+          'La orden fue despachada correctamente.'
+        );
+
+        this.loadHistory(updatedOrder.id);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error.set(
+          err.error?.message ||
+          'No se pudo despachar la orden.'
+        );
+        this.saving.set(false);
+      }
+    });
+  }
+
+  deliver(): void {
+    const order = this.order();
+
+    if (
+      !order ||
+      this.saving() ||
+      order.status !== 'dispatched'
+    ) {
+      return;
+    }
+
+    if (
+      !window.confirm(
+        '¿Confirmas que el inventario fue entregado?'
+      )
+    ) {
+      return;
+    }
+
+    this.saving.set(true);
+    this.error.set('');
+    this.success.set('');
+
+    const notes = this.operationNotes().trim() || null;
+
+    this.logistics.deliver(order.id, notes).subscribe({
+      next: updatedOrder => {
+        this.setOrder(updatedOrder);
+        this.operationNotes.set('');
+        this.saving.set(false);
+
+        this.success.set(
+          'La entrega fue confirmada correctamente.'
+        );
+
+        this.loadHistory(updatedOrder.id);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error.set(
+          err.error?.message ||
+          'No se pudo confirmar la entrega.'
         );
         this.saving.set(false);
       }
