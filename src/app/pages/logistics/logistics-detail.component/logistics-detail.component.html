@@ -1,10 +1,8 @@
-
 <section class="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
 
   <a
     routerLink="/logistics"
-    class="inline-flex items-center text-sm font-medium
-           text-blue-600 hover:underline">
+    class="inline-flex items-center text-sm font-medium text-blue-600 hover:underline">
     ← Volver a órdenes logísticas
   </a>
 
@@ -19,8 +17,8 @@
   } @else if (order(); as currentOrder) {
 
     <!-- ENCABEZADO -->
-    <header class="rounded-xl border border-gray-200 bg-white
-                   p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <header class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm
+                   dark:border-gray-700 dark:bg-gray-800">
 
       <div class="flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -49,6 +47,10 @@
               currentOrder.status === 'in_progress',
             'bg-green-100 text-green-800':
               currentOrder.status === 'prepared',
+            'bg-indigo-100 text-indigo-800':
+              currentOrder.status === 'dispatched',
+            'bg-emerald-100 text-emerald-800':
+              currentOrder.status === 'delivered',
             'bg-red-100 text-red-800':
               currentOrder.status === 'cancelled'
           }">
@@ -56,14 +58,14 @@
         </span>
       </div>
 
-      <!-- RESUMEN -->
+      <!-- INDICADORES -->
       <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
         <div class="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
           <p class="text-xs text-gray-500 dark:text-gray-300">
             Unidades requeridas
           </p>
-          <p class="mt-1 text-2xl font-bold dark:text-white">
+          <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
             {{ totalRequired() }}
           </p>
         </div>
@@ -104,7 +106,7 @@
         </div>
       </div>
 
-      <p class="mt-4 text-xs text-gray-500">
+      <p class="mt-4 text-xs text-gray-500 dark:text-gray-300">
         Fecha programada:
         {{ currentOrder.scheduled_at
           ? (currentOrder.scheduled_at | date:'dd/MM/yyyy HH:mm')
@@ -113,24 +115,27 @@
 
     </header>
 
-    <!-- ADVERTENCIA DE NOMBRES -->
     @if (namesWarning()) {
-      <div class="rounded-lg border border-amber-200
-                  bg-amber-50 p-4 text-sm text-amber-800">
+      <div class="rounded-lg border border-amber-200 bg-amber-50 p-4
+                  text-sm text-amber-800">
         {{ namesWarning() }}
       </div>
     }
 
     <!-- INVENTARIO -->
-    <div class="rounded-xl border border-gray-200 bg-white
-                p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm
+                dark:border-gray-700 dark:bg-gray-800">
 
       <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
         Preparación de inventario
       </h2>
 
-      <p class="mt-1 text-sm text-gray-500">
-        Registra la cantidad preparada de cada artículo.
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-300">
+        @if (canEditPreparation()) {
+          Registra la cantidad preparada de cada artículo.
+        } @else {
+          Consulta las cantidades registradas en la orden.
+        }
       </p>
 
       <div class="mt-5 overflow-x-auto">
@@ -164,7 +169,7 @@
                   </div>
                 </td>
 
-                <td class="px-4 py-3 dark:text-white">
+                <td class="px-4 py-3 text-gray-900 dark:text-white">
                   {{ item.quantity_required }}
                   {{ itemUnit(item.inventory_item_id) }}
                 </td>
@@ -177,11 +182,10 @@
                     [max]="item.quantity_required"
                     [ngModel]="quantities()[item.id]"
                     (ngModelChange)="updateQuantity(item.id, $event)"
-                    [disabled]="saving() ||
-                      currentOrder.status === 'prepared' ||
-                      currentOrder.status === 'cancelled'"
-                    class="w-24 rounded-lg border border-gray-300
-                           p-2 text-sm dark:bg-gray-700 dark:text-white">
+                    [disabled]="saving() || !canEditPreparation()"
+                    class="w-24 rounded-lg border border-gray-300 p-2
+                           text-sm text-gray-900 dark:bg-gray-700
+                           dark:text-white disabled:opacity-60">
                 </td>
 
                 <td class="px-4 py-3">
@@ -204,12 +208,9 @@
                   <button
                     type="button"
                     (click)="saveItem(item.id)"
-                    [disabled]="saving() ||
-                      currentOrder.status === 'prepared' ||
-                      currentOrder.status === 'cancelled'"
-                    class="rounded-lg bg-blue-600 px-4 py-2
-                           text-sm font-medium text-white
-                           hover:bg-blue-700
+                    [disabled]="saving() || !canEditPreparation()"
+                    class="rounded-lg bg-blue-600 px-4 py-2 text-sm
+                           font-medium text-white hover:bg-blue-700
                            disabled:cursor-not-allowed disabled:opacity-50">
                     Guardar
                   </button>
@@ -229,16 +230,16 @@
       </div>
     </div>
 
-    <!-- CONTROL DE ORDEN -->
-    <div class="rounded-xl border border-gray-200 bg-white
-                p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <!-- CONTROL DE LA ORDEN -->
+    <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm
+                dark:border-gray-700 dark:bg-gray-800">
 
       <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
         Control de la orden
       </h2>
 
-      <p class="mt-1 text-sm text-gray-500">
-        Actualiza el estado según el avance de la preparación.
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-300">
+        Gestiona la preparación, el despacho y la entrega.
       </p>
 
       <div class="mt-5 flex flex-wrap gap-3">
@@ -248,9 +249,9 @@
             type="button"
             (click)="changeStatus('in_progress')"
             [disabled]="saving()"
-            class="rounded-lg bg-blue-600 px-5 py-3
-                   text-sm font-semibold text-white
-                   hover:bg-blue-700 disabled:opacity-50">
+            class="rounded-lg bg-blue-600 px-5 py-3 text-sm
+                   font-semibold text-white hover:bg-blue-700
+                   disabled:opacity-50">
             Iniciar preparación
           </button>
         }
@@ -260,9 +261,9 @@
             type="button"
             (click)="changeStatus('prepared')"
             [disabled]="saving() || !allPrepared()"
-            class="rounded-lg bg-green-600 px-5 py-3
-                   text-sm font-semibold text-white
-                   hover:bg-green-700 disabled:opacity-50">
+            class="rounded-lg bg-green-600 px-5 py-3 text-sm
+                   font-semibold text-white hover:bg-green-700
+                   disabled:opacity-50">
             Finalizar preparación
           </button>
         }
@@ -275,35 +276,274 @@
             type="button"
             (click)="changeStatus('cancelled')"
             [disabled]="saving()"
-            class="rounded-lg border border-red-300 px-5 py-3
-                   text-sm font-semibold text-red-700
-                   hover:bg-red-50 disabled:opacity-50">
+            class="rounded-lg border border-red-300 px-5 py-3 text-sm
+                   font-semibold text-red-700 hover:bg-red-50
+                   disabled:opacity-50">
             Cancelar orden
           </button>
         }
+
       </div>
 
+      <!-- DESPACHO -->
       @if (currentOrder.status === 'prepared') {
-        <p class="mt-4 text-sm font-medium text-green-700">
-          La preparación de esta orden ha finalizado correctamente.
-        </p>
+
+        <div class="mt-6 rounded-xl border border-indigo-200
+                    bg-indigo-50 p-5">
+
+          <h3 class="text-base font-semibold text-indigo-900">
+            Despacho de inventario
+          </h3>
+
+          <p class="mt-2 text-sm text-indigo-800">
+            La preparación está completa. Puedes registrar la
+            salida del inventario.
+          </p>
+
+          <label
+            for="operationNotes"
+            class="mt-4 block text-sm font-medium text-gray-700">
+            Observaciones del despacho
+          </label>
+
+          <textarea
+            id="operationNotes"
+            rows="3"
+            maxlength="5000"
+            [ngModel]="operationNotes()"
+            (ngModelChange)="operationNotes.set($event)"
+            [disabled]="saving()"
+            placeholder="Ej. Inventario entregado al transportista"
+            class="mt-2 block w-full rounded-lg border border-gray-300
+                   bg-white p-3 text-sm text-gray-900">
+          </textarea>
+
+          <button
+            type="button"
+            (click)="dispatch()"
+            [disabled]="saving()"
+            class="mt-4 rounded-lg bg-indigo-600 px-5 py-3 text-sm
+                   font-semibold text-white hover:bg-indigo-700
+                   disabled:cursor-not-allowed disabled:opacity-50">
+            {{ saving() ? 'Procesando...' : 'Despachar orden' }}
+          </button>
+
+        </div>
+      }
+
+      <!-- ENTREGA -->
+      @if (currentOrder.status === 'dispatched') {
+
+        <div class="mt-6 rounded-xl border border-blue-200
+                    bg-blue-50 p-5">
+
+          <h3 class="text-base font-semibold text-blue-900">
+            Confirmación de entrega
+          </h3>
+
+          <p class="mt-2 text-sm text-blue-800">
+            El inventario fue despachado. Confirma su recepción
+            en el evento.
+          </p>
+
+          <p class="mt-3 text-xs text-gray-600">
+            Despachada:
+            {{ currentOrder.dispatched_at
+              ? (currentOrder.dispatched_at | date:'dd/MM/yyyy HH:mm')
+              : 'Sin fecha' }}
+          </p>
+
+          @if (currentOrder.dispatch_notes) {
+            <p class="mt-2 text-sm text-gray-700">
+              Observaciones del despacho:
+              {{ currentOrder.dispatch_notes }}
+            </p>
+          }
+
+          <label
+            for="deliveryNotes"
+            class="mt-4 block text-sm font-medium text-gray-700">
+            Observaciones de la entrega
+          </label>
+
+          <textarea
+            id="deliveryNotes"
+            rows="3"
+            maxlength="5000"
+            [ngModel]="operationNotes()"
+            (ngModelChange)="operationNotes.set($event)"
+            [disabled]="saving()"
+            placeholder="Ej. Inventario recibido en el evento"
+            class="mt-2 block w-full rounded-lg border border-gray-300
+                   bg-white p-3 text-sm text-gray-900">
+          </textarea>
+
+          <button
+            type="button"
+            (click)="deliver()"
+            [disabled]="saving()"
+            class="mt-4 rounded-lg bg-blue-600 px-5 py-3 text-sm
+                   font-semibold text-white hover:bg-blue-700
+                   disabled:cursor-not-allowed disabled:opacity-50">
+            {{ saving() ? 'Procesando...' : 'Confirmar entrega' }}
+          </button>
+
+        </div>
+      }
+
+      <!-- ENTREGA FINALIZADA -->
+      @if (currentOrder.status === 'delivered') {
+        <div class="mt-6 rounded-xl border border-green-200
+                    bg-green-50 p-5">
+
+          <h3 class="font-semibold text-green-800">
+            Entrega completada
+          </h3>
+
+          <p class="mt-2 text-sm text-green-700">
+            El inventario fue entregado correctamente.
+          </p>
+
+          <p class="mt-3 text-sm text-gray-700">
+            Fecha de despacho:
+            {{ currentOrder.dispatched_at
+              ? (currentOrder.dispatched_at | date:'dd/MM/yyyy HH:mm')
+              : 'Sin registro' }}
+          </p>
+
+          <p class="mt-2 text-sm text-gray-700">
+            Fecha de entrega:
+            {{ currentOrder.delivered_at
+              ? (currentOrder.delivered_at | date:'dd/MM/yyyy HH:mm')
+              : 'Sin registro' }}
+          </p>
+
+          @if (currentOrder.delivery_notes) {
+            <p class="mt-3 text-sm text-gray-700">
+              Observaciones:
+              {{ currentOrder.delivery_notes }}
+            </p>
+          }
+        </div>
       }
 
       @if (currentOrder.status === 'cancelled') {
-        <p class="mt-4 text-sm font-medium text-red-700">
+        <p class="mt-5 text-sm font-medium text-red-700">
           Esta orden fue cancelada.
         </p>
       }
 
     </div>
 
-    <!-- ERROR DE OPERACIÓN -->
+    <!-- MENSAJES -->
+    @if (success()) {
+      <div role="status"
+           class="rounded-lg border border-green-200 bg-green-50
+                  p-4 text-sm text-green-800">
+        {{ success() }}
+      </div>
+    }
+
     @if (error()) {
-      <div class="rounded-lg border border-red-200
-                  bg-red-50 p-4 text-sm text-red-700">
+      <div role="alert"
+           class="rounded-lg border border-red-200 bg-red-50
+                  p-4 text-sm text-red-700">
         {{ error() }}
       </div>
     }
+
+    <!-- HISTORIAL -->
+    <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm
+                dark:border-gray-700 dark:bg-gray-800">
+
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+            Historial logístico
+          </h2>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-300">
+            Registro de cambios de estado de la orden.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          (click)="loadHistory(currentOrder.id)"
+          [disabled]="loadingHistory()"
+          class="rounded-lg border border-gray-300 px-4 py-2
+                 text-sm font-medium text-gray-700
+                 hover:bg-gray-50 dark:text-white
+                 disabled:opacity-50">
+          Actualizar historial
+        </button>
+      </div>
+
+      @if (loadingHistory()) {
+        <p class="mt-5 text-sm text-gray-500">
+          Cargando historial...
+        </p>
+      } @else if (historyError()) {
+        <p class="mt-5 text-sm text-red-700">
+          {{ historyError() }}
+        </p>
+      } @else if (history().length === 0) {
+        <p class="mt-5 text-sm text-gray-500">
+          Todavía no hay movimientos registrados en el historial.
+        </p>
+      } @else {
+
+        <ol class="mt-6 space-y-5 border-l-2 border-gray-200 pl-5
+                   dark:border-gray-600">
+
+          @for (entry of history(); track entry.id) {
+
+            <li class="relative">
+
+              <span
+                class="absolute -left-[29px] top-1 h-4 w-4 rounded-full
+                       border-2 border-white bg-blue-600">
+              </span>
+
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="font-semibold text-gray-900 dark:text-white">
+                  {{ statusLabel(entry.new_status) }}
+                </p>
+
+                <time class="text-xs text-gray-500 dark:text-gray-300">
+                  {{ entry.created_at | date:'dd/MM/yyyy HH:mm:ss' }}
+                </time>
+              </div>
+
+              <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                @if (entry.previous_status) {
+                  {{ statusLabel(entry.previous_status) }}
+                  →
+                  {{ statusLabel(entry.new_status) }}
+                } @else {
+                  Registro inicial de la orden
+                }
+              </p>
+
+              <p class="mt-1 text-xs text-gray-500">
+                Usuario #{{ entry.changed_by }}
+              </p>
+
+              @if (entry.notes) {
+                <p class="mt-2 rounded-lg bg-gray-50 p-3
+                          text-sm text-gray-700 dark:bg-gray-700
+                          dark:text-gray-200">
+                  {{ entry.notes }}
+                </p>
+              }
+
+            </li>
+
+          }
+
+        </ol>
+      }
+
+    </div>
 
   }
 
