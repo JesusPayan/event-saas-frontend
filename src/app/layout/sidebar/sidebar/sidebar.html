@@ -1,0 +1,271 @@
+
+<!-- Fondo oscuro para móvil -->
+@if (mobileOpen()) {
+  <button
+    type="button"
+    class="sidebar-backdrop"
+    aria-label="Cerrar menú"
+    (click)="closeMobile()">
+  </button>
+}
+
+<!-- Botón móvil -->
+<button
+  type="button"
+  class="mobile-menu-button"
+  aria-label="Abrir menú"
+  [attr.aria-expanded]="mobileOpen()"
+  (click)="toggleMobile()">
+  ☰
+</button>
+
+<aside
+  class="sidebar"
+  [class.mobile-open]="mobileOpen()">
+
+  <!-- Marca -->
+  <div class="brand">
+    <div class="brand-icon">
+      <lucide-icon
+        [img]="icons.calendar"
+        [size]="22">
+      </lucide-icon>
+    </div>
+
+    <div class="brand-text">
+      <strong>Eventos SaaS</strong>
+      <small>Panel administrativo</small>
+    </div>
+
+    <button
+      type="button"
+      class="close-mobile"
+      aria-label="Cerrar menú"
+      (click)="closeMobile()">
+      ✕
+    </button>
+  </div>
+
+  <nav aria-label="Menú principal">
+
+    <a
+      routerLink="/dashboard"
+      routerLinkActive="active"
+      (click)="closeMobile()">
+      <lucide-icon [img]="icons.dashboard" [size]="18" />
+      <span>Dashboard</span>
+    </a>
+
+    @if (auth.hasPermission('clients.read')) {
+      <a
+        routerLink="/clients"
+        routerLinkActive="active"
+        (click)="closeMobile()">
+        <lucide-icon [img]="icons.clients" [size]="18" />
+        <span>Clientes</span>
+      </a>
+    }
+
+    @if (auth.hasPermission('events.read')) {
+      <a
+        routerLink="/events"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="closeMobile()">
+        <lucide-icon [img]="icons.events" [size]="18" />
+        <span>Eventos</span>
+      </a>
+
+      <a
+        routerLink="/events/calendar"
+        routerLinkActive="active"
+        (click)="closeMobile()">
+        <lucide-icon [img]="icons.calendar" [size]="18" />
+        <span>Calendario</span>
+      </a>
+    }
+
+    <!-- Gestión comercial -->
+    @if (
+      auth.hasPermission('quotes.read') ||
+      auth.hasPermission('quotes.create') ||
+      auth.hasPermission('contracts.read')
+    ) {
+      <div class="menu-heading">
+        Gestión comercial
+      </div>
+    }
+
+    @if (auth.hasPermission('quotes.read')) {
+      <a
+        routerLink="/quotes"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="closeMobile()">
+        <lucide-icon [img]="icons.quotes" [size]="18" />
+        <span>Cotizaciones</span>
+      </a>
+    }
+
+    @if (auth.hasPermission('quotes.create')) {
+      <a
+        routerLink="/quotes/new"
+        routerLinkActive="active"
+        (click)="closeMobile()">
+        <lucide-icon [img]="icons.newQuote" [size]="18" />
+        <span>Nueva cotización</span>
+      </a>
+    }
+
+    @if (auth.hasPermission('contracts.read')) {
+      <a
+        routerLink="/contracts"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: false }"
+        (click)="closeMobile()">
+        <lucide-icon [img]="icons.contracts" [size]="18" />
+        <span>Contratos</span>
+      </a>
+    }
+
+    <!-- Inventario -->
+    @if (auth.hasPermission('inventory.read')) {
+
+      <div class="menu-heading">
+        Gestión de inventario
+      </div>
+
+      <button
+        type="button"
+        class="menu-toggle"
+        [class.expanded]="inventoryOpen()"
+        [attr.aria-expanded]="inventoryOpen()"
+        aria-controls="inventory-submenu"
+        (click)="toggleInventory()">
+
+        <lucide-icon [img]="icons.inventory" [size]="18" />
+        <span class="menu-label">Inventario</span>
+
+        <lucide-icon
+          [img]="inventoryOpen() ? icons.down : icons.right"
+          [size]="16">
+        </lucide-icon>
+      </button>
+
+      @if (inventoryOpen()) {
+        <div id="inventory-submenu" class="submenu">
+
+          <a routerLink="/inventory"
+             routerLinkActive="active"
+             [routerLinkActiveOptions]="{ exact: true }"
+             (click)="closeMobile()">
+            Artículos
+          </a>
+
+          <a routerLink="/inventory/categories"
+             routerLinkActive="active"
+             (click)="closeMobile()">
+            Categorías
+          </a>
+
+          <a routerLink="/inventory/operations"
+             routerLinkActive="active"
+             (click)="closeMobile()">
+            Operaciones
+          </a>
+
+          <a routerLink="/inventory/incidents"
+             routerLinkActive="active"
+             (click)="closeMobile()">
+            Incidencias
+          </a>
+
+          <a routerLink="/inventory/charges"
+             routerLinkActive="active"
+             (click)="closeMobile()">
+            Cargos por daños
+          </a>
+
+          <a routerLink="/inventory/capacity"
+             routerLinkActive="active"
+             (click)="closeMobile()">
+            Déficit y auditoría
+          </a>
+
+          <a routerLink="/inventory/replenishments"
+             routerLinkActive="active"
+             (click)="closeMobile()">
+            Reposiciones
+          </a>
+
+          <a routerLink="/inventory/capacity-alerts"
+             routerLinkActive="active"
+             (click)="closeMobile()">
+            Alertas de capacidad
+          </a>
+
+          <a routerLink="/inventory/reports"
+             routerLinkActive="active"
+             (click)="closeMobile()">
+            Reportes de inventario
+          </a>
+
+        </div>
+      }
+    }
+
+    <!-- Logística -->
+    @if (
+      auth.hasPermission('inventory.read') ||
+      auth.hasPermission('inventory.create')
+    ) {
+
+      <div class="menu-heading">
+        Gestión logística
+      </div>
+
+      <button
+        type="button"
+        class="menu-toggle"
+        [class.expanded]="logisticsOpen()"
+        [attr.aria-expanded]="logisticsOpen()"
+        aria-controls="logistics-submenu"
+        (click)="toggleLogistics()">
+
+        <lucide-icon [img]="icons.logistics" [size]="18" />
+        <span class="menu-label">Logística</span>
+
+        <lucide-icon
+          [img]="logisticsOpen() ? icons.down : icons.right"
+          [size]="16">
+        </lucide-icon>
+      </button>
+
+      @if (logisticsOpen()) {
+        <div id="logistics-submenu" class="submenu">
+
+          @if (auth.hasPermission('inventory.read')) {
+            <a
+              routerLink="/logistics"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: true }"
+              (click)="closeMobile()">
+              Órdenes logísticas
+            </a>
+          }
+
+          @if (auth.hasPermission('inventory.create')) {
+            <a
+              routerLink="/logistics/new"
+              routerLinkActive="active"
+              (click)="closeMobile()">
+              Nueva orden
+            </a>
+          }
+
+        </div>
+      }
+    }
+
+  </nav>
+</aside>

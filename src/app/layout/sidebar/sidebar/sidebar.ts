@@ -1,3 +1,4 @@
+
 import {
   Component,
   inject,
@@ -13,14 +14,40 @@ import {
 } from '@angular/router';
 
 import { filter, Subscription } from 'rxjs';
-import { AuthService } from '../../services/auth.service';
+import { AuthService } from '../../../services/auth.service';
+
+import {
+  LucideAngularModule,
+  LayoutDashboard,
+  Users,
+  CalendarDays,
+  Calendar,
+  FileText,
+  FilePlus2,
+  FileSignature,
+  Package,
+  Truck,
+  ChevronDown,
+  ChevronRight,
+  Boxes,
+  Tags,
+  ClipboardList,
+  AlertTriangle,
+  Wallet,
+  BarChart3,
+  PackagePlus,
+  Bell,
+  ChartColumnIncreasing,
+  Plus
+} from 'lucide-angular';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
   imports: [
     RouterLink,
-    RouterLinkActive
+    RouterLinkActive,
+    LucideAngularModule
   ],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css'
@@ -31,6 +58,30 @@ export class SidebarComponent implements OnDestroy {
   private readonly router = inject(Router);
   private readonly routerSubscription: Subscription;
 
+  readonly icons = {
+    dashboard: LayoutDashboard,
+    clients: Users,
+    events: CalendarDays,
+    calendar: Calendar,
+    quotes: FileText,
+    newQuote: FilePlus2,
+    contracts: FileSignature,
+    inventory: Package,
+    logistics: Truck,
+    down: ChevronDown,
+    right: ChevronRight,
+    items: Boxes,
+    categories: Tags,
+    operations: ClipboardList,
+    incidents: AlertTriangle,
+    charges: Wallet,
+    capacity: BarChart3,
+    replenishments: PackagePlus,
+    alerts: Bell,
+    reports: ChartColumnIncreasing,
+    plus: Plus
+  };
+
   readonly inventoryOpen = signal(
     this.router.url.startsWith('/inventory')
   );
@@ -38,6 +89,8 @@ export class SidebarComponent implements OnDestroy {
   readonly logisticsOpen = signal(
     this.router.url.startsWith('/logistics')
   );
+
+  readonly mobileOpen = signal(false);
 
   constructor() {
     this.routerSubscription = this.router.events
@@ -57,6 +110,8 @@ export class SidebarComponent implements OnDestroy {
         if (url.startsWith('/logistics')) {
           this.logisticsOpen.set(true);
         }
+
+        this.mobileOpen.set(false);
       });
   }
 
@@ -66,6 +121,14 @@ export class SidebarComponent implements OnDestroy {
 
   toggleLogistics(): void {
     this.logisticsOpen.update(value => !value);
+  }
+
+  toggleMobile(): void {
+    this.mobileOpen.update(value => !value);
+  }
+
+  closeMobile(): void {
+    this.mobileOpen.set(false);
   }
 
   ngOnDestroy(): void {

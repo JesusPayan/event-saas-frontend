@@ -6,8 +6,8 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
-import { EventsService } from '../../services/events.service';
-import { Event } from '../../models/event.model';
+import { EventsService } from '../../../services/events.service';
+import { Event } from '../../../models/event.model';
 
 interface CalendarDay {
   date: Date;
@@ -19,63 +19,7 @@ interface CalendarDay {
   selector: 'app-event-calendar',
   standalone: true,
   imports: [RouterLink, DatePipe],
-  template: `
-    <main class="calendar-page">
-      <header>
-        <div>
-          <h1>Calendario de eventos</h1>
-          <p>Programación mensual de tu empresa.</p>
-        </div>
-
-        <nav>
-          <a routerLink="/events">Ver listado</a>
-          <a routerLink="/events/new">+ Nuevo evento</a>
-        </nav>
-      </header>
-
-      <div class="calendar-toolbar">
-        <button type="button" (click)="previousMonth()">‹ Anterior</button>
-        <h2>{{ currentDate() | date:'MMMM yyyy' }}</h2>
-        <button type="button" (click)="nextMonth()">Siguiente ›</button>
-        <button type="button" (click)="today()">Hoy</button>
-      </div>
-
-      @if (loading()) {
-        <p>Cargando calendario...</p>
-      }
-
-      @if (error()) {
-        <p class="error" role="alert">{{ error() }}</p>
-      }
-
-      <div class="calendar-grid">
-        @for (name of weekdays; track name) {
-          <div class="weekday">{{ name }}</div>
-        }
-
-        @for (day of calendarDays(); track day.date.getTime()) {
-          <div
-            class="calendar-day"
-            [class.other-month]="!day.currentMonth">
-
-            <span class="day-number">
-              {{ day.date.getDate() }}
-            </span>
-
-            @for (event of day.events; track event.id) {
-              <a
-                class="calendar-event"
-                [class.cancelled]="event.status === 'cancelled'"
-                [routerLink]="['/events', event.id]"
-                [title]="event.name">
-                {{ event.name }}
-              </a>
-            }
-          </div>
-        }
-      </div>
-    </main>
-  `,
+  templateUrl: './event-calendar.component.html',
   styles: [`
     .calendar-page { padding: 24px; max-width: 1400px; margin: auto; }
     header, .calendar-toolbar {

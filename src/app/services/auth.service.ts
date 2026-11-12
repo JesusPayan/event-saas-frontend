@@ -28,12 +28,10 @@ export class AuthService {
   readonly selectedTenant = computed(() => this.tenantId() !== null);
   token(): string | null { return this.accessToken(); }
   login(email: string, password: string): Observable<LoginResponse> {
-    console.log('AuthService.login() called with email:', email);
     return this.http.post<LoginResponse>(`${this.hostUrl}/auth/login`, { email, password }).pipe(
       tap(r => this.accessToken.set(r.access_token)));
   }
   register(email: string, password: string, company_name: string, slug: string) {
-    console.log('AuthService.register() called with email:', email);
     return this.http.post(`${this.hostUrl}/auth/register`, { email, password, company_name, slug });
   }
 loadMe(): Observable<MeResponse> {
