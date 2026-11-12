@@ -44,31 +44,46 @@
     }
 
     <!-- COTIZACIONES -->
-    @if (
-      auth.hasPermission('quotes.read') ||
-      auth.hasPermission('quotes.create')
-    ) {
-      <div class="menu-heading">
-        GESTIÓN COMERCIAL
-      </div>
-    }
+   <!-- GESTIÓN COMERCIAL -->
+@if (
+  auth.hasPermission('quotes.read') ||
+  auth.hasPermission('quotes.create') ||
+  auth.hasPermission('contracts.read')
+) {
+  <div class="menu-heading">
+    GESTIÓN COMERCIAL
+  </div>
+}
 
-    @if (auth.hasPermission('quotes.read')) {
-      <a routerLink="/quotes"
-         routerLinkActive="active"
-         [routerLinkActiveOptions]="{ exact: true }">
-        <span class="nav-icon">▤</span>
-        Cotizaciones
-      </a>
-    }
+@if (auth.hasPermission('quotes.read')) {
+  <a
+    routerLink="/quotes"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="{ exact: true }">
+    <span class="nav-icon">▤</span>
+    Cotizaciones
+  </a>
+}
 
-    @if (auth.hasPermission('quotes.create')) {
-      <a routerLink="/quotes/new"
-         routerLinkActive="active">
-        <span class="nav-icon">+</span>
-        Nueva cotización
-      </a>
-    }
+@if (auth.hasPermission('quotes.create')) {
+  <a
+    routerLink="/quotes/new"
+    routerLinkActive="active">
+    <span class="nav-icon">+</span>
+    Nueva cotización
+  </a>
+}
+
+<!-- CONTRATOS -->
+@if (auth.hasPermission('contracts.read')) {
+  <a
+    routerLink="/contracts"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="{ exact: false }">
+    <span class="nav-icon">▣</span>
+    Contratos
+  </a>
+}
 
     <!-- INVENTARIO -->
     @if (auth.hasPermission('inventory.read')) {

@@ -1,0 +1,106 @@
+<section class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">Contratos</h1>
+      <p class="mt-1 text-sm text-slate-500">Consulta documentos, importes y firmas electrónicas de tu empresa.</p>
+    </div>
+    <button type="button" (click)="load()" [disabled]="loading()"
+      class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+      {{ loading() ? 'Actualizando...' : 'Actualizar' }}
+    </button>
+  </header>
+
+  @if (error()) {
+    <div role="alert" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error() }}</div>
+  }
+
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="rounded-xl border border-slate-200 bg-white p-4">
+      <p class="text-xs text-slate-500">Contratos encontrados</p>
+      <p class="mt-2 text-2xl font-semibold text-slate-900">{{ filtered().length }}</p>
+    </div>
+    <div class="rounded-xl border border-slate-200 bg-white p-4">
+      <p class="text-xs text-slate-500">Contratos activos</p>
+      <p class="mt-2 text-2xl font-semibold text-slate-900">{{ activeCount() }}</p>
+    </div>
+    <div class="rounded-xl border border-slate-200 bg-white p-4">
+      <p class="text-xs text-slate-500">Importe filtrado</p>
+      @if (currencies().length === 1) {
+        <p class="mt-2 text-2xl font-semibold text-slate-900">{{ money(totalAmount(), currencies()[0]) }}</p>
+      } @else {
+        <p class="mt-2 text-sm font-medium text-slate-700">Varios tipos de moneda</p>
+      }
+    </div>
+  </div>
+
+  <div class="rounded-xl border border-slate-200 bg-white p-4">
+    <div class="grid gap-4 md:grid-cols-3">
+      <label class="block md:col-span-2">
+        <span class="mb-1 block text-xs font-medium text-slate-700">Buscar contrato</span>
+        <input type="search" [ngModel]="search()" (ngModelChange)="search.set($event)"
+          placeholder="Número de contrato, ID, cliente o evento"
+          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100" />
+      </label>
+      <label class="block">
+        <span class="mb-1 block text-xs font-medium text-slate-700">Estado</span>
+        <select [ngModel]="status()" (ngModelChange)="status.set($event)"
+          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+          <option value="all">Todos los estados</option>
+          <option value="draft">Borrador</option>
+          <option value="active">Activo</option>
+          <option value="completed">Completado</option>
+          <option value="cancelled">Cancelado</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+        <thead class="bg-slate-50 text-xs font-semibold text-slate-600">
+          <tr>
+            <th class="px-4 py-3">Contrato</th>
+            <th class="px-4 py-3">Cliente / Evento</th>
+            <th class="px-4 py-3">Creación</th>
+            <th class="px-4 py-3">Estado</th>
+            <th class="px-4 py-3 text-right">Importe</th>
+            <th class="px-4 py-3 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          @for (contract of filtered(); track contract.id) {
+            <tr class="hover:bg-slate-50">
+              <td class="px-4 py-3 font-semibold text-slate-900">{{ contract.contract_number || ('#' + contract.id) }}</td>
+              <td class="px-4 py-3 text-slate-600">
+                <div>Cliente #{{ contract.client_id ?? '—' }}</div>
+                <div class="text-xs text-slate-400">Evento #{{ contract.event_id ?? '—' }}</div>
+              </td>
+              <td class="px-4 py-3 text-slate-600">{{ contract.created_at ? (contract.created_at | date:'dd/MM/yyyy') : '—' }}</td>
+              <td class="px-4 py-3">
+                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset" [ngClass]="statusClass(contract.status)">
+                  {{ label(contract.status) }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-right font-medium text-slate-900">{{ money(contract.total, contract.currency) }}</td>
+              <td class="px-4 py-3">
+                <div class="flex flex-wrap justify-end gap-2">
+                  <button type="button" (click)="downloadPdf(contract)" [disabled]="downloadingId() !== null"
+                    class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50">
+                    {{ downloadingId() === contract.id ? 'Descargando...' : 'PDF' }}
+                  </button>
+                  <a [routerLink]="['/contracts', contract.id, 'signatures']"
+                    class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700">Firmas</a>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="px-4 py-10 text-center text-sm text-slate-500">
+              {{ loading() ? 'Cargando contratos...' : 'No hay contratos que coincidan con los filtros.' }}
+            </td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

@@ -300,6 +300,32 @@ export const routes: Routes = [
     import('./pages/contract-signing/contract-signing.component')
       .then(m => m.ContractSigningComponent),
 },
+// =====================================
+      // COM-02.1.8 - CONTRATOS Y FIRMAS
+      // =====================================
+      {
+        path: 'contracts',
+        canActivate: [
+          permissionGuard('contracts.read')
+        ],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () =>
+              import(
+                './pages/contracts/contracts-list.component'
+              ).then(m => m.ContractsListComponent)
+          },
+          {
+            path: ':id/signatures',
+            loadComponent: () =>
+              import(
+                './pages/contract-signatures/contract-signatures.component'
+              ).then(m => m.ContractSignaturesComponent)
+          }
+        ]
+      },
   {
     path: '**',
     redirectTo: 'login'
