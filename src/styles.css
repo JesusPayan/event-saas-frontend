@@ -1,11 +1,8 @@
-
 @import "tailwindcss";
 
 @plugin "flowbite/plugin";
 
 @source "../node_modules/flowbite";
-
-/* Estilos globales propios */
 
 body {
   margin: 0;
@@ -13,7 +10,167 @@ body {
   background: #f8fafc;
 }
 
-*{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#17253b;font:16px system-ui,Arial,sans-serif}a{color:#2255ad;text-decoration:none}a:hover{text-decoration:underline}.topbar{background:#12243f;color:white;padding:18px clamp(16px,5vw,70px);display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.brand{color:white;font-weight:800;font-size:20px}.topbar nav{display:flex;align-items:center;gap:20px;flex-wrap:wrap}.topbar nav a{color:#e8f0ff}main{max-width:1080px;margin:48px auto;padding:0 20px}.auth-card,.panel{background:white;border:1px solid #e0e6ef;border-radius:18px;padding:clamp(24px,4vw,48px);box-shadow:0 12px 35px #152b4b10}.auth-card{max-width:480px;margin:auto}h1{margin:0 0 12px;font-size:30px}p{color:#52647d;line-height:1.6}label{display:block;margin:18px 0 8px;font-weight:600}input{display:block;width:100%;margin-top:8px;border:1px solid #bdc8d8;border-radius:9px;padding:12px;font:inherit}button{border:0;background:#245bcb;color:white;padding:12px 18px;border-radius:9px;font:inherit;cursor:pointer;margin-top:12px}button:disabled{opacity:.55;cursor:wait}.outline{background:transparent;border:1px solid #b8c8e6}.tenant{display:block;width:100%;text-align:left}.error{color:#b3261e}.success{color:#13703b}.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin:24px 0}.tiles article{border:1px solid #e0e6ef;padding:20px;border-radius:12px}table{border-collapse:collapse;width:100%}td,th{text-align:left;border-bottom:1px solid #e0e6ef;padding:12px}.eyebrow{color:#4167a4;font-weight:700;letter-spacing:2px;font-size:12px}
+* {
+  box-sizing: border-box
+}
+
+body {
+  margin: 0;
+  background: #f5f7fb;
+  color: #17253b;
+  font: 16px system-ui, Arial, sans-serif
+}
+
+a {
+  color: #2255ad;
+  text-decoration: none
+}
+
+a:hover {
+  text-decoration: underline
+}
+
+.topbar {
+  background: #12243f;
+  color: white;
+  padding: 18px clamp(16px, 5vw, 70px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap
+}
+
+.brand {
+  color: white;
+  font-weight: 800;
+  font-size: 20px
+}
+
+.topbar nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap
+}
+
+.topbar nav a {
+  color: #e8f0ff
+}
+
+/* main {
+  max-width: 1080px;
+  margin: 48px auto;
+  padding: 0 20px
+} */
+
+.auth-card,
+.panel {
+  background: white;
+  border: 1px solid #e0e6ef;
+  border-radius: 18px;
+  padding: clamp(24px, 4vw, 48px);
+  box-shadow: 0 12px 35px #152b4b10
+}
+
+.auth-card {
+  max-width: 480px;
+  margin: auto
+}
+
+h1 {
+  margin: 0 0 12px;
+  font-size: 30px
+}
+
+p {
+  color: #52647d;
+  line-height: 1.6
+}
+
+label {
+  display: block;
+  margin: 18px 0 8px;
+  font-weight: 600
+}
+
+input {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  border: 1px solid #bdc8d8;
+  border-radius: 9px;
+  padding: 12px;
+  font: inherit
+}
+
+/* button {
+  border: 0;
+  background: #245bcb;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 9px;
+  font: inherit;
+  cursor: pointer;
+  margin-top: 12px
+} */
+
+/* button:disabled {
+  opacity: .55;
+  cursor: wait
+} */
+
+.outline {
+  background: transparent;
+  border: 1px solid #b8c8e6
+}
+
+.tenant {
+  display: block;
+  width: 100%;
+  text-align: left
+}
+
+.error {
+  color: #b3261e
+}
+
+.success {
+  color: #13703b
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
+  margin: 24px 0
+}
+
+.tiles article {
+  border: 1px solid #e0e6ef;
+  padding: 20px;
+  border-radius: 12px
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%
+}
+
+td,
+th {
+  text-align: left;
+  border-bottom: 1px solid #e0e6ef;
+  padding: 12px
+}
+
+.eyebrow {
+  color: #4167a4;
+  font-weight: 700;
+  letter-spacing: 2px;
+  font-size: 12px
+}
+
 .module-card {
   display: block;
   padding: 24px;
@@ -30,4 +187,3 @@ body {
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.12);
   transform: translateY(-2px);
 }
-

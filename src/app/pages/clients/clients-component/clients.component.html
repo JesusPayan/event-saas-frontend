@@ -1,0 +1,150 @@
+<section class="space-y-6">
+
+    <!-- ENCABEZADO -->
+    <app-page-header title="Clientes" description="Administra los clientes de tu empresa.">
+        @if (auth.hasPermission('clients.create')) {
+        <a routerLink="/events/new" class="inline-flex items-center justify-center
+              rounded-lg !bg-blue-600 px-4 py-2.5
+              text-sm font-semibold !text-white
+              hover:!bg-blue-700">
+            + Nuevo cliente
+        </a>
+        }
+    </app-page-header>
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <app-stat-card title="Total de clientes" [value]="total()" description="Clientes registrados"
+            variant="primary" />
+
+        <app-stat-card title="Clientes activos" [value]="activeClients()" description="En la página actual"
+            variant="success" />
+
+        <app-stat-card title="Clientes inactivos" [value]="inactiveClients()" description="En la página actual" />
+    </div>
+
+    <!-- INDICADORES -->
+
+    <!-- TABLA PRINCIPAL -->
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+
+
+        <!-- ERROR -->
+        @if (error()) {
+        <div role="alert" class="m-5 rounded-lg bg-red-50 p-4 text-sm text-red-700">
+            <p>{{ error() }}</p>
+
+            <button type="button" (click)="load(page())" class="mt-2 font-medium underline">
+                Reintentar
+            </button>
+        </div>
+        }
+
+        <!-- LOADING -->
+        @if (loading()) {
+        <div role="status" class="flex items-center justify-center gap-3 p-12 text-gray-500">
+            <span class="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></span>
+            Cargando clientes...
+        </div>
+        } @else if (!error()) {
+
+        <div class="overflow-x-auto">
+
+            <app-data-table [loading]="loading()" [error]="error()" [empty]="filteredClients().length === 0"
+                loadingMessage="Cargando clientes..." emptyTitle="No se encontraron clientes"
+                emptyDescription="Prueba con otros criterios de búsqueda.">
+                <!-- Filtros -->
+                <div table-toolbar class="flex flex-col gap-3 md:flex-row">
+
+                    <input type="search" aria-label="Buscar clientes" [ngModel]="search"
+                        (ngModelChange)="onSearchChange($event)" (keyup.enter)="load(1)"
+                        placeholder="Buscar clientes..."
+                        class="w-full flex-1 rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm focus:border-blue-500 focus:ring-blue-500" />
+
+                    <select aria-label="Filtrar por estado" [ngModel]="statusFilter()"
+                        (ngModelChange)="onStatusChange($event)"
+                        class="rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm">
+                        <option value="all">Todos los estados</option>
+                        <option value="active">Activos</option>
+                        <option value="inactive">Inactivos</option>
+                    </select>
+
+                    <button type="button" (click)="clearFilters()"
+                        class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                        Limpiar
+                    </button>
+                </div>
+
+                <!-- Tabla -->
+                <table table-content class="w-full text-left text-sm text-gray-500">
+
+                    <thead class="bg-gray-50 text-xs uppercase text-gray-700">
+                        <tr>
+                            <th scope="col" class="px-6 py-4">Nombre</th>
+                            <th scope="col" class="px-6 py-4">Correo</th>
+                            <th scope="col" class="px-6 py-4">Teléfono</th>
+                            <th scope="col" class="px-6 py-4">Estado</th>
+                            <th scope="col" class="px-6 py-4 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @for (client of filteredClients(); track client.id) {
+                        <tr class="border-b border-gray-200 bg-white hover:bg-gray-50">
+
+                            <td class="whitespace-nowrap px-6 py-4 font-medium text-gray-900">
+                                {{ client.first_name }} {{ client.last_name }}
+                            </td>
+
+                            <td class="px-6 py-4">
+                                {{ client.email || '-' }}
+                            </td>
+
+                            <td class="px-6 py-4">
+                                {{ client.phone || '-' }}
+                            </td>
+
+                            <td class="px-6 py-4">
+                                @if (client.status === 'active') {
+                                <span class="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800">
+                                    Activo
+                                </span>
+                                } @else {
+                                <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                                    Inactivo
+                                </span>
+                                }
+                            </td>
+
+                            <td class="whitespace-nowrap px-6 py-4 text-right">
+                                <div class="flex justify-end gap-4">
+                                    <a [routerLink]="['/clients', client.id]"
+                                        class="font-medium text-blue-700 hover:underline">
+                                        Ver
+                                    </a>
+
+                                    @if (auth.hasPermission('clients.update')) {
+                                    <a [routerLink]="['/clients', client.id, 'edit']"
+                                        class="font-medium text-gray-700 hover:text-blue-700 hover:underline">
+                                        Editar
+                                    </a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- Paginación -->
+                <div table-footer>
+                    <app-pagination [page]="page()" [pageSize]="pageSize" [total]="total()" [loading]="loading()"
+                        (pageChange)="load($event)" />
+                </div>
+            </app-data-table>
+
+        </div>
+
+       
+        }
+    </div>
+</section>

@@ -7,16 +7,16 @@ import {
   permissionGuard
 } from './services/auth.guard';
 
-import { AdminLayoutComponent } from './layout/sidebar/admin-layout.component';
+import { AdminLayoutComponent } from './layout/sidebar/admin-layout/admin-layout.component';
 
-import { ClientsComponent } from './pages/clients/clients.component';
-import { ClientFormComponent } from './pages/clients/client-form.component';
-import { ClientDetailComponent } from './pages/clients/client-detail.component';
+import { ClientsComponent } from './pages/clients/clients-component/clients.component';
+import { ClientFormComponent } from './pages/clients/client-form/client-form.component';
+import { ClientDetailComponent } from './pages/clients/client-detail/client-detail.component';
 
-import { EventsComponent } from './pages/events/events.component';
+import { EventsComponent } from './pages/events/event-list/events.component';
 import { EventFormComponent } from './pages/events/event-detail/even-form/event-form.component';
 import { EventDetailComponent } from './pages/events/event-detail/event-detail.component';
-import { EventCalendarComponent } from './pages/events/event-calendar.component';
+import { EventCalendarComponent } from './pages/events/event-calendar/event-calendar.component';
 
 import { InventoryComponent } from './pages/inventory/inventory.component';
 import { InventoryFormComponent } from './pages/inventory/inventory-form.component';
@@ -279,53 +279,40 @@ export const routes: Routes = [
         canActivate: [
           permissionGuard('inventory.update')
         ]
-      }
+      },
+{
+  path: 'contracts',
+  canActivate: [
+    permissionGuard('contracts.read')
+  ],
+  children: [
+    {
+      path: '',
+      pathMatch: 'full',
+      loadComponent: () =>
+        import(
+          './pages/contracts/contracts-list.component'
+        ).then(m => m.ContractsListComponent)
+    },
+    {
+      path: ':id/signatures',
+      loadComponent: () =>
+        import(
+          './pages/contract-signatures/contract-signatures.component'
+        ).then(m => m.ContractSignaturesComponent)
+    }
+  ]
+}
+
 
     ] // Fin de children de AdminLayoutComponent
   }, // Fin de AdminLayoutComponent
-
-  // =====================================
-  // RUTA NO ENCONTRADA
-  // =====================================
-
-  {
-  path: 'quotes/:id',
-  loadComponent: () =>
-    import('./pages/quotes/quote-detail/quote-detail')
-      .then(m => m.QuoteDetail)
-},
 {
   path: 'sign/:token',
   loadComponent: () =>
     import('./pages/contract-signing/contract-signing.component')
       .then(m => m.ContractSigningComponent),
 },
-// =====================================
-      // COM-02.1.8 - CONTRATOS Y FIRMAS
-      // =====================================
-      {
-        path: 'contracts',
-        canActivate: [
-          permissionGuard('contracts.read')
-        ],
-        children: [
-          {
-            path: '',
-            pathMatch: 'full',
-            loadComponent: () =>
-              import(
-                './pages/contracts/contracts-list.component'
-              ).then(m => m.ContractsListComponent)
-          },
-          {
-            path: ':id/signatures',
-            loadComponent: () =>
-              import(
-                './pages/contract-signatures/contract-signatures.component'
-              ).then(m => m.ContractSignaturesComponent)
-          }
-        ]
-      },
   {
     path: '**',
     redirectTo: 'login'

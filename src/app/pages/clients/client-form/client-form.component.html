@@ -1,0 +1,144 @@
+<section class="panel">
+      <h1>{{ editing() ? 'Editar cliente' : 'Nuevo cliente' }}</h1>
+      <p>Información general y datos de contacto.</p>
+
+      @if (error()) {
+        <p class="error" role="alert">{{ error() }}</p>
+      }
+
+      @if (loading()) {
+        <p>Cargando información...</p>
+      } @else {
+        <form #clientForm="ngForm" (ngSubmit)="save()">
+
+          <label>
+            Tipo de cliente
+            <select
+              name="client_type"
+              [(ngModel)]="client.client_type">
+              <option value="individual">Persona física</option>
+              <option value="business">Empresa</option>
+            </select>
+          </label>
+
+          <label>
+            {{ client.client_type === 'business'
+              ? 'Nombre de contacto'
+              : 'Nombre' }}
+            <input
+              name="first_name"
+              [(ngModel)]="client.first_name"
+              required
+              maxlength="100"
+            />
+          </label>
+
+          <label>
+            Apellidos
+            <input
+              name="last_name"
+              [(ngModel)]="client.last_name"
+              maxlength="150"
+            />
+          </label>
+
+          @if (client.client_type === 'business') {
+            <label>
+              Razón social
+              <input
+                name="business_name"
+                [(ngModel)]="client.business_name"
+                required
+                maxlength="180"
+              />
+            </label>
+          }
+
+          <label>
+            Correo electrónico
+            <input
+              type="email"
+              name="email"
+              [(ngModel)]="client.email"
+              email
+              maxlength="180"
+            />
+          </label>
+
+          <label>
+            Teléfono
+            <input
+              type="tel"
+              name="phone"
+              [(ngModel)]="client.phone"
+              maxlength="30"
+            />
+          </label>
+
+          <label>
+            WhatsApp
+            <input
+              type="tel"
+              name="whatsapp"
+              [(ngModel)]="client.whatsapp"
+              maxlength="30"
+            />
+          </label>
+
+          <label>
+            Dirección
+            <input
+              name="address"
+              [(ngModel)]="client.address"
+              maxlength="255"
+            />
+          </label>
+
+          <label>
+            Ciudad
+            <input
+              name="city"
+              [(ngModel)]="client.city"
+              maxlength="100"
+            />
+          </label>
+
+          <label>
+            Estado
+            <input
+              name="state"
+              [(ngModel)]="client.state"
+              maxlength="100"
+            />
+          </label>
+
+          <label>
+            Código postal
+            <input
+              name="postal_code"
+              [(ngModel)]="client.postal_code"
+              maxlength="15"
+            />
+          </label>
+
+          <label>
+            Observaciones
+            <textarea
+              name="notes"
+              [(ngModel)]="client.notes"
+              rows="4">
+            </textarea>
+          </label>
+
+          <div class="form-actions">
+            <a routerLink="/clients">Cancelar</a>
+
+            <button
+              type="submit"
+              [disabled]="busy() || clientForm.invalid">
+              {{ busy() ? 'Guardando...' : 'Guardar cliente' }}
+            </button>
+          </div>
+        </form>
+      }
+    </section>

@@ -1,0 +1,180 @@
+Listado de rutas de carpetas
+El número de serie del volumen es 7AEC-A8C3
+C:\DEV\CRM-EVENTS\EVENTOS-SAAS\EVENT-SAAS-FRONTEND\SRC\APP
+|   app.component.ts
+|   app.routes.ts
+|   
++---layout
+|   \---sidebar
+|           admin-layout.component.html
+|           admin-layout.component.ts
+|           sidebar.css
+|           sidebar.html
+|           sidebar.ts
+|           
++---models
+|       client.model.ts
+|       event.model.ts
+|       inventory-charge.model.ts
+|       inventory-movement.model.ts
+|       inventory-operation.model.ts
+|       inventory.model.ts
+|       logistics.model.ts
+|       
++---pages
+|   +---clients
+|   |       client-detail.component.ts
+|   |       client-form.component.ts
+|   |       clients.component.ts
+|   |       
+|   +---contract-signatures
+|   |       contract-signatures.component.html
+|   |       contract-signatures.component.ts
+|   |       
+|   +---contract-signing
+|   |       contract-signing.component.html
+|   |       contract-signing.component.ts
+|   |       
+|   +---contracts
+|   |       contracts-list.component.html
+|   |       contracts-list.component.ts
+|   |       
+|   +---dashboard-component
+|   |       dashboard.component.html
+|   |       dashboard.component.ts
+|   |       
+|   +---events
+|   |   |   event-calendar.component.ts
+|   |   |   event-inventory-movements.component.ts
+|   |   |   events.component.ts
+|   |   |   inventory-movement.model.ts
+|   |   |   
+|   |   \---event-detail
+|   |       |   event-detail.component.css
+|   |       |   event-detail.component.html
+|   |       |   event-detail.component.ts
+|   |       |   
+|   |       +---even-form
+|   |       |       event-form.component.css
+|   |       |       event-form.component.html
+|   |       |       event-form.component.ts
+|   |       |       
+|   |       \---event-inventory-reservations
+|   |               event-inventory-reservations.component.css
+|   |               event-inventory-reservations.component.html
+|   |               event-inventory-reservations.component.ts
+|   |               
+|   +---forbidden-component
+|   |       forbidden.component.html
+|   |       forbidden.component.ts
+|   |       
+|   +---inventory
+|   |   |   inventory-categories.component.ts
+|   |   |   inventory-form.component.ts
+|   |   |   inventory.component.ts
+|   |   |   
+|   |   +---charges
+|   |   +---inventory-capacity
+|   |   |       inventory-capacity.component.html
+|   |   |       inventory-capacity.component.ts
+|   |   |       
+|   |   +---inventory-charges
+|   |   |       inventory-charges.component.html
+|   |   |       inventory-charges.component.ts
+|   |   |       
+|   |   +---inventory-incidents
+|   |   |       inventory-incidents.component.css
+|   |   |       inventory-incidents.component.html
+|   |   |       inventory-incidents.component.ts
+|   |   |       
+|   |   +---inventory-movement-manager
+|   |   |       inventory-movement-manager.component.css
+|   |   |       inventory-movement-manager.component.html
+|   |   |       inventory-movement-manager.component.ts
+|   |   |       
+|   |   +---inventory-operations
+|   |   |       inventory-operations.component.css
+|   |   |       inventory-operations.component.html
+|   |   |       inventory-operations.component.ts
+|   |   |       
+|   |   +---inventory-reports
+|   |   |       inventory-reports.component.html
+|   |   |       inventory-reports.component.ts
+|   |   |       
+|   |   \---services
+|   |           inventory-reconciliation.service.ts
+|   |           inventory-reports.service.ts
+|   |           
+|   +---inventory-capacity-alerts
+|   |       inventory-capacity-alerts.component.html
+|   |       inventory-capacity-alerts.component.ts
+|   |       
+|   +---inventory-replenishments
+|   |       inventory-replenishments.component.html
+|   |       inventory-replenishments.component.ts
+|   |       
+|   +---login-component
+|   |       login.component.html
+|   |       login.component.ts
+|   |       
+|   +---logistics
+|   |   +---logistics-create.component
+|   |   |       logistics-create.component.html
+|   |   |       logistics-create.component.ts
+|   |   |       
+|   |   +---logistics-detail.component
+|   |   |       logistics-detail.component.html
+|   |   |       logistics-detail.component.ts
+|   |   |       
+|   |   \---logistics-list.component
+|   |           logistics-list.component.html
+|   |           logistics-list.component.ts
+|   |           
+|   +---members-component
+|   |       members.component.html
+|   |       members.component.ts
+|   |       
+|   +---quotes
+|   |   +---quote-detail
+|   |   |       quote-detail.css
+|   |   |       quote-detail.html
+|   |   |       quote-detail.ts
+|   |   |       
+|   |   +---quote-form
+|   |   |       quote-form.css
+|   |   |       quote-form.html
+|   |   |       quote-form.ts
+|   |   |       
+|   |   \---quote-list
+|   |           quote-list.css
+|   |           quote-list.html
+|   |           quote-list.ts
+|   |           
+|   +---registrer-component
+|   |       register.component.html
+|   |       register.component.ts
+|   |       
+|   \---tenants-component
+|           tenants.component.html
+|           tenants.component.ts
+|           
+\---services
+        auth.guard.ts
+        auth.interceptor.ts
+        auth.service.ts
+        clients.service.ts
+        contract-signature-admin.service.ts
+        contract-signing.service.ts
+        events.service.ts
+        inventory-capacity.service.ts
+        inventory-charges.service.ts
+        inventory-incidents.service.ts
+        inventory-movements.service.ts
+        inventory-operations.service.ts
+        inventory-replenishments.service.ts
+        inventory-reservations.service.ts
+        inventory.service.ts
+        logistics.service.ts
+        quotes.service.ts
+        quotes.ts
+        

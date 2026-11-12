@@ -1,0 +1,70 @@
+<section class="panel">
+
+      <a routerLink="/clients">← Volver a clientes</a>
+
+      @if (loading()) {
+        <p>Cargando cliente...</p>
+      }
+
+      @if (error()) {
+        <p role="alert" class="error">{{ error() }}</p>
+      }
+
+      @if (client(); as c) {
+        <h1>
+          {{ c.client_type === 'business' && c.business_name
+            ? c.business_name
+            : c.first_name + ' ' + (c.last_name ?? '') }}
+        </h1>
+
+        <p>Estado: {{ c.status }}</p>
+
+        <h2>Información general</h2>
+
+        <dl>
+          <dt>Tipo</dt>
+          <dd>{{ c.client_type }}</dd>
+
+          <dt>Nombre de contacto</dt>
+          <dd>{{ c.first_name }} {{ c.last_name }}</dd>
+
+          <dt>Correo</dt>
+          <dd>{{ c.email || 'Sin registrar' }}</dd>
+
+          <dt>Teléfono</dt>
+          <dd>{{ c.phone || 'Sin registrar' }}</dd>
+
+          <dt>WhatsApp</dt>
+          <dd>{{ c.whatsapp || 'Sin registrar' }}</dd>
+
+          <dt>Dirección</dt>
+          <dd>{{ c.address || 'Sin registrar' }}</dd>
+
+          <dt>Ciudad</dt>
+          <dd>{{ c.city || 'Sin registrar' }}</dd>
+
+          <dt>Estado / Provincia</dt>
+          <dd>{{ c.state || 'Sin registrar' }}</dd>
+
+          <dt>Observaciones</dt>
+          <dd>{{ c.notes || 'Sin observaciones' }}</dd>
+        </dl>
+
+        @if (auth.hasPermission('clients.update')) {
+          <div class="form-actions">
+            <a [routerLink]="['/clients', c.id, 'edit']">
+              Editar cliente
+            </a>
+
+            @if (c.status === 'active') {
+              <button
+                type="button"
+                [disabled]="busy()"
+                (click)="deactivate()">
+                Desactivar cliente
+              </button>
+            }
+          </div>
+        }
+      }
+    </section>
