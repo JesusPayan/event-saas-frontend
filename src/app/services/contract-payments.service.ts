@@ -1,4 +1,3 @@
-
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -123,6 +122,12 @@ export class ContractPaymentsService {
     );
   }
 
+  receipt(contractId: number, paymentId: number): Observable<Blob> {
+    return this.http.get(`${this.url(contractId)}/${paymentId}/receipt`, {
+      responseType: 'blob'
+    });
+  }
+
   audit(
     contractId: number,
     paymentId: number
@@ -132,3 +137,6 @@ export class ContractPaymentsService {
     );
   }
 }
+
+
+
