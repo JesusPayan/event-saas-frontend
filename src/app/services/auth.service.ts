@@ -123,14 +123,14 @@ chooseTenant(id: number): Observable<TenantRef> {
     this.tenant.set(null); this.permissions.set([]);
     void this.router.navigateByUrl('/login');
   }
-  debugAuth(): void {
+ debugAuth(): void {
   console.table({
     authenticated: this.authenticated(),
     tenantId: this.tenantId(),
     tenantLoaded: this.tenant() !== null,
-    inventoryRead: this.hasPermission('inventory.read'),
-    inventoryCreate: this.hasPermission('inventory.create'),
-    inventoryUpdate: this.hasPermission('inventory.update')
+    contractsRead: this.hasPermission('contracts.read'),
+    contractsUpdate: this.hasPermission('contracts.update'),
+    inventoryRead: this.hasPermission('inventory.read')
   });
 
   console.log('Permisos cargados:', this.permissions());

@@ -31,7 +31,7 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
 
   @Component({
     standalone: true,
-    imports: [RouterLink, FormsModule, PageHeaderComponent, StatCardComponent, EmptyStateComponent, DataTableComponent, PaginationComponent],
+    imports: [RouterLink, FormsModule, PageHeaderComponent, StatCardComponent, DataTableComponent, PaginationComponent],
     templateUrl: './clients.component.html'
   })
   export class ClientsComponent implements OnInit, OnDestroy {

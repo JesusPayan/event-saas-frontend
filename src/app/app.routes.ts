@@ -300,7 +300,14 @@ export const routes: Routes = [
         import(
           './pages/contract-signatures/contract-signatures.component'
         ).then(m => m.ContractSignaturesComponent)
-    }
+    },
+    {
+  path: ':id/payments',
+  loadComponent: () =>
+    import('./pages/contract-payments/contract-payments.component')
+      .then(m => m.ContractPaymentsComponent),
+  canActivate: [permissionGuard('contracts.read')]
+}
   ]
 }
 
