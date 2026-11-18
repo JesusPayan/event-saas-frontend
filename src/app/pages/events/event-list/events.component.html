@@ -1,317 +1,210 @@
-<!-- <main class="events-container">
-      <header>
-        <h1>Gestión de eventos</h1>
-        <p>Administra los eventos de tu empresa.</p>
-
-        <a routerLink="/events/new" class="btn-primary">
-          + Nuevo evento
-        </a>
-        <a routerLink="/events/calendar">
-            Ver calendario
-        </a>
-      </header>
-
-      @if (loading()) {
-        <p>Cargando eventos...</p>
-      }
-
-      @if (error()) {
-        <p class="error" role="alert">{{ error() }}</p>
-      }
-
-      @if (!loading() && !error()) {
-        <table>
-          <thead>
-            <tr>
-              <th>Evento</th>
-              <th>Tipo</th>
-              <th>Fecha</th>
-              <th>Ubicación</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (event of events(); track event.id) {
-              <tr>
-                <td>
-                  <a [routerLink]="['/events', event.id]">
-                    {{ event.name }}
-                  </a>
-                </td>
-                <td>{{ event.event_type }}</td>
-                <td>{{ event.starts_at | date:'dd/MM/yyyy HH:mm' }}</td>
-                <td>{{ event.location || 'Sin ubicación' }}</td>
-                <td>{{ event.status }}</td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="5">No hay eventos registrados.</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-
-        <p>Total de eventos: {{ total() }}</p>
-      }
-    </main> -->
-
 
 <section class="mx-auto w-full max-w-7xl space-y-6">
 
   <!-- ENCABEZADO -->
-  <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  <app-page-header
+    title="Gestión de eventos"
+    description="Administra los eventos de tu empresa."
+  >
+    <a
+      routerLink="/events/calendar"
+      class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+    >
+      Ver calendario
+    </a>
 
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight text-slate-900">
-        Gestión de eventos
-      </h1>
-
-      <p class="mt-1 text-sm text-slate-500">
-        Administra los eventos de tu empresa.
-      </p>
-    </div>
-
-    <div class="flex flex-wrap items-center gap-2">
-
-      <a
-        routerLink="/events/calendar"
-        class="inline-flex items-center justify-center rounded-lg
-               border border-slate-200 bg-white px-4 py-2.5
-               text-sm font-medium text-slate-700
-               hover:bg-slate-50">
-        Ver calendario
-      </a>
-
-      <a
-        routerLink="/events/new"
-        class="inline-flex items-center justify-center
+    @if (auth.hasPermission('events.create')) {
+      <a routerLink="/events/new" class="inline-flex items-center justify-center
               rounded-lg !bg-blue-600 px-4 py-2.5
               text-sm font-semibold !text-white
               hover:!bg-blue-700">
         + Nuevo evento
       </a>
+    }
+  </app-page-header>
 
+  <!-- INDICADORES -->
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+    <app-stat-card
+      title="Total de eventos"
+      [value]="total()"
+      description="Total reportado por el servidor"
+      variant="primary"
+    />
+
+    <app-stat-card
+      title="Confirmados"
+      [value]="confirmedCount()"
+      description="En los registros cargados"
+      variant="success"
+    />
+
+    <app-stat-card
+      title="En progreso"
+      [value]="inProgressCount()"
+      description="En los registros cargados"
+      variant="primary"
+    />
+
+    <app-stat-card
+      title="Finalizados"
+      [value]="completedCount()"
+      description="En los registros cargados"
+    />
+  </div>
+
+  <!-- TABLA -->
+  <app-data-table
+    [loading]="loading()"
+    [error]="error()"
+    [empty]="filteredTotal() === 0"
+    loadingMessage="Cargando eventos..."
+    emptyTitle="No se encontraron eventos"
+    emptyDescription="Prueba con otros criterios de búsqueda."
+  >
+
+    <!-- FILTROS -->
+    <div table-toolbar class="flex flex-col gap-3 md:flex-row">
+
+      <input
+        type="search"
+        aria-label="Buscar eventos"
+        [ngModel]="search()"
+        (ngModelChange)="onSearchChange($event)"
+        placeholder="Buscar por evento, tipo o ubicación..."
+        class="w-full flex-1 rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+      />
+
+      <select
+        aria-label="Filtrar eventos por estado"
+        [ngModel]="statusFilter()"
+        (ngModelChange)="onStatusChange($event)"
+        class="rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900"
+      >
+        <option value="all">Todos los estados</option>
+        <option value="draft">Borrador</option>
+        <option value="quoted">Cotizado</option>
+        <option value="confirmed">Confirmado</option>
+        <option value="in_progress">En progreso</option>
+        <option value="completed">Completado</option>
+        <option value="cancelled">Cancelado</option>
+      </select>
+
+      <button
+        type="button"
+        (click)="clearFilters()"
+        [disabled]="!hasActiveFilters()"
+        class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+      >
+        Limpiar
+      </button>
+
+      <button
+        type="button"
+        (click)="load()"
+        [disabled]="loading()"
+        class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+      >
+        Actualizar
+      </button>
     </div>
-  </header>
 
-  <!-- ESTADOS DE CARGA -->
-  @if (loading()) {
-    <div
-      role="status"
-      class="rounded-xl border border-slate-200 bg-white p-6
-             text-sm text-slate-500">
-      Cargando eventos...
-    </div>
-  }
+    <!-- CONTENIDO -->
+    <table
+      table-content
+      class="w-full min-w-[850px] text-left text-sm text-gray-500"
+    >
+      <thead class="bg-gray-50 text-xs uppercase text-gray-700">
+        <tr>
+          <th scope="col" class="px-6 py-4">Evento</th>
+          <th scope="col" class="px-6 py-4">Tipo</th>
+          <th scope="col" class="px-6 py-4">Fecha</th>
+          <th scope="col" class="px-6 py-4">Ubicación</th>
+          <th scope="col" class="px-6 py-4">Estado</th>
+          <th scope="col" class="px-6 py-4 text-right">Acciones</th>
+        </tr>
+      </thead>
 
-  @if (error()) {
-    <div
-      role="alert"
-      class="rounded-xl border border-red-200 bg-red-50
-             p-4 text-sm text-red-700">
-      {{ error() }}
-    </div>
-  }
+      <tbody>
+        @for (event of paginatedEvents(); track event.id) {
+          <tr class="border-b border-gray-200 bg-white hover:bg-gray-50">
 
-  @if (!loading() && !error()) {
-
-    <!-- RESUMEN -->
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-
-      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p class="text-xs font-medium text-slate-500">
-          Total de eventos
-        </p>
-
-        <p class="mt-2 text-3xl font-bold text-slate-900">
-          {{ total() }}
-        </p>
-      </div>
-
-      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p class="text-xs font-medium text-slate-500">
-          Borradores visibles
-        </p>
-
-        <p class="mt-2 text-3xl font-bold text-blue-600">
-          {{ draftCount() }}
-        </p>
-      </div>
-
-      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p class="text-xs font-medium text-slate-500">
-          Cancelados visibles
-        </p>
-
-        <p class="mt-2 text-3xl font-bold text-red-600">
-          {{ cancelledCount() }}
-        </p>
-      </div>
-
-    </div>
-
-    <!-- LISTADO -->
-    <div class="overflow-hidden rounded-xl border border-slate-200
-                bg-white shadow-sm">
-
-      <div class="flex items-center justify-between
-                  border-b border-slate-200 px-5 py-4">
-
-        <h2 class="text-base font-semibold text-slate-900">
-          Eventos registrados
-        </h2>
-
-        <span class="text-xs text-slate-500">
-          {{ events().length }} visibles
-        </span>
-
-      </div>
-
-      <!-- TABLA DESKTOP -->
-      <div class="hidden overflow-x-auto md:block">
-
-        <table class="w-full min-w-[760px] text-left text-sm">
-
-          <thead class="bg-slate-50 text-xs uppercase text-slate-500">
-            <tr>
-              <th scope="col" class="px-5 py-3">Evento</th>
-              <th scope="col" class="px-5 py-3">Tipo</th>
-              <th scope="col" class="px-5 py-3">Fecha</th>
-              <th scope="col" class="px-5 py-3">Ubicación</th>
-              <th scope="col" class="px-5 py-3">Estado</th>
-              <th scope="col" class="px-5 py-3">Acciones</th>
-            </tr>
-          </thead>
-
-          <tbody class="divide-y divide-slate-100">
-
-            @for (event of events(); track event.id) {
-              <tr class="hover:bg-slate-50">
-
-                <td class="px-5 py-4 font-medium">
-                  <a
-                    [routerLink]="['/events', event.id]"
-                    class="text-blue-600 hover:underline">
-                    {{ event.name }}
-                  </a>
-                </td>
-
-                <td class="px-5 py-4 text-slate-600">
-                  {{ event.event_type }}
-                </td>
-
-                <td class="whitespace-nowrap px-5 py-4 text-slate-600">
-                  {{ event.starts_at | date:'dd/MM/yyyy HH:mm' }}
-                </td>
-
-                <td class="px-5 py-4 text-slate-600">
-                  {{ event.location || 'Sin ubicación' }}
-                </td>
-
-                <td class="px-5 py-4">
-                  <span
-                    class="inline-flex rounded-full px-2.5 py-1
-                           text-xs font-semibold"
-                    [class.bg-slate-100]="event.status === 'draft'"
-                    [class.text-slate-700]="event.status === 'draft'"
-                    [class.bg-blue-100]="event.status === 'confirmed'"
-                    [class.text-blue-700]="event.status === 'confirmed'"
-                    [class.bg-red-100]="event.status === 'cancelled'"
-                    [class.text-red-700]="event.status === 'cancelled'"
-                    [class.bg-emerald-100]="event.status === 'completed'"
-                    [class.text-emerald-700]="event.status === 'completed'">
-                    {{ statusLabel(event.status) }}
-                  </span>
-                </td>
-
-                <td class="px-5 py-4">
-                  <a
-                    [routerLink]="['/events', event.id]"
-                    class="font-medium text-blue-600 hover:underline">
-                    Ver detalle
-                  </a>
-                </td>
-
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="6" class="px-5 py-10 text-center text-slate-500">
-                  No hay eventos registrados.
-                </td>
-              </tr>
-            }
-
-          </tbody>
-        </table>
-      </div>
-
-      <!-- TARJETAS MÓVILES -->
-      <div class="divide-y divide-slate-100 md:hidden">
-
-        @for (event of events(); track event.id) {
-
-          <article class="space-y-3 p-4">
-
-            <div class="flex items-start justify-between gap-3">
-
+            <td class="px-6 py-4 font-medium text-gray-900">
               <a
                 [routerLink]="['/events', event.id]"
-                class="min-w-0 break-words font-semibold
-                       text-blue-600 hover:underline">
+                class="text-blue-700 hover:underline"
+              >
                 {{ event.name }}
               </a>
+            </td>
 
+            <td class="px-6 py-4">
+              {{ eventTypeLabel(event.event_type) || '-' }}
+            </td>
+
+            <td class="whitespace-nowrap px-6 py-4">
+              {{ event.starts_at | date:'dd/MM/yyyy HH:mm' }}
+            </td>
+
+            <td class="px-6 py-4">
+              {{ event.location || 'Sin ubicación' }}
+            </td>
+
+            <td class="px-6 py-4">
               <span
-                class="shrink-0 rounded-full bg-slate-100
-                       px-2 py-1 text-xs font-medium text-slate-700">
+                class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
+                [class]="statusClass(event.status)"
+              >
                 {{ statusLabel(event.status) }}
               </span>
+            </td>
 
-            </div>
+            <td class="whitespace-nowrap px-6 py-4 text-right">
+              <div class="flex justify-end gap-4">
 
-            <dl class="grid grid-cols-1 gap-2 text-sm">
+                <a
+                  [routerLink]="['/events', event.id]"
+                  class="font-medium text-blue-700 hover:underline"
+                >
+                  Ver
+                </a>
 
-              <div class="flex justify-between gap-3">
-                <dt class="text-slate-500">Tipo</dt>
-                <dd class="text-right text-slate-700">
-                  {{ event.event_type }}
-                </dd>
+                @if (auth.hasPermission('events.update')) {
+                  <a
+                    [routerLink]="['/events', event.id, 'edit']"
+                    class="font-medium text-gray-700 hover:text-blue-700 hover:underline"
+                  >
+                    Editar
+                  </a>
+                }
               </div>
+            </td>
 
-              <div class="flex justify-between gap-3">
-                <dt class="text-slate-500">Fecha</dt>
-                <dd class="text-right text-slate-700">
-                  {{ event.starts_at | date:'dd/MM/yyyy HH:mm' }}
-                </dd>
-              </div>
-
-              <div class="flex justify-between gap-3">
-                <dt class="text-slate-500">Ubicación</dt>
-                <dd class="break-words text-right text-slate-700">
-                  {{ event.location || 'Sin ubicación' }}
-                </dd>
-              </div>
-
-            </dl>
-
-            <a
-              [routerLink]="['/events', event.id]"
-              class="inline-flex text-sm font-semibold text-blue-600">
-              Ver detalles →
-            </a>
-
-          </article>
-
-        } @empty {
-          <p class="p-6 text-center text-sm text-slate-500">
-            No hay eventos registrados.
-          </p>
+          </tr>
         }
+      </tbody>
+    </table>
 
-      </div>
-
+    <!-- PAGINACIÓN -->
+    <div table-footer>
+      <app-pagination
+        [page]="page()"
+        [pageSize]="pageSize"
+        [total]="filteredTotal()"
+        [loading]="loading()"
+        (pageChange)="onPageChange($event)"
+      />
     </div>
 
+  </app-data-table>
+
+  @if (!loading() && !error() && total() > events().length) {
+    <p class="text-xs text-amber-700">
+      El servidor reporta {{ total() }} eventos, pero se han cargado
+      {{ events().length }}. La búsqueda, los filtros y la paginación
+      de esta vista solo consideran los registros cargados.
+    </p>
   }
 
 </section>

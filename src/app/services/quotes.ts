@@ -55,7 +55,46 @@ export interface QuotesPage {
   per_page: number;
   pages: number;
 }
+export interface CreateQuoteItem {
+  inventory_item_id?: number | null;
+  item_type: 'inventory' | 'service' | 'custom';
+  description: string;
+  quantity: string;
+  unit_price: string;
+  discount_amount: string;
+  tax_rate: string;
+}
 
+export interface CreateQuotePayload {
+  client_id: number;
+  event_id: number;
+  valid_until: string | null;
+  notes: string | null;
+  terms_conditions: string | null;
+  items: CreateQuoteItem[];
+}
+
+
+interface ClientOption {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email?: string | null;
+}
+
+interface EventOption {
+  id: number;
+  name: string;
+  client_id: number;
+  starts_at: string;
+}
+
+export interface GeneratedContract {
+  id: number;
+  quote_id: number;
+  contract_number: string;
+  status: string;
+}
 @Injectable({
   providedIn: 'root'
 })
@@ -85,12 +124,12 @@ export class QuotesService {
     );
   }
 
-  createQuote(payload: unknown): Observable<Quote> {
-    return this.http.post<Quote>(
-      this.apiUrl,
-      payload
-    );
-  }
+  createQuote(payload: CreateQuotePayload): Observable<Quote> {
+  return this.http.post<Quote>(
+    this.apiUrl,
+    payload
+  );
+}
 
   changeStatus(
     id: number,
@@ -105,4 +144,6 @@ export class QuotesService {
       }
     );
   }
+  
+  
 }

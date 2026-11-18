@@ -6,12 +6,13 @@ import { Observable } from 'rxjs';
 import {
   Quote,
   QuoteStatus,
-  QuotesPage
+  QuotesPage,GeneratedContract
 } from './quotes';
 
 @Injectable({
   providedIn: 'root'
 })
+
 export class QuotesService {
 
   private readonly http = inject(HttpClient);
@@ -66,4 +67,24 @@ export class QuotesService {
     { responseType: 'blob' }
   );
 }
+
+
+
+
+
+  private readonly baseUrl = '/api/v1/contracts';
+
+  createFromQuote(quoteId: number) {
+    return this.http.post<GeneratedContract>(
+      this.baseUrl,
+      { quote_id: quoteId }
+    );
+  }
+
+  getById(contractId: number) {
+    return this.http.get<GeneratedContract>(
+      `${this.baseUrl}/${contractId}`
+    );
+  }
 }
+
