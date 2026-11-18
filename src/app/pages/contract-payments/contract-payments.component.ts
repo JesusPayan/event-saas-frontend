@@ -35,6 +35,7 @@ export class ContractPaymentsComponent implements OnInit {
   readonly busy = signal(false);
   readonly refreshingFinancial = signal(false);
   readonly auditLoading = signal(false);
+  readonly downloadingReceiptId = signal<number | null>(null);
   readonly error = signal('');
   readonly message = signal('');
   readonly showForm = signal(false);
@@ -80,6 +81,32 @@ export class ContractPaymentsComponent implements OnInit {
     if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(paid)) return 0;
     return Math.min(100, Math.max(0, Math.round(paid / total * 100)));
   });
+
+  downloadReceipt(payment: ContractPayment): void {
+    if (!this.canReadPayments() || payment.status !== 'confirmed' ||
+        this.downloadingReceiptId() !== null) return;
+    this.downloadingReceiptId.set(payment.id);
+    this.error.set('');
+    this.paymentsApi.receipt(this.contractId, payment.id).pipe(
+      finalize(() => this.downloadingReceiptId.set(null))
+    ).subscribe({
+      next: blob => {
+        if (blob.type && blob.type !== 'application/pdf') {
+          this.error.set('La respuesta no es un comprobante PDF válido.');
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `REC-${String(payment.id).padStart(10, '0')}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      },
+      error: err => this.error.set(this.errorMessage(err))
+    });
+  }
 
   ngOnInit(): void { this.refresh(); }
 
