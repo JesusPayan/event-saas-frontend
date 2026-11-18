@@ -1,5 +1,5 @@
 
-<div class="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
+<div class="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
 
   <div class="flex flex-wrap items-center justify-between gap-4">
     <div>
@@ -61,8 +61,8 @@
             type="button"
             [disabled]="downloadingPdf()"
             (click)="downloadPdf()"
-            class="rounded-lg bg-blue-600 px-5 py-2.5
-                  font-medium text-white hover:bg-blue-700
+            class="rounded-lg !bg-blue-600 px-5 py-2.5
+                  font-medium !text-white hover:!bg-blue-700
                   disabled:opacity-50">
             {{ downloadingPdf() ? 'Generando PDF...' : 'Descargar PDF' }}
           </button>
@@ -80,18 +80,18 @@
 
         <div>
           <p class="text-sm text-gray-500">Cliente</p>
-          <p class="font-medium">Cliente #{{ q.client_id }}</p>
+          <p class="font-medium">{{ clientName() || "Cargando cliente..." }}</p>
         </div>
 
         <div>
           <p class="text-sm text-gray-500">Evento</p>
-          <p class="font-medium">Evento #{{ q.event_id }}</p>
+          <p class="font-medium">{{ eventName() || "Cargando evento..." }}</p>
         </div>
 
         <div>
           <p class="text-sm text-gray-500">Vigencia</p>
           <p class="font-medium">
-            {{ q.valid_until || 'Sin fecha definida' }}
+            {{ q.valid_until ? (q.valid_until | date:'dd/MM/yyyy':'UTC') : 'Sin fecha definida' }}
           </p>
         </div>
 
@@ -132,7 +132,7 @@
                     {{ item.description }}
                   </p>
                   <p class="text-xs text-gray-500">
-                    {{ item.item_type }}
+                    {{ itemTypeLabel(item.item_type) }}
                   </p>
                 </td>
 
@@ -236,6 +236,79 @@
         Estado actual: {{ statusLabel(q.status) }}
       </p>
 
+<!-- GENERACIÓN DE CONTRATO -->
+@if (q.status === 'accepted') {
+
+  <div class="mt-5 rounded-xl border border-blue-200
+              bg-blue-50 p-5">
+
+    <div class="flex flex-col gap-4 sm:flex-row
+                sm:items-center sm:justify-between">
+
+      <div>
+        <h4 class="font-semibold text-slate-900">
+          Cotización lista para contratación
+        </h4>
+
+        <p class="mt-1 text-sm text-slate-600">
+          Revisa los conceptos y condiciones comerciales
+          antes de generar el contrato.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        (click)="openContractReview()"
+        [disabled]="!canGenerateContract() || saving()"
+        class="rounded-lg bg-blue-600 px-5 py-2.5
+               text-sm font-semibold text-white
+               hover:bg-blue-700 disabled:opacity-50">
+        Generar contrato
+      </button>
+
+    </div>
+  </div>
+}
+
+@if (generatedContract(); as contract) {
+
+  <div class="mt-5 rounded-xl border border-emerald-200
+              bg-emerald-50 p-5">
+
+    <h4 class="font-semibold text-emerald-900">
+      Contrato generado correctamente
+    </h4>
+
+    <p class="mt-1 text-sm text-emerald-800">
+      {{ contract.contract_number }}
+    </p>
+
+    <p class="mt-2 text-xs text-emerald-700">
+      Estado inicial: Borrador
+    </p>
+
+    <a
+      routerLink="/contracts"
+      class="mt-4 inline-flex rounded-lg bg-emerald-700
+             px-4 py-2 text-sm font-semibold text-white
+             hover:bg-emerald-800">
+      Ver contratos
+    </a>
+  </div>
+}
+
+@if (q.status === 'converted' && !generatedContract()) {
+  <div class="mt-5 rounded-lg border border-purple-200
+              bg-purple-50 p-4 text-sm text-purple-800">
+    Esta cotización ya fue convertida en contrato.
+    <a routerLink="/contracts"
+       class="ml-1 font-semibold underline">
+      Consultar contratos
+    </a>
+  </div>
+}
+
+
       @if (availableActions().length > 0) {
 
         <div class="mt-5">
@@ -263,7 +336,7 @@
               type="button"
               [disabled]="saving()"
               (click)="changeStatus('sent')"
-              class="rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+              class="rounded-lg !bg-blue-600 px-5 py-2.5 font-medium !text-white hover:!bg-blue-700 disabled:opacity-50">
               Enviar cotización
             </button>
           }
@@ -330,3 +403,199 @@
   }
 
 </div>
+
+@if (reviewingContract() && quote(); as q) {
+
+  <div
+    class="fixed inset-0 z-50 flex items-center
+           justify-center bg-slate-900/60 p-4"
+    role="presentation">
+
+    <section
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="contract-review-title"
+      class="flex max-h-[90vh] w-full max-w-3xl
+             flex-col overflow-hidden rounded-xl
+             bg-white shadow-2xl">
+
+      <!-- ENCABEZADO -->
+      <div class="flex items-center justify-between
+                  border-b border-slate-200 p-5">
+
+        <div>
+          <h2
+            id="contract-review-title"
+            class="text-xl font-bold text-slate-900">
+            Revisar contrato
+          </h2>
+
+          <p class="mt-1 text-sm text-slate-500">
+            Cotización {{ q.quote_number }}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          (click)="closeContractReview()"
+          [disabled]="generatingContract()"
+          aria-label="Cerrar revisión"
+          class="rounded-lg p-2 text-slate-500
+                 hover:bg-slate-100 disabled:opacity-50">
+          ✕
+        </button>
+      </div>
+
+      <!-- CONTENIDO -->
+      <div class="space-y-5 overflow-y-auto p-5">
+
+        <div class="grid gap-4 sm:grid-cols-2">
+
+          <div>
+            <p class="text-xs text-slate-500">Cliente</p>
+            <p class="font-semibold text-slate-900">
+              {{ clientName() || ('Cliente #' + q.client_id) }}
+            </p>
+          </div>
+
+          <div>
+            <p class="text-xs text-slate-500">Evento</p>
+            <p class="font-semibold text-slate-900">
+              {{ eventName() || ('Evento #' + q.event_id) }}
+            </p>
+          </div>
+
+          <div>
+            <p class="text-xs text-slate-500">Cotización</p>
+            <p class="font-semibold text-slate-900">
+              {{ q.quote_number }}
+            </p>
+          </div>
+
+          <div>
+            <p class="text-xs text-slate-500">Estado inicial</p>
+            <p class="font-semibold text-amber-700">
+              Contrato en borrador
+            </p>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto rounded-lg
+                    border border-slate-200">
+
+          <table class="w-full min-w-[550px] text-left text-sm">
+
+            <thead class="bg-slate-50 text-xs uppercase text-slate-600">
+              <tr>
+                <th class="px-4 py-3">Concepto</th>
+                <th class="px-4 py-3 text-right">Cantidad</th>
+                <th class="px-4 py-3 text-right">Total</th>
+              </tr>
+            </thead>
+
+            <tbody class="divide-y divide-slate-100">
+              @for (item of q.items ?? []; track item.id) {
+                <tr>
+                  <td class="px-4 py-3">
+                    {{ item.description }}
+                  </td>
+                  <td class="px-4 py-3 text-right">
+                    {{ item.quantity }}
+                  </td>
+                  <td class="px-4 py-3 text-right">
+                    {{ money(item.total) }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="ml-auto max-w-sm space-y-2 text-sm">
+          <div class="flex justify-between">
+            <span>Subtotal</span>
+            <span>{{ money(q.subtotal) }}</span>
+          </div>
+
+          <div class="flex justify-between">
+            <span>Descuentos</span>
+            <span>-{{ money(q.discount_total) }}</span>
+          </div>
+
+          <div class="flex justify-between">
+            <span>Impuestos</span>
+            <span>{{ money(q.tax_total) }}</span>
+          </div>
+
+          <div class="flex justify-between border-t pt-3
+                      text-lg font-bold">
+            <span>Total</span>
+            <span class="text-blue-700">
+              {{ money(q.total) }}
+            </span>
+          </div>
+        </div>
+
+        @if (q.notes) {
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900">
+              Notas
+            </h3>
+            <p class="mt-1 whitespace-pre-line text-sm text-slate-600">
+              {{ q.notes }}
+            </p>
+          </div>
+        }
+
+        @if (q.terms_conditions) {
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900">
+              Términos y condiciones
+            </h3>
+            <p class="mt-1 whitespace-pre-line text-sm text-slate-600">
+              {{ q.terms_conditions }}
+            </p>
+          </div>
+        }
+
+        <div class="rounded-lg border border-amber-200
+                    bg-amber-50 p-4 text-sm text-amber-800">
+          Al confirmar, se generará un contrato en borrador
+          y la cotización cambiará a estado Convertida.
+          Esta operación no crea automáticamente una firma.
+        </div>
+
+      </div>
+
+      <!-- ACCIONES -->
+      <div class="flex flex-wrap justify-end gap-3
+                  border-t border-slate-200 p-5">
+
+        <button
+          type="button"
+          (click)="closeContractReview()"
+          [disabled]="generatingContract()"
+          class="rounded-lg border border-slate-300
+                 bg-white px-5 py-2.5 text-sm font-medium
+                 text-slate-700 hover:bg-slate-50
+                 disabled:opacity-50">
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          (click)="confirmGenerateContract()"
+          [disabled]="generatingContract()"
+          class="rounded-lg bg-blue-600 px-5 py-2.5
+                 text-sm font-semibold text-white
+                 hover:bg-blue-700 disabled:opacity-50">
+          {{ generatingContract()
+              ? 'Generando contrato...'
+              : 'Confirmar generación' }}
+        </button>
+
+      </div>
+
+    </section>
+  </div>
+}

@@ -1,98 +1,191 @@
 
-<section class="quotes-page">
+<section class="mx-auto w-full max-w-7xl space-y-6">
 
-  <header class="page-header">
-    <div>
-      <h1>Gestión de cotizaciones</h1>
-      <p>Administra las cotizaciones de tu empresa.</p>
-    </div>
+  <!-- ENCABEZADO -->
+  <app-page-header
+    title="Gestión de cotizaciones"
+    description="Administra las cotizaciones de tu empresa."
+  >
+  
+    @if (auth.hasPermission('quotes.create')) {
+      <a routerLink="/quotes/new" class="inline-flex items-center justify-center
+              rounded-lg !bg-blue-600 px-4 py-2.5
+              text-sm font-semibold !text-white
+              hover:!bg-blue-700">
+        + Nueva cotización
+      </a>
+    }
+  </app-page-header>
 
-    <a routerLink="/quotes/new" class="btn-primary">
-      + Nueva cotización
-    </a>
-  </header>
+  <!-- INDICADORES -->
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-  @if (loading()) {
-    <p>Cargando cotizaciones...</p>
-  }
+    <app-stat-card
+      title="Total de cotizaciones"
+      [value]="total()"
+      description="Total reportado por el servidor"
+      variant="primary"
+    />
 
-  @if (error()) {
-    <div class="error-message">
-      {{ error() }}
-      <button type="button" (click)="loadQuotes()">
-        Reintentar
+    <app-stat-card
+      title="Borradores"
+      [value]="draftCount()"
+      description="En la página cargada"
+    />
+
+    <app-stat-card
+      title="Enviadas"
+      [value]="sentCount()"
+      description="En la página cargada"
+      variant="primary"
+    />
+
+    <app-stat-card
+      title="Aprobadas"
+      [value]="approvedCount()"
+      description="En la página cargada"
+      variant="success"
+    />
+
+  </div>
+
+  <!-- TABLA -->
+  <app-data-table
+    [loading]="loading()"
+    [error]="error()"
+    [empty]="filteredQuotes().length === 0"
+    loadingMessage="Cargando cotizaciones..."
+    emptyTitle="No se encontraron cotizaciones"
+    emptyDescription="Prueba con otros criterios de búsqueda."
+  >
+
+    <!-- FILTROS -->
+    <div table-toolbar class="flex flex-col gap-3 md:flex-row">
+
+      <input
+        type="search"
+        aria-label="Buscar cotizaciones"
+        [ngModel]="search()"
+        (ngModelChange)="onSearchChange($event)"
+        placeholder="Buscar por ID de cotización, cliente o evento..."
+        class="w-full flex-1 rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+      />
+
+      <select
+        aria-label="Filtrar cotizaciones por estado"
+        [ngModel]="statusFilter()"
+        (ngModelChange)="onStatusChange($event)"
+        class="rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900"
+      >
+        <option value="all">Todos los estados</option>
+
+        @for (status of statusOptions(); track status) {
+          <option [value]="status">
+            {{ statusLabel(status) }}
+          </option>
+        }
+      </select>
+
+      <button
+        type="button"
+        (click)="clearFilters()"
+        [disabled]="!hasActiveFilters()"
+        class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+      >
+        Limpiar
+      </button>
+
+      <button
+        type="button"
+        (click)="loadQuotes()"
+        [disabled]="loading()"
+        class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+      >
+        Actualizar
       </button>
     </div>
-  }
 
-  @if (!loading() && !error()) {
+    <!-- TABLA DE COTIZACIONES -->
+    <table
+      table-content
+      class="w-full min-w-[850px] text-left text-sm text-gray-500"
+    >
+      <thead class="bg-gray-50 text-xs uppercase text-gray-700">
+        <tr>
+          <th scope="col" class="px-6 py-4">ID</th>
+          <th scope="col" class="px-6 py-4">Cliente</th>
+          <th scope="col" class="px-6 py-4">Evento</th>
+          <th scope="col" class="px-6 py-4">Estado</th>
+          <th scope="col" class="px-6 py-4 text-right">Total</th>
+          <th scope="col" class="px-6 py-4">Fecha</th>
+          <th scope="col" class="px-6 py-4 text-right">Acciones</th>
+        </tr>
+      </thead>
 
-    @if (quotes().length === 0) {
-      <div class="empty-state">
-        <h3>No hay cotizaciones registradas</h3>
-        <p>Crea tu primera cotización para comenzar.</p>
-        <a routerLink="/quotes/new">
-          Crear cotización
-        </a>
-      </div>
-    } @else {
+      <tbody>
+        @for (quote of filteredQuotes(); track quote.id) {
+          <tr class="border-b border-gray-200 bg-white hover:bg-gray-50">
 
-      <table class="quotes-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Cliente</th>
-            <th>Evento</th>
-            <th>Estado</th>
-            <th>Total</th>
-            <th>Fecha</th>
-            <th>Acciones</th>
+            <td class="whitespace-nowrap px-6 py-4 font-medium text-gray-900">
+              #{{ quote.id }}
+            </td>
+
+            <td class="px-6 py-4">
+              {{ quote.client_id ?? '—' }}
+            </td>
+
+            <td class="px-6 py-4">
+              {{ quote.event_id ?? '—' }}
+            </td>
+
+            <td class="px-6 py-4">
+              <span
+                class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
+                [class]="statusClass(quote.status)"
+              >
+                {{ statusLabel(quote.status) }}
+              </span>
+            </td>
+
+            <td class="whitespace-nowrap px-6 py-4 text-right font-medium text-gray-900">
+              {{ (quote.total ?? 0) | currency:'MXN' }}
+            </td>
+
+            <td class="whitespace-nowrap px-6 py-4">
+              {{ quote.created_at | date:'dd/MM/yyyy' }}
+            </td>
+
+            <td class="whitespace-nowrap px-6 py-4 text-right">
+              <a
+                [routerLink]="['/quotes', quote.id]"
+                class="font-medium text-blue-700 hover:underline"
+              >
+                Ver detalle
+              </a>
+            </td>
           </tr>
-        </thead>
+        }
+      </tbody>
+    </table>
 
-        <tbody>
-          @for (quote of quotes(); track quote.id) {
-            <tr>
-              <td>#{{ quote.id }}</td>
-              <td>{{ quote.client_id ?? '—' }}</td>
-              <td>{{ quote.event_id ?? '—' }}</td>
-              <td>{{ quote.status ?? '—' }}</td>
-              <td>
-                {{ quote.total ?? 0 | currency:'MXN' }}
-              </td>
-              <td>
-                {{ quote.created_at | date:'dd/MM/yyyy' }}
-              </td>
-              <td>
-                <a [routerLink]="['/quotes', quote.id]">
-                  Ver detalle
-                </a>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+    <!-- PAGINACIÓN DEL SERVIDOR -->
+    <div table-footer>
+      <app-pagination
+        [page]="page()"
+        [pageSize]="perPage"
+        [total]="total()"
+        [loading]="loading()"
+        (pageChange)="onPageChange($event)"
+      />
+    </div>
 
-      <div class="pagination">
-        <button
-          type="button"
-          (click)="previousPage()"
-          [disabled]="page() === 1">
-          Anterior
-        </button>
+  </app-data-table>
 
-        <span>
-          Página {{ page() }} · Total: {{ total() }}
-        </span>
-
-        <button
-          type="button"
-          (click)="nextPage()"
-          [disabled]="page() * perPage >= total()">
-          Siguiente
-        </button>
-      </div>
-    }
+  @if (!loading() && !error() && hasActiveFilters()) {
+    <p class="text-xs text-amber-700">
+      Los filtros se aplican únicamente a las cotizaciones de la página actual.
+      El total y la paginación corresponden a los datos reportados por el servidor.
+    </p>
   }
 
 </section>
