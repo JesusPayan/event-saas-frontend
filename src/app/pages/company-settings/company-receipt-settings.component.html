@@ -1,0 +1,31 @@
+<section class="mx-auto max-w-4xl space-y-6 text-slate-800">
+  <header><h1 class="text-2xl font-bold">Configuración de comprobantes</h1><p class="text-sm text-slate-500">Personaliza la información de tu empresa. Los comprobantes emitidos permanecerán intactos.</p></header>
+  @if (loading()) { <p role="status">Cargando configuración…</p> }
+  @if (error()) { <div role="alert" class="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{{error()}}</div> }
+  @if (success()) { <div role="status" class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-700">{{success()}}</div> }
+  @if (!loading()) {
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="mb-4 text-lg font-semibold">Identidad de la empresa</h2>
+      <div class="mb-6 flex flex-wrap items-center gap-5">
+        @if (logoUrl()) { <img [src]="logoUrl()!" alt="Logotipo de la empresa" class="h-24 w-40 rounded-lg border object-contain p-2" /> }
+        @else { <div class="flex h-24 w-40 items-center justify-center rounded-lg border border-dashed text-sm text-slate-500">Sin logotipo</div> }
+        @if (canEdit) {
+          <label class="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Subir logotipo
+            <input type="file" class="sr-only" accept="image/png,image/jpeg" (change)="upload($event)" [disabled]="busy()" />
+          </label>
+          @if (model.has_logo) { <button type="button" (click)="removeLogo()" [disabled]="busy()" class="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-700">Eliminar</button> }
+        }
+        <p class="text-xs text-slate-500">PNG o JPG · Máximo 1 MB</p>
+      </div>
+      <form (ngSubmit)="save()" class="grid gap-4 md:grid-cols-2">
+        <label class="block text-sm font-medium">Nombre comercial<input name="name" [(ngModel)]="model.commercial_name" [disabled]="!canEdit || busy()" maxlength="180" class="mt-1 block w-full rounded-lg border border-slate-300 p-2" /></label>
+        <label class="block text-sm font-medium">RFC (opcional)<input name="taxId" [(ngModel)]="model.tax_id" [disabled]="!canEdit || busy()" maxlength="20" class="mt-1 block w-full rounded-lg border border-slate-300 p-2" /></label>
+        <label class="block text-sm font-medium">Correo comercial<input name="email" type="email" [(ngModel)]="model.contact_email" [disabled]="!canEdit || busy()" maxlength="254" class="mt-1 block w-full rounded-lg border border-slate-300 p-2" /></label>
+        <label class="block text-sm font-medium">Teléfono<input name="phone" [(ngModel)]="model.phone" [disabled]="!canEdit || busy()" maxlength="40" class="mt-1 block w-full rounded-lg border border-slate-300 p-2" /></label>
+        <label class="block text-sm font-medium md:col-span-2">Domicilio comercial<textarea name="address" [(ngModel)]="model.address" [disabled]="!canEdit || busy()" maxlength="500" rows="3" class="mt-1 block w-full rounded-lg border border-slate-300 p-2"></textarea></label>
+        <label class="block text-sm font-medium md:col-span-2">Zona horaria<select name="timezone" [(ngModel)]="model.timezone" [disabled]="!canEdit || busy()" class="mt-1 block w-full rounded-lg border border-slate-300 p-2">@for (zone of zones; track zone) { <option [value]="zone">{{zone}}</option> }</select></label>
+        @if (canEdit) { <div class="md:col-span-2 flex justify-end"><button type="submit" [disabled]="busy()" class="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white disabled:opacity-50">{{busy() ? 'Guardando…' : 'Guardar cambios'}}</button></div> }
+      </form>
+    </div>
+  }
+</section>
