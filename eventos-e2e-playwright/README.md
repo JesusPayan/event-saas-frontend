@@ -1,29 +1,39 @@
-# Eventos SaaS E2E — Playwright + TypeScript
+# E2E-03 — Integración inicial verificada contra código fuente
 
-## Prerrequisitos
-- Backend Flask en `127.0.0.1:5000`, Angular en `127.0.0.1:4200` con proxy `/api`.
-- **Base de datos separada `crm_events_e2e`**. Nunca ejecutar contra `crm_events_dev` ni producción: las pruebas registran empresas y escriben configuraciones.
-- Ejecutar `flask db upgrade` apuntando a `crm_events_e2e` antes de comenzar. Confirmar la URI de conexión en el entorno del backend.
+Se inspeccionaron `backend-e2e03.zip`, `frontend-e2e03.zip` y `e2e03-complementos.zip`.
 
-## Instalación (CMD, carpeta frontend)
-Copiar `e2e/`, `playwright.config.ts`, `.env.example` y `.gitignore` (fusionar si existe) a la raíz del frontend. Incorporar scripts y devDependencies del `package.json` del paquete **sin reemplazar** el `package.json` existente.
+## Instalación
 
-```cmd
-npm install -D @playwright/test dotenv
-npx playwright install chromium
-copy .env.example .env
-npm run e2e:smoke
+Copiar `e2e/specs/commercial-signing.api.spec.ts` a:
+`event-saas-frontend/eventos-e2e-playwright/e2e/specs/`
+
+No sustituir fixtures, configuración ni pruebas existentes.
+
+## Ejecución en CMD
+
+Verificar primero que Flask en puerto 5000 use una base **descartable y aislada** como `crm_events_test`, con migraciones actualizadas. Angular puede seguir en 4200.
+
+```
+cd C:\DEV\crm-events\eventos-saas\event-saas-frontend
+set E2E_ALLOW_WRITES=yes
+npm run e2e -- --grep E2E-03
 npm run e2e
-npx playwright show-report
 ```
 
-Scripts a fusionar: `"e2e":"playwright test"`, `"e2e:smoke":"playwright test --grep @smoke"`, `"e2e:report":"playwright show-report"`.
+## Alcance real
 
-## Seguridad de los datos
-Cada test que utiliza `tenantA` o `tenantB` registra empresas y usuarios aleatorios en la base aislada. No hay limpieza destructiva: recrear la base E2E mediante proceso controlado entre ejecuciones, nunca truncar tablas de un entorno compartido.
+Cuatro pruebas de API: recorrido hasta documento contractual final, contrato duplicado, pago antes de activación, aislamiento entre empresas y token público inválido.
 
-## Cobertura y límites
-Implementado: AUTH-01/02/03/04/05/10, configuración PDF-01/02/03/04/05 y smoke de rutas UI. PDF-09/10/11/15 queda marcado como `skip` hasta crear un contrato y pago confirmado dentro del mismo tenant de prueba. La matriz completa de CRM, eventos, inventario, cotizaciones, contratos, logística y pagos requiere agregar factories API basadas en los contratos reales de esos endpoints y selectores de las pantallas; no se simula que esos flujos ya estén automatizados.
+**No automatiza aún OTP, firmas de ambas partes, activación, pagos confirmados ni SHA-256 de recibos.**
 
-## GitHub CI
-El workflow incluido es **manual y opt-in**: necesita una base E2E MySQL, secretos de configuración y arranque de ambos servidores. No habilitarlo como required check hasta integrar esos servicios. Se recomienda primero ejecutarlo localmente y luego añadir un job E2E a los PR contra `development`.
+La implementación de `app.services.email_service` envía mediante SMTP real; `signature_delivery_service` envía por ese servicio y no expone el token en la respuesta. No es seguro ni correcto leer hashes de tokens en MySQL o desactivar verificaciones para las pruebas.
+
+Siguiente paso: integrar un transporte de correo E2E local (por ejemplo Mailpit) mediante configuración explícita para entorno test, capturar de allí los enlaces y OTP y verificar la firma de ambas partes. Antes de activar ese flujo, confirmar reglas de firma, credenciales SMTP de prueba y endpoints con una ejecución real.
+
+## Seguridad
+
+No ejecutar con `crm_events_dev` ni producción. El guard `E2E_ALLOW_WRITES=yes` no comprueba la conexión efectiva del servidor: verificarla por separado. Nunca incluir credenciales o tokens en logs y reportes.
+
+## GitHub
+
+Crear rama `feature/E2E-03-commercial-signing`, revisar diff, ejecutar pruebas y build, commit, push, PR, CI y merge protegido a `development`.

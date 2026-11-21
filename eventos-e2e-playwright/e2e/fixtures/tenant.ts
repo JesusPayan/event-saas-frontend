@@ -28,10 +28,16 @@ async function registerTenant(request: APIRequestContext): Promise<TenantSession
   return { email, password, tenantId, token, headers: { ...authHeaders, 'X-Tenant-ID': String(tenantId) } };
 }
 
-type Fixtures = { tenantA: TenantSession; tenantB: TenantSession; apiUrl: string };
+type Fixtures = { e2eGuard: void; tenantA: TenantSession; tenantB: TenantSession; apiUrl: string };
 export const test = base.extend<Fixtures>({
   apiUrl: [api, { option: true }],
-  tenantA: async ({ request }, use) => { await use(await registerTenant(request)); },
-  tenantB: async ({ request }, use) => { await use(await registerTenant(request)); },
+  e2eGuard: [async ({ request, apiUrl }, use) => {
+    const response = await request.get(`${apiUrl}/api/v1/e2e/readiness`, { maxRedirects: 0 });
+    expect(response.status(), 'Isolated E2E server required').toBe(200);
+    expect(await response.json()).toEqual({status:'ready', environment:'test', database:'crm_events_test'});
+    await use();
+  }, { auto: true }],
+  tenantA: async ({ request, e2eGuard }, use) => { await use(await registerTenant(request)); },
+  tenantB: async ({ request, e2eGuard }, use) => { await use(await registerTenant(request)); },
 });
 export { expect };
