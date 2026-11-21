@@ -33,4 +33,13 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
+  testDir: './e2e/specs',
+
+testMatch: '**/*.api.spec.ts',
+
+testIgnore: [
+  '**/crm-frontend-app/**',
+  '**/node_modules/**',
+  '**/dist/**'
+],
 });
