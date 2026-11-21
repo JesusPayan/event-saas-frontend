@@ -72,6 +72,13 @@ export const routes: Routes = [
             .then(m => m.DashboardComponent)
       },
       {
+        path: 'company/receipt-settings',
+        loadComponent: () => 
+          import('./pages/company-settings/company-receipt-settings.component')
+        .then(m => m.CompanyReceiptSettingsComponent),
+        canActivate: [permissionGuard('contracts.read')]
+      },
+      {
         path: 'members',
         loadComponent: () =>
           import('./pages/members-component/members.component')

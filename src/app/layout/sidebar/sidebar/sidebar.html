@@ -267,5 +267,11 @@
       }
     }
 
+    @if (auth.hasPermission('contracts.read')) {
+      <div class="menu-heading">Empresa</div>
+      <a routerLink="/company/receipt-settings" routerLinkActive="active" (click)="closeMobile()">
+        <span>Configuración de comprobantes</span>
+      </a>
+    }
   </nav>
 </aside>
