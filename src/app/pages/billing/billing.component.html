@@ -1,0 +1,19 @@
+<section class="space-y-5">
+    <header>
+        <h1 class="text-2xl font-bold text-slate-900">Mi suscripción</h1>
+        <p class="text-sm text-slate-500">Estado verificado por Eventos SaaS</p>
+    </header>
+    @if (error()) { <p role="alert" class="rounded-lg bg-red-50 p-4 text-red-700">{{error()}}</p> }
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        @if (loading()) { <p>Consultando...</p> } @else if (data()?.subscription; as sub) {
+        <p class="text-lg font-semibold">{{sub.plan_name}}</p>
+        <p class="mt-2">Estado: <strong>{{sub.status}}</strong></p>
+        @if (sub.current_period_end) { <p class="mt-2">Fin del periodo: {{sub.current_period_end | date:'mediumDate'}}
+        </p> }
+        } @else { <p>Aún no tienes una suscripción registrada.</p> }
+        <div class="mt-5 flex gap-3"><button type="button" (click)="load()"
+                class="rounded-lg border border-slate-300 px-4 py-2 text-sm">Actualizar estado</button><a
+                routerLink="/billing/plans" class="rounded-lg bg-blue-700 px-4 py-2 text-sm text-white">Ver planes</a>
+        </div>
+    </div>
+</section>

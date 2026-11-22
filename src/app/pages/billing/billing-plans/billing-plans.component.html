@@ -1,0 +1,12 @@
+import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
+@Component({selector:'app-billing-return',standalone:true,imports:[RouterLink],template:`
+<section class="mx-auto max-w-xl rounded-xl border border-blue-200 bg-white p-8 text-center shadow-sm">
+    <h1 class="text-2xl font-bold text-slate-900">Autorización recibida</h1>
+    <p class="mt-4 text-slate-600">El regreso de Mercado Pago no confirma un cobro. La suscripción se activará cuando
+        nuestro servidor verifique el pago.</p>
+    <a routerLink="/billing/subscription"
+        class="mt-6 inline-block rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white">Consultar estado de
+        mi suscripción</a>
+</section>`})
+export class BillingReturnComponent {}

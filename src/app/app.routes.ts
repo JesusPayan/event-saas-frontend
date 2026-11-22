@@ -24,6 +24,7 @@ import { InventoryCategoriesComponent } from './pages/inventory/inventory-catego
 import {QuoteList} from './pages/quotes/quote-list/quote-list';
 import {QuoteForm} from './pages/quotes/quote-form/quote-form';
 import {QuoteDetail} from './pages/quotes/quote-detail/quote-detail';
+
 export const routes: Routes = [
   {
     path: '',
@@ -327,6 +328,54 @@ export const routes: Routes = [
     import('./pages/contract-signing/contract-signing.component')
       .then(m => m.ContractSigningComponent),
 },
+      // =====================================
+      // BILL-03 - PLANES Y SUSCRIPCIONES
+      // =====================================
+
+      {
+        path: 'billing/plans',
+        loadComponent: () =>
+          import('./pages/billing/billing-plans/billing-plans.component')
+            .then(m => m.BillingPlansComponent),
+        canActivate: [permissionGuard('tenant.read')]
+      },
+      {
+        path: 'billing/subscription',
+        loadComponent: () =>
+          import('./pages/billing/billing-subscription/billing-subscription.component')
+            .then(m => m.BillingSubscriptionComponent),
+        canActivate: [permissionGuard('tenant.read')]
+      },
+      {
+        path: 'billing/return',
+        loadComponent: () =>
+          import('./pages/billing/billing-return/billing-return.component')
+            .then(m => m.BillingReturnComponent),
+        canActivate: [permissionGuard('tenant.read')]
+      },
+      {
+        path: 'billing/admin/prices',
+        loadComponent: () =>
+          import('./pages/billing/billing-admin-prices/billing-admin-prices.component')
+            .then(m => m.BillingAdminPricesComponent)
+      }
+
+    ] // Fin de children de AdminLayoutComponent
+  }, // Fin de AdminLayoutComponent
+
+  // =====================================
+  // FIRMA PÚBLICA DE CONTRATOS
+  // =====================================
+  {
+    path: 'sign/:token',
+    loadComponent: () =>
+      import('./pages/contract-signing/contract-signing.component')
+        .then(m => m.ContractSigningComponent)
+  },
+
+  // =====================================
+  // RUTA NO ENCONTRADA
+  // =====================================
   {
     path: '**',
     redirectTo: 'login'
