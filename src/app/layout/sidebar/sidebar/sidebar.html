@@ -202,5 +202,10 @@
     <a routerLink="/billing/plans" routerLinkActive="active" (click)="closeMobile()">Planes y precios</a>
     <a routerLink="/billing/subscription" routerLinkActive="active" (click)="closeMobile()">Mi suscripción</a>
     }
+    @if (auth.isOperator()) {
+    <div class="menu-heading">Plataforma</div>
+    <a routerLink="/platform/subscriptions" routerLinkActive="active" (click)="closeMobile()">Suscripciones</a>
+    <a routerLink="/platform/prices" routerLinkActive="active" (click)="closeMobile()">Precios de planes</a>
+    }
   </nav>
 </aside>

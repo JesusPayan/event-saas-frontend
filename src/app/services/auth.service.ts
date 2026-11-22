@@ -7,7 +7,8 @@ import {
   catchError,
   throwError,
   switchMap,
-  map
+  map,
+  of
 } from 'rxjs';
 export interface TenantRef { id: number; name?: string; slug?: string; }
 export interface MeResponse { id: number; email: string; tenants: number[]; }
@@ -24,6 +25,8 @@ export class AuthService {
   readonly tenantId = signal<number | null>(null);
   readonly tenant = signal<TenantRef | null>(null);
   readonly permissions = signal<string[]>([]);
+  /** Operador global de la plataforma (validado siempre por el backend). */
+  readonly isOperator = signal(false);
   readonly authenticated = computed(() => this.accessToken() !== null && this.me() !== null);
   readonly selectedTenant = computed(() => this.tenantId() !== null);
   token(): string | null { return this.accessToken(); }
@@ -38,7 +41,15 @@ loadMe(): Observable<MeResponse> {
   return this.http.get<MeResponse>(
     `${this.hostUrl}/auth/me`
   ).pipe(
-    tap(me => this.me.set(me))
+    tap(me => this.me.set(me)),
+    switchMap(me =>
+      this.http.get<{ operator: boolean }>(`${this.hostUrl}/billing/admin/me`).pipe(
+        map(r => r.operator === true),
+        catchError(() => of(false)),
+        tap(isOperator => this.isOperator.set(isOperator)),
+        map(() => me)
+      )
+    )
   );
 }
 //   chooseTenant(id: number): Observable<TenantRef> {
@@ -120,7 +131,7 @@ chooseTenant(id: number): Observable<TenantRef> {
   hasPermission(code: string): boolean { return this.permissions().includes(code); }
   logout(): void {
     this.accessToken.set(null); this.me.set(null); this.tenantId.set(null);
-    this.tenant.set(null); this.permissions.set([]);
+    this.tenant.set(null); this.permissions.set([]); this.isOperator.set(false);
     void this.router.navigateByUrl('/login');
   }
  debugAuth(): void {

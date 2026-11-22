@@ -4,26 +4,14 @@ import { Routes } from '@angular/router';
 import {
   authGuard,
   tenantGuard,
-  permissionGuard
+  permissionGuard,
+  operatorGuard
 } from './services/auth.guard';
 
 import { AdminLayoutComponent } from './layout/sidebar/admin-layout/admin-layout.component';
 
-import { ClientsComponent } from './pages/clients/clients-component/clients.component';
-import { ClientFormComponent } from './pages/clients/client-form/client-form.component';
-import { ClientDetailComponent } from './pages/clients/client-detail/client-detail.component';
 
-import { EventsComponent } from './pages/events/event-list/events.component';
-import { EventFormComponent } from './pages/events/event-detail/even-form/event-form.component';
-import { EventDetailComponent } from './pages/events/event-detail/event-detail.component';
-import { EventCalendarComponent } from './pages/events/event-calendar/event-calendar.component';
 
-import { InventoryComponent } from './pages/inventory/inventory.component';
-import { InventoryFormComponent } from './pages/inventory/inventory-form.component';
-import { InventoryCategoriesComponent } from './pages/inventory/inventory-categories.component';
-import {QuoteList} from './pages/quotes/quote-list/quote-list';
-import {QuoteForm} from './pages/quotes/quote-form/quote-form';
-import {QuoteDetail} from './pages/quotes/quote-detail/quote-detail';
 
 export const routes: Routes = [
   {
@@ -92,22 +80,22 @@ export const routes: Routes = [
       // =====================================
       {
         path: 'clients',
-        component: ClientsComponent,
+        loadComponent: () => import('./pages/clients/clients-component/clients.component').then(m => m.ClientsComponent),
         canActivate: [permissionGuard('clients.read')]
       },
       {
         path: 'clients/new',
-        component: ClientFormComponent,
+        loadComponent: () => import('./pages/clients/client-form/client-form.component').then(m => m.ClientFormComponent),
         canActivate: [permissionGuard('clients.create')]
       },
       {
         path: 'clients/:id/edit',
-        component: ClientFormComponent,
+        loadComponent: () => import('./pages/clients/client-form/client-form.component').then(m => m.ClientFormComponent),
         canActivate: [permissionGuard('clients.update')]
       },
       {
         path: 'clients/:id',
-        component: ClientDetailComponent,
+        loadComponent: () => import('./pages/clients/client-detail/client-detail.component').then(m => m.ClientDetailComponent),
         canActivate: [permissionGuard('clients.read')]
       },
 
@@ -116,27 +104,27 @@ export const routes: Routes = [
       // =====================================
       {
         path: 'events',
-        component: EventsComponent,
+        loadComponent: () => import('./pages/events/event-list/events.component').then(m => m.EventsComponent),
         canActivate: [permissionGuard('events.read')]
       },
       {
         path: 'events/new',
-        component: EventFormComponent,
+        loadComponent: () => import('./pages/events/event-detail/even-form/event-form.component').then(m => m.EventFormComponent),
         canActivate: [permissionGuard('events.create')]
       },
       {
         path: 'events/calendar',
-        component: EventCalendarComponent,
+        loadComponent: () => import('./pages/events/event-calendar/event-calendar.component').then(m => m.EventCalendarComponent),
         canActivate: [permissionGuard('events.read')]
       },
       {
         path: 'events/:id/edit',
-        component: EventFormComponent,
+        loadComponent: () => import('./pages/events/event-detail/even-form/event-form.component').then(m => m.EventFormComponent),
         canActivate: [permissionGuard('events.update')]
       },
       {
         path: 'events/:id',
-        component: EventDetailComponent,
+        loadComponent: () => import('./pages/events/event-detail/event-detail.component').then(m => m.EventDetailComponent),
         canActivate: [permissionGuard('events.read')]
       },
 
@@ -184,17 +172,17 @@ export const routes: Routes = [
       // =====================================
       {
         path: 'inventory',
-        component: InventoryComponent,
+        loadComponent: () => import('./pages/inventory/inventory.component').then(m => m.InventoryComponent),
         canActivate: [permissionGuard('inventory.read')]
       },
       {
         path: 'inventory/new',
-        component: InventoryFormComponent,
+        loadComponent: () => import('./pages/inventory/inventory-form.component').then(m => m.InventoryFormComponent),
         canActivate: [permissionGuard('inventory.create')]
       },
       {
         path: 'inventory/categories',
-        component: InventoryCategoriesComponent,
+        loadComponent: () => import('./pages/inventory/inventory-categories.component').then(m => m.InventoryCategoriesComponent),
         canActivate: [permissionGuard('inventory.read')]
       },
       {
@@ -283,7 +271,7 @@ export const routes: Routes = [
       // =====================================
       {
         path: 'inventory/:id/edit',
-        component: InventoryFormComponent,
+        loadComponent: () => import('./pages/inventory/inventory-form.component').then(m => m.InventoryFormComponent),
         canActivate: [
           permissionGuard('inventory.update')
         ]
@@ -317,21 +305,11 @@ export const routes: Routes = [
   canActivate: [permissionGuard('contracts.read')]
 }
   ]
-}
-
-
-    ] // Fin de children de AdminLayoutComponent
-  }, // Fin de AdminLayoutComponent
-{
-  path: 'sign/:token',
-  loadComponent: () =>
-    import('./pages/contract-signing/contract-signing.component')
-      .then(m => m.ContractSigningComponent),
 },
-      // =====================================
-      // BILL-03 - PLANES Y SUSCRIPCIONES
-      // =====================================
 
+      // =====================================
+      // BILL-03 - PLANES Y SUSCRIPCIONES (tenant)
+      // =====================================
       {
         path: 'billing/plans',
         loadComponent: () =>
@@ -353,11 +331,28 @@ export const routes: Routes = [
             .then(m => m.BillingReturnComponent),
         canActivate: [permissionGuard('tenant.read')]
       },
+
+      // =====================================
+      // PANEL GLOBAL DEL OPERADOR (no es permiso de tenant)
+      // =====================================
       {
-        path: 'billing/admin/prices',
+        path: 'platform/prices',
         loadComponent: () =>
           import('./pages/billing/billing-admin-prices/billing-admin-prices.component')
-            .then(m => m.BillingAdminPricesComponent)
+            .then(m => m.BillingAdminPricesComponent),
+        canActivate: [operatorGuard]
+      },
+      {
+        path: 'platform/subscriptions',
+        loadComponent: () =>
+          import('./pages/billing/billing-admin-subscriptions/billing-admin-subscriptions.component')
+            .then(m => m.BillingAdminSubscriptionsComponent),
+        canActivate: [operatorGuard]
+      },
+      {
+        path: 'billing/admin/prices',
+        pathMatch: 'full',
+        redirectTo: 'platform/prices'
       }
 
     ] // Fin de children de AdminLayoutComponent
