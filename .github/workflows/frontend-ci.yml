@@ -5,14 +5,14 @@ on:
   push:
     branches:
       - master
-      - develop
+      - development
       - "feature/**"
       - "fix/**"
 
   pull_request:
     branches:
       - master
-      - develop
+      - development
 
   workflow_dispatch:
 
