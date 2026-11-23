@@ -13,7 +13,7 @@ import {
 
 const CHECKOUT_ERRORS: Record<string, string> = {
   subscription_already_exists: 'Tu empresa ya tiene una suscripción vigente.',
-  checkout_already_pending: 'Ya existe un proceso de pago pendiente. Revisa el estado de tu suscripción.',
+  checkout_already_pending: 'Ya iniciaste un pago hace menos de 30 minutos. Complétalo en la pestaña de Mercado Pago o vuelve a intentarlo cuando venza ese plazo.',
   invalid_plan_price: 'El precio seleccionado ya no está disponible. Recarga la página.',
   invalid_payer_email: 'Ingresa un correo válido para Mercado Pago.',
   invalid_return_url: 'El pago no está disponible temporalmente (configuración del servidor).',
