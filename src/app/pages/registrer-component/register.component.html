@@ -1,22 +1,52 @@
-<section class="auth-card">
-    <h1>Registra tu empresa</h1>
-    <p>Crea tu espacio de trabajo.</p>
-<form (ngSubmit)="submit()">
-    <label>Nombre de la empresa<input name="company" [(ngModel)]="company" required minlength="3"></label>
-    <label>Identificador (letras, números y guiones)<input name="slug" [(ngModel)]="slug" required pattern="[a-z0-9-]{3,100}"></label>
-    <label>Correo del propietario<input name="email" type="email" [(ngModel)]="email" required></label>
-    <label>Contraseña (mínimo 12 caracteres)<input name="password" type="password" [(ngModel)]="password" required minlength="12"></label>
-    @if(error()){
-        <p role="alert" class="error">{{error()}}</p>
-    }
-    @if(success()){
-        <p role="status" class="success">Empresa creada. Ya puedes iniciar sesión.</p>
-    }
-    <button type="submit" [disabled]="busy()">
-        {{busy()?'Registrando…':'Crear empresa'}}
-    </button>
-    </form>
-    <p>
-        <a routerLink="/login">Volver al inicio de sesión</a>
-    </p>
-</section>
+<main class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">
+  <div class="w-full max-w-md">
+    <div class="mb-6 flex items-center justify-center gap-3">
+      <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-700 text-lg font-bold text-white" aria-hidden="true">E</span>
+      <span class="text-xl font-bold text-gray-900">Eventos SaaS</span>
+    </div>
+
+    <section class="card p-8">
+      <h1 class="page-title">Registra tu empresa</h1>
+      <p class="page-subtitle">Crea tu espacio de trabajo. Empiezas con el plan Gratuito.</p>
+
+      @if (success()) {
+        <div role="status" class="alert-success mt-6">
+          Empresa creada. <a routerLink="/login" class="font-semibold">Inicia sesión</a> para comenzar.
+        </div>
+      } @else {
+        <form class="mt-6 space-y-5" (ngSubmit)="submit()" #registerForm="ngForm">
+          <div>
+            <label for="company" class="form-label">Nombre de la empresa</label>
+            <input id="company" class="form-control" name="company" [(ngModel)]="company" (ngModelChange)="suggestSlug()" required minlength="3" maxlength="180">
+          </div>
+          <div>
+            <label for="slug" class="form-label">Identificador</label>
+            <input id="slug" class="form-control" name="slug" [(ngModel)]="slug" (ngModelChange)="slugTouched = true" required pattern="[a-z0-9]([a-z0-9-]{1,98}[a-z0-9])?">
+            <p class="form-hint">Minúsculas, números y guiones. Ejemplo: eventos-del-norte</p>
+          </div>
+          <div>
+            <label for="email" class="form-label">Correo del propietario</label>
+            <input id="email" class="form-control" name="email" type="email" [(ngModel)]="email" required autocomplete="email">
+          </div>
+          <div>
+            <label for="password" class="form-label">Contraseña</label>
+            <input id="password" class="form-control" name="password" type="password" [(ngModel)]="password" required minlength="12" autocomplete="new-password">
+            <p class="form-hint">Mínimo 12 caracteres.</p>
+          </div>
+
+          @if (error()) {
+            <p role="alert" class="alert-error">{{ error() }}</p>
+          }
+
+          <button type="submit" class="btn-primary w-full" [disabled]="busy() || registerForm.invalid">
+            {{ busy() ? 'Registrando…' : 'Crear empresa' }}
+          </button>
+        </form>
+      }
+
+      <p class="mt-6 text-center text-sm text-gray-600">
+        ¿Ya tienes cuenta? <a routerLink="/login" class="font-semibold">Iniciar sesión</a>
+      </p>
+    </section>
+  </div>
+</main>

@@ -1,144 +1,106 @@
-<section class="panel">
-      <h1>{{ editing() ? 'Editar cliente' : 'Nuevo cliente' }}</h1>
-      <p>Información general y datos de contacto.</p>
+<section class="space-y-6 p-4 md:p-6">
+  <div>
+    <a routerLink="/clients" class="text-sm font-medium">← Volver a clientes</a>
+    <h1 class="page-title mt-2">{{ editing() ? 'Editar cliente' : 'Nuevo cliente' }}</h1>
+    <p class="page-subtitle">Información general y datos de contacto.</p>
+  </div>
 
-      @if (error()) {
-        <p class="error" role="alert">{{ error() }}</p>
-      }
+  @if (error()) {
+    <p class="alert-error" role="alert">{{ error() }}</p>
+  }
 
-      @if (loading()) {
-        <p>Cargando información...</p>
-      } @else {
-        <form #clientForm="ngForm" (ngSubmit)="save()">
+  @if (loading()) {
+    <div class="card space-y-4" aria-busy="true">
+      @for (i of [1, 2, 3, 4]; track i) { <div class="h-10 animate-pulse rounded-lg bg-gray-100"></div> }
+    </div>
+  } @else {
+    <form #clientForm="ngForm" (ngSubmit)="save()" class="card space-y-8">
 
-          <label>
-            Tipo de cliente
-            <select
-              name="client_type"
-              [(ngModel)]="client.client_type">
+      <fieldset>
+        <legend class="mb-4 text-base font-semibold text-gray-900">Datos generales</legend>
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label for="client_type" class="form-label">Tipo de cliente</label>
+            <select id="client_type" name="client_type" class="form-control" [(ngModel)]="client.client_type">
               <option value="individual">Persona física</option>
               <option value="business">Empresa</option>
             </select>
-          </label>
-
-          <label>
-            {{ client.client_type === 'business'
-              ? 'Nombre de contacto'
-              : 'Nombre' }}
-            <input
-              name="first_name"
-              [(ngModel)]="client.first_name"
-              required
-              maxlength="100"
-            />
-          </label>
-
-          <label>
-            Apellidos
-            <input
-              name="last_name"
-              [(ngModel)]="client.last_name"
-              maxlength="150"
-            />
-          </label>
+          </div>
 
           @if (client.client_type === 'business') {
-            <label>
-              Razón social
-              <input
-                name="business_name"
-                [(ngModel)]="client.business_name"
-                required
-                maxlength="180"
-              />
-            </label>
+            <div>
+              <label for="business_name" class="form-label">Razón social <span class="text-red-600">*</span></label>
+              <input id="business_name" name="business_name" class="form-control" [(ngModel)]="client.business_name" required maxlength="180" />
+            </div>
+          } @else {
+            <div class="hidden md:block" aria-hidden="true"></div>
           }
 
-          <label>
-            Correo electrónico
-            <input
-              type="email"
-              name="email"
-              [(ngModel)]="client.email"
-              email
-              maxlength="180"
-            />
-          </label>
-
-          <label>
-            Teléfono
-            <input
-              type="tel"
-              name="phone"
-              [(ngModel)]="client.phone"
-              maxlength="30"
-            />
-          </label>
-
-          <label>
-            WhatsApp
-            <input
-              type="tel"
-              name="whatsapp"
-              [(ngModel)]="client.whatsapp"
-              maxlength="30"
-            />
-          </label>
-
-          <label>
-            Dirección
-            <input
-              name="address"
-              [(ngModel)]="client.address"
-              maxlength="255"
-            />
-          </label>
-
-          <label>
-            Ciudad
-            <input
-              name="city"
-              [(ngModel)]="client.city"
-              maxlength="100"
-            />
-          </label>
-
-          <label>
-            Estado
-            <input
-              name="state"
-              [(ngModel)]="client.state"
-              maxlength="100"
-            />
-          </label>
-
-          <label>
-            Código postal
-            <input
-              name="postal_code"
-              [(ngModel)]="client.postal_code"
-              maxlength="15"
-            />
-          </label>
-
-          <label>
-            Observaciones
-            <textarea
-              name="notes"
-              [(ngModel)]="client.notes"
-              rows="4">
-            </textarea>
-          </label>
-
-          <div class="form-actions">
-            <a routerLink="/clients">Cancelar</a>
-
-            <button
-              type="submit"
-              [disabled]="busy() || clientForm.invalid">
-              {{ busy() ? 'Guardando...' : 'Guardar cliente' }}
-            </button>
+          <div>
+            <label for="first_name" class="form-label">
+              {{ client.client_type === 'business' ? 'Nombre de contacto' : 'Nombre' }} <span class="text-red-600">*</span>
+            </label>
+            <input id="first_name" name="first_name" class="form-control" [(ngModel)]="client.first_name" required maxlength="100" />
           </div>
-        </form>
-      }
-    </section>
+
+          <div>
+            <label for="last_name" class="form-label">Apellidos</label>
+            <input id="last_name" name="last_name" class="form-control" [(ngModel)]="client.last_name" maxlength="150" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend class="mb-4 text-base font-semibold text-gray-900">Contacto</legend>
+        <div class="grid gap-5 md:grid-cols-3">
+          <div>
+            <label for="email" class="form-label">Correo electrónico</label>
+            <input id="email" type="email" name="email" class="form-control" [(ngModel)]="client.email" email maxlength="180" placeholder="cliente@correo.com" />
+          </div>
+          <div>
+            <label for="phone" class="form-label">Teléfono</label>
+            <input id="phone" type="tel" name="phone" class="form-control" [(ngModel)]="client.phone" maxlength="30" />
+          </div>
+          <div>
+            <label for="whatsapp" class="form-label">WhatsApp</label>
+            <input id="whatsapp" type="tel" name="whatsapp" class="form-control" [(ngModel)]="client.whatsapp" maxlength="30" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend class="mb-4 text-base font-semibold text-gray-900">Dirección</legend>
+        <div class="grid gap-5 md:grid-cols-4">
+          <div class="md:col-span-4">
+            <label for="address" class="form-label">Calle y número</label>
+            <input id="address" name="address" class="form-control" [(ngModel)]="client.address" maxlength="255" />
+          </div>
+          <div class="md:col-span-2">
+            <label for="city" class="form-label">Ciudad</label>
+            <input id="city" name="city" class="form-control" [(ngModel)]="client.city" maxlength="100" />
+          </div>
+          <div>
+            <label for="state" class="form-label">Estado</label>
+            <input id="state" name="state" class="form-control" [(ngModel)]="client.state" maxlength="100" />
+          </div>
+          <div>
+            <label for="postal_code" class="form-label">Código postal</label>
+            <input id="postal_code" name="postal_code" class="form-control" [(ngModel)]="client.postal_code" maxlength="15" />
+          </div>
+        </div>
+      </fieldset>
+
+      <div>
+        <label for="notes" class="form-label">Observaciones</label>
+        <textarea id="notes" name="notes" class="form-control" [(ngModel)]="client.notes" rows="4"></textarea>
+      </div>
+
+      <div class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:justify-end">
+        <a routerLink="/clients" class="btn-secondary">Cancelar</a>
+        <button type="submit" class="btn-primary" [disabled]="busy() || clientForm.invalid">
+          {{ busy() ? 'Guardando...' : 'Guardar cliente' }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

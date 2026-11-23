@@ -1,24 +1,43 @@
- <section class="panel">
-      <h1>Selecciona tu empresa</h1>
-      <p>Empresas asociadas a tu usuario.</p>
+<main class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">
+  <div class="w-full max-w-lg">
+    <div class="mb-6 flex items-center justify-center gap-3">
+      <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-700 text-lg font-bold text-white" aria-hidden="true">E</span>
+      <span class="text-xl font-bold text-gray-900">Eventos SaaS</span>
+    </div>
+
+    <section class="card p-8">
+      <h1 class="page-title">Selecciona tu empresa</h1>
+      <p class="page-subtitle">{{ auth.me()?.email }}</p>
 
       @if (error()) {
-        <p role="alert" class="error">
-          {{ error() }}
-        </p>
+        <p role="alert" class="alert-error mt-6">{{ error() }}</p>
       }
 
-      @for (id of auth.me()?.tenants ?? []; track id) {
-        <button
-          class="tenant"
-          type="button"
-          [disabled]="busy()"
-          (click)="select(id)">
-          Empresa #{{ id }} →
-        </button>
-      }
+      <ul class="mt-6 space-y-3">
+        @for (tenant of tenants(); track tenant.id) {
+          <li>
+            <button type="button" (click)="select(tenant.id)" [disabled]="busy() !== null"
+              class="flex w-full items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 text-left hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-wait disabled:opacity-60">
+              <span class="flex items-center gap-3">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 font-bold text-blue-800" aria-hidden="true">
+                  {{ initial(tenant.name) }}
+                </span>
+                <span>
+                  <span class="block font-semibold text-gray-900">{{ tenant.name ?? 'Empresa #' + tenant.id }}</span>
+                  <span class="block text-xs text-gray-500">{{ tenant.slug }}{{ tenant.role ? ' · ' + roleLabel(tenant.role) : '' }}</span>
+                </span>
+              </span>
+              <span class="text-sm font-medium text-blue-700">{{ busy() === tenant.id ? 'Entrando…' : 'Entrar →' }}</span>
+            </button>
+          </li>
+        } @empty {
+          <li class="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
+            No tienes empresas activas.
+          </li>
+        }
+      </ul>
 
-      @if ((auth.me()?.tenants ?? []).length === 0) {
-        <p>No tienes empresas activas.</p>
-      }
-</section>
+      <button type="button" (click)="auth.logout()" class="btn-secondary mt-6 w-full">Cerrar sesión</button>
+    </section>
+  </div>
+</main>

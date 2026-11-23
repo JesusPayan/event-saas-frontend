@@ -11,7 +11,8 @@ import {
   of
 } from 'rxjs';
 export interface TenantRef { id: number; name?: string; slug?: string; }
-export interface MeResponse { id: number; email: string; tenants: number[]; }
+export interface TenantSummary { id: number; name: string | null; slug: string | null; role: string | null; }
+export interface MeResponse { id: number; email: string; tenants: number[]; tenant_details?: TenantSummary[]; }
 export interface LoginResponse { access_token: string; token_type: string; expires_in: number; }
 
 @Injectable({ providedIn: 'root' })

@@ -34,6 +34,7 @@ export class ClientDetailComponent implements OnInit {
   readonly loading = signal(false);
   readonly busy = signal(false);
   readonly error = signal('');
+  readonly confirmOpen = signal(false);
 
   private id = 0;
 
@@ -65,10 +66,7 @@ export class ClientDetailComponent implements OnInit {
       return;
     }
 
-    if (!window.confirm('¿Desactivar este cliente?')) {
-      return;
-    }
-
+    this.confirmOpen.set(false);
     this.busy.set(true);
     this.error.set('');
 

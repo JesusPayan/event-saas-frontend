@@ -56,3 +56,21 @@ test('production build does not inline critical CSS (needs an inline onload, blo
   const csp = read('deploy/security-headers.conf');
   assert.match(csp, /script-src 'self';/);
 });
+
+test('global styles stay in Tailwind layers so utilities are never overridden', () => {
+  const css = read('src/styles.css');
+  // Fuera de @layer solo deben quedar los imports/plugins de Tailwind.
+  const outside = css.replace(/@layer\s+\w+\s*\{(?:[^{}]|\{[^{}]*\})*\}/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.doesNotMatch(outside, /[a-z.#*][^;{}]*\{/i, 'unlayered CSS rule found in styles.css');
+});
+
+test('standardized screens no longer use legacy layout classes', async () => {
+  const { readdirSync, statSync } = await import('node:fs');
+  const files = [];
+  const walk = dir => { for (const f of readdirSync(dir)) { const p = resolve(dir, f); statSync(p).isDirectory() ? walk(p) : /\.(html|ts)$/.test(f) && files.push(p); } };
+  walk(resolve(root, 'src/app'));
+  for (const file of files) {
+    const text = readFileSync(file, 'utf8');
+    assert.doesNotMatch(text, /class="(panel|auth-card|tiles|module-card|eyebrow|form-page|tenant)"/, `legacy class in ${file}`);
+  }
+});
