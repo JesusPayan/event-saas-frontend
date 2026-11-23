@@ -369,6 +369,22 @@ export const routes: Routes = [
   },
 
   // =====================================
+  // CUENTA: RECUPERACIÓN E INVITACIONES (públicas; el token viaja en el #fragmento)
+  // =====================================
+  {
+    path: 'forgot-password',
+    loadComponent: () => import('./pages/password-forgot/password-forgot.component').then(m => m.PasswordForgotComponent)
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () => import('./pages/password-reset/password-reset.component').then(m => m.PasswordResetComponent)
+  },
+  {
+    path: 'invite',
+    loadComponent: () => import('./pages/invite-accept/invite-accept.component').then(m => m.InviteAcceptComponent)
+  },
+
+  // =====================================
   // RUTA NO ENCONTRADA
   // =====================================
   {

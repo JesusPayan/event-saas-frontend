@@ -74,3 +74,25 @@ test('standardized screens no longer use legacy layout classes', async () => {
     assert.doesNotMatch(text, /class="(panel|auth-card|tiles|module-card|eyebrow|form-page|tenant)"/, `legacy class in ${file}`);
   }
 });
+
+test('session survives reloads via sessionStorage only (never localStorage)', () => {
+  const auth = read('src/app/services/auth.service.ts');
+  assert.match(auth, /sessionStorage\.setItem/);
+  assert.doesNotMatch(auth, /localStorage/);
+  assert.match(read('src/main.ts'), /provideAppInitializer\(\s*\(\)\s*=>\s*inject\(AuthService\)\.restore\(\)\s*\)/);
+});
+
+test('reset and invite tokens are read from the URL fragment, never the query string', () => {
+  for (const path of ['src/app/pages/password-reset/password-reset.component.ts', 'src/app/pages/invite-accept/invite-accept.component.ts']) {
+    const text = read(path);
+    assert.match(text, /snapshot\.fragment/);
+    assert.doesNotMatch(text, /queryParam/);
+  }
+});
+
+test('401 on public credential endpoints does not end the session', () => {
+  const interceptor = read('src/app/services/auth.interceptor.ts');
+  for (const p of ['/api/v1/auth/login', '/api/v1/auth/password/', '/api/v1/invitations/accept']) {
+    assert.ok(interceptor.includes(`'${p}'`), p);
+  }
+});

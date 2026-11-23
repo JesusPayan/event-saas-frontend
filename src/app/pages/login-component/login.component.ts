@@ -7,8 +7,16 @@ import { AuthService } from '../../services/auth.service';
 
 @Component({ standalone: true, imports: [FormsModule, RouterLink], templateUrl: './login.component.html' })
 export class LoginComponent {
-  private readonly auth = inject(AuthService);
+  readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+
+  constructor() {
+    // Sesión restaurada tras recargar: no mostrar el login otra vez.
+    if (this.auth.authenticated()) {
+      void this.router.navigate([this.auth.tenant() ? '/dashboard' : '/tenants']);
+    }
+  }
+
   email = '';
   password = '';
   readonly busy = signal(false);

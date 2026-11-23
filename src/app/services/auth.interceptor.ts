@@ -4,6 +4,14 @@ import { catchError, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 import { BillingNoticeService } from './billing-notice.service';
 
+const PUBLIC_AUTH_PATHS = [
+  '/api/v1/auth/login',
+  '/api/v1/auth/register',
+  '/api/v1/auth/password/',
+  '/api/v1/invitations/lookup',
+  '/api/v1/invitations/accept',
+];
+
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   if (!req.url.startsWith('/api/v1/')) {
     return next(req);
@@ -28,6 +36,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req.clone({ setHeaders: headers })).pipe(
     catchError((err: unknown) => {
+      // Token vencido o revocado: cerrar la sesión, salvo en endpoints públicos donde
+      // un 401 significa credenciales incorrectas.
+      if (err instanceof HttpErrorResponse && err.status === 401 && token
+          && !PUBLIC_AUTH_PATHS.some(path => req.url.startsWith(path))) {
+        auth.expireSession();
+      }
       if (err instanceof HttpErrorResponse && err.status === 403
           && err.error?.error === 'billing_entitlement_denied') {
         notices.show({
