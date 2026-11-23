@@ -5,6 +5,7 @@ export interface PlanLimitNotice {
   reason: string;
   limit: number | null;
   used: number | null;
+  tier?: string | null;
 }
 
 const FEATURES: Record<string, string> = {
@@ -25,9 +26,13 @@ export class BillingNoticeService {
     const feature = FEATURES[n.feature] ?? n.feature;
     switch (n.reason) {
       case 'limit_reached':
-        return `Alcanzaste el límite de ${feature} de tu plan (${n.used ?? '?'} de ${n.limit ?? '?'}).`;
+        return n.tier === 'free'
+          ? `Alcanzaste el límite de ${feature} del plan Gratuito (${n.used ?? '?'} de ${n.limit ?? '?'}). Contrata un plan para continuar.`
+          : `Alcanzaste el límite de ${feature} de tu plan (${n.used ?? '?'} de ${n.limit ?? '?'}).`;
       case 'feature_disabled':
-        return `Tu plan actual no incluye ${feature}.`;
+        return n.tier === 'free'
+          ? `El plan Gratuito no incluye ${feature}.`
+          : `Tu plan actual no incluye ${feature}.`;
       case 'not_subscribed':
         return 'Tu empresa no tiene una suscripción activa.';
       case 'period_expired':

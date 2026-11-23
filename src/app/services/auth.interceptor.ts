@@ -35,6 +35,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
           reason: String(err.error.reason ?? ''),
           limit: err.error.limit ?? null,
           used: err.error.used ?? null,
+          tier: err.error.tier ?? null,
         });
       }
       return throwError(() => err);

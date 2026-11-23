@@ -28,7 +28,7 @@ export interface CheckoutStatus {
   checkout: null | { id: number; status: string; plan_price_id: number; created_at: string | null };
 }
 export interface UsageItem { feature_code: string; limit_value: number | null; used: number | null; remaining: number | null; }
-export interface UsageResponse { status: string; items: UsageItem[]; }
+export interface UsageResponse { status: string; tier?: 'paid' | 'free'; items: UsageItem[]; }
 
 export const FEATURE_LABELS: Partial<Record<string, string>> = {
   members: 'Usuarios',

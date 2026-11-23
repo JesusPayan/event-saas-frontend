@@ -23,6 +23,7 @@ export class BillingSubscriptionComponent {
 
   readonly data = signal<SubscriptionResponse | null>(null);
   readonly usage = signal<UsageItem[]>([]);
+  readonly tier = signal<'paid' | 'free' | null>(null);
   readonly loading = signal(true);
   readonly error = signal('');
   readonly message = signal('');
@@ -32,6 +33,12 @@ export class BillingSubscriptionComponent {
   readonly statusLabels = SUBSCRIPTION_STATUS_LABELS;
   readonly statusClasses = SUBSCRIPTION_STATUS_CLASSES;
   readonly featureLabels = FEATURE_LABELS;
+  /** Cancelada pero aún dentro del periodo pagado. */
+  readonly accessUntil = computed(() => {
+    const sub = this.data()?.subscription;
+    if (!sub || sub.status !== 'canceled' || !sub.current_period_end) return null;
+    return new Date(sub.current_period_end) > new Date() ? sub.current_period_end : null;
+  });
   readonly canManage = computed(() => this.auth.hasPermission('billing.manage'));
   readonly cancellable = computed(() =>
     ['active', 'trialing', 'past_due', 'paused'].includes(this.data()?.status ?? ''));
@@ -50,6 +57,7 @@ export class BillingSubscriptionComponent {
       ]);
       this.data.set(current);
       this.usage.set(usage.items ?? []);
+      this.tier.set(usage.tier ?? null);
     } catch {
       this.error.set('No se pudo consultar la suscripción.');
     } finally {
@@ -68,7 +76,7 @@ export class BillingSubscriptionComponent {
     this.message.set('');
     try {
       await firstValueFrom(this.api.cancel());
-      this.message.set('Tu suscripción fue cancelada en Mercado Pago. No se realizarán más cobros.');
+      this.message.set('Tu suscripción fue cancelada en Mercado Pago. No se realizarán más cobros y conservas el acceso hasta el final del periodo pagado.');
       this.confirmCancel.set(false);
       await this.load();
     } catch (err) {
