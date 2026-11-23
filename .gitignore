@@ -30,3 +30,7 @@ Thumbs.db
 
 /dist/
 .angular/cache/
+# Generados
+/test-results/
+/playwright-report/
+/git

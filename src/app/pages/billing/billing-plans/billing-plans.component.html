@@ -1,0 +1,134 @@
+<section class="space-y-6 p-4 md:p-6">
+  <app-page-header title="Planes y precios" description="Elige el plan de Eventos SaaS para tu empresa. Precios en MXN.">
+    <a routerLink="/billing/subscription"
+      class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+      Mi suscripción
+    </a>
+  </app-page-header>
+
+  <!-- Selector mensual / anual -->
+  <div class="inline-flex rounded-lg border border-gray-200 bg-white p-1 shadow-sm" role="group" aria-label="Periodo de facturación">
+    <button type="button" (click)="interval.set('month')" [attr.aria-pressed]="interval() === 'month'"
+      class="rounded-md px-4 py-2 text-sm font-medium"
+      [class]="interval() === 'month' ? 'bg-blue-700 text-white' : 'text-gray-700 hover:bg-gray-100'">
+      Mensual
+    </button>
+    <button type="button" (click)="interval.set('year')" [attr.aria-pressed]="interval() === 'year'"
+      class="rounded-md px-4 py-2 text-sm font-medium"
+      [class]="interval() === 'year' ? 'bg-blue-700 text-white' : 'text-gray-700 hover:bg-gray-100'">
+      Anual
+    </button>
+  </div>
+
+  @if (error() && !selected()) {
+    <div role="alert" class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ error() }}</div>
+  }
+
+  @if (!hasActive()) {
+    <div role="status" class="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">
+      Actualmente tu empresa usa el <strong>plan Gratuito</strong> con funciones básicas. Contrata un plan para ampliar
+      los límites; la activación ocurre cuando Mercado Pago confirma el pago.
+    </div>
+  }
+
+  @if (hasActive()) {
+    <div role="status" class="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+      Tu empresa ya tiene una suscripción vigente. Para cambiar de plan, contacta a soporte o cancela la actual desde
+      <a routerLink="/billing/subscription" class="font-semibold underline">Mi suscripción</a>.
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="grid gap-6 md:grid-cols-3" aria-busy="true">
+      @for (i of [1, 2, 3]; track i) {
+        <div class="h-80 animate-pulse rounded-xl border border-gray-200 bg-white"></div>
+      }
+    </div>
+  } @else if (plans().length === 0) {
+    <div class="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">
+      No hay planes disponibles en este momento.
+    </div>
+  } @else {
+    <div class="grid gap-6 md:grid-cols-3">
+      @for (plan of plans(); track plan.id) {
+        @let price = priceFor(plan);
+        <article class="flex flex-col rounded-xl border bg-white p-6 shadow-sm"
+          [class]="isCurrentPlan(plan) ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'">
+          <div class="flex items-start justify-between gap-2">
+            <h2 class="text-xl font-bold text-gray-900">{{ plan.name }}</h2>
+            @if (isCurrentPlan(plan)) {
+              <span class="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">Plan actual</span>
+            }
+          </div>
+          @if (plan.description) {
+            <p class="mt-1 text-sm text-gray-500">{{ plan.description }}</p>
+          }
+
+          @if (price) {
+            <p class="mt-5">
+              <span class="text-3xl font-extrabold text-gray-900">{{ price.amount | currency:'MXN':'symbol-narrow':'1.2-2' }}</span>
+              <span class="text-sm text-gray-500">/ {{ price.billing_interval === 'month' ? 'mes' : 'año' }}</span>
+            </p>
+            @if (price.billing_interval === 'year') {
+              <p class="text-xs text-gray-500">Equivale a {{ monthlyEquivalent(price) | currency:'MXN':'symbol-narrow':'1.2-2' }} al mes</p>
+            }
+          } @else {
+            <p class="mt-5 text-sm text-gray-500">No disponible con este periodo.</p>
+          }
+
+          <ul class="mt-5 flex-1 space-y-2 text-sm text-gray-700">
+            @for (ent of plan.entitlements; track ent.feature_code) {
+              <li class="flex justify-between gap-3 border-b border-gray-100 pb-2">
+                <span>{{ featureLabels[ent.feature_code] ?? ent.feature_code }}</span>
+                <span class="font-medium" [class.text-gray-400]="ent.limit_value === 0">{{ limitLabel(ent.limit_value) }}</span>
+              </li>
+            }
+          </ul>
+
+          @if (canBuy()) {
+            <button type="button" (click)="choose(plan)" [disabled]="!price || hasActive()"
+              class="mt-6 w-full rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-50">
+              Contratar {{ plan.name }}
+            </button>
+          } @else {
+            <p class="mt-6 text-center text-xs text-gray-500">Solo el propietario de la empresa puede contratar planes.</p>
+          }
+        </article>
+      }
+    </div>
+  }
+
+  <!-- Confirmación de checkout -->
+  @if (selected(); as choice) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true"
+      aria-labelledby="checkout-title">
+      <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+        <h2 id="checkout-title" class="text-lg font-bold text-gray-900">Confirmar suscripción</h2>
+        <p class="mt-2 text-sm text-gray-600">
+          Plan <strong>{{ choice.plan.name }}</strong> ·
+          {{ choice.price.amount | currency:'MXN':'symbol-narrow':'1.2-2' }}
+          {{ choice.price.billing_interval === 'month' ? 'al mes' : 'al año' }}, con cobro recurrente.
+        </p>
+        <label for="payer-email" class="mt-4 block text-sm font-medium text-gray-900">Correo de tu cuenta de Mercado Pago</label>
+        <input id="payer-email" type="email" [(ngModel)]="payerEmail" autocomplete="email" maxlength="254"
+          class="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm focus:border-blue-500 focus:ring-blue-500" />
+        <p class="mt-3 text-xs text-gray-500">
+          Serás redirigido a Mercado Pago. La suscripción se activa solo cuando Mercado Pago confirma el cobro.
+        </p>
+        @if (error()) {
+          <p role="alert" class="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{{ error() }}</p>
+        }
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" (click)="cancelSelection()" [disabled]="busy()"
+            class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+            Cancelar
+          </button>
+          <button type="button" (click)="confirmCheckout()" [disabled]="busy()"
+            class="rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50">
+            {{ busy() ? 'Redirigiendo...' : 'Ir a Mercado Pago' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</section>

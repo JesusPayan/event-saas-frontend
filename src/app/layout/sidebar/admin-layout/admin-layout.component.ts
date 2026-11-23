@@ -1,15 +1,17 @@
 
 import { Component, computed, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet } from '@angular/router';
 
 import { SidebarComponent } from '../sidebar/sidebar';
 import { AuthService } from '../../../services/auth.service';
+import { BillingNoticeService } from '../../../services/billing-notice.service';
 
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
   imports: [
     RouterOutlet,
+    RouterLink,
     SidebarComponent
   ],
   templateUrl: './admin-layout.component.html'
@@ -17,6 +19,7 @@ import { AuthService } from '../../../services/auth.service';
 export class AdminLayoutComponent {
 
   readonly auth = inject(AuthService);
+  readonly billingNotice = inject(BillingNoticeService);
 
   readonly companyName = computed(() => {
     const tenant = this.auth.tenant();

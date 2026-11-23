@@ -36,29 +36,36 @@
                   "maximumError": "1MB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": true
+              }
             }
           }
         },
-  
         "serve": {
-  "builder": "@angular/build:dev-server",
-  "options": {
-    "buildTarget": "eventos-saas-web:build:development",
-    "proxyConfig": "proxy.conf.json",
-    "host": "127.0.0.1",
-    "port": 4200
-  },
-  "configurations": {
-    "production": {
-      "buildTarget": "eventos-saas-web:build:production"
-    },
-    "development": {
-      "buildTarget": "eventos-saas-web:build"
-    }
-  },
-  "defaultConfiguration": "development"
-}
+          "builder": "@angular/build:dev-server",
+          "options": {
+            "buildTarget": "eventos-saas-web:build:development",
+            "proxyConfig": "proxy.conf.json",
+            "host": "127.0.0.1",
+            "port": 4200
+          },
+          "configurations": {
+            "production": {
+              "buildTarget": "eventos-saas-web:build:production"
+            },
+            "development": {
+              "buildTarget": "eventos-saas-web:build"
+            }
+          },
+          "defaultConfiguration": "development"
+        }
       }
     }
   },
