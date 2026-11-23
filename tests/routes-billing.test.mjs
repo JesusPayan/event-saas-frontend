@@ -48,3 +48,11 @@ test('return page does not trust URL query params as payment evidence', () => {
   assert.doesNotMatch(page, /ActivatedRoute|queryParam|collection_status|preapproval_id/);
   assert.match(page, /api\.current\(\)/);
 });
+
+test('production build does not inline critical CSS (needs an inline onload, blocked by CSP)', () => {
+  const angular = JSON.parse(read('angular.json'));
+  const prod = angular.projects['eventos-saas-web'].architect.build.configurations.production;
+  assert.equal(prod.optimization?.styles?.inlineCritical, false);
+  const csp = read('deploy/security-headers.conf');
+  assert.match(csp, /script-src 'self';/);
+});
