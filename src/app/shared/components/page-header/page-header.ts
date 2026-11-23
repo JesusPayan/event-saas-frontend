@@ -7,7 +7,9 @@ import {
 @Component({
   selector: 'app-page-header',
   standalone: true,
-  templateUrl: './page-header.html'
+  templateUrl: './page-header.html',
+  // Elemento de bloque: respeta el espaciado vertical (space-y-*) del contenedor.
+  host: { class: 'block' }
 })
 export class PageHeaderComponent {
   readonly title = input.required<string>();

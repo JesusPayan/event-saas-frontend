@@ -13,111 +13,83 @@ import { AuthService } from '../../services/auth.service';
   standalone: true,
   imports: [FormsModule, RouterLink],
   template: `
-    <main class="categories-page">
-      <a routerLink="/inventory">← Volver al inventario</a>
-      <h1>Categorías de inventario</h1>
+    <section class="space-y-6 p-4 md:p-6">
+      <div>
+        <a routerLink="/inventory" class="text-sm font-medium">← Volver al inventario</a>
+        <h1 class="page-title mt-2">Categorías de inventario</h1>
+        <p class="page-subtitle">Agrupa tus artículos para encontrarlos y reportarlos más fácil.</p>
+      </div>
 
       @if (error()) {
-        <p class="error" role="alert">{{ error() }}</p>
+        <p class="alert-error" role="alert">{{ error() }}</p>
       }
 
-      @if (auth.hasPermission(
-        editingId() === null ? 'inventory.create' : 'inventory.update'
-      )) {
-        <form #form="ngForm" (ngSubmit)="save()">
-          <h2>
-            {{ editingId() === null ? 'Nueva categoría' : 'Editar categoría' }}
-          </h2>
+      <div class="grid gap-6 lg:grid-cols-3">
+        @if (auth.hasPermission(editingId() === null ? 'inventory.create' : 'inventory.update')) {
+          <form #form="ngForm" (ngSubmit)="save()" class="card h-fit space-y-5">
+            <h2 class="text-lg font-semibold text-gray-900">{{ editingId() === null ? 'Nueva categoría' : 'Editar categoría' }}</h2>
+            <div>
+              <label for="cat-name" class="form-label">Nombre <span class="text-red-600">*</span></label>
+              <input id="cat-name" name="name" class="form-control" [(ngModel)]="name" required maxlength="120" />
+            </div>
+            <div>
+              <label for="cat-description" class="form-label">Descripción</label>
+              <input id="cat-description" name="description" class="form-control" [(ngModel)]="description" maxlength="255" />
+            </div>
+            <div class="flex flex-wrap justify-end gap-3">
+              @if (editingId() !== null) {
+                <button type="button" class="btn-secondary" (click)="cancelEdit()">Cancelar</button>
+              }
+              <button type="submit" class="btn-primary" [disabled]="form.invalid || saving()">
+                {{ saving() ? 'Guardando...' : 'Guardar categoría' }}
+              </button>
+            </div>
+          </form>
+        }
 
-          <label>
-            Nombre
-            <input
-              name="name"
-              [(ngModel)]="name"
-              required
-              maxlength="120"
-            />
-          </label>
+        <div class="relative overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm lg:col-span-2" [attr.aria-busy]="loading()">
+          <table class="w-full text-left text-sm text-gray-700">
+            <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+              <tr>
+                <th scope="col" class="px-4 py-3">Nombre</th>
+                <th scope="col" class="px-4 py-3">Descripción</th>
+                <th scope="col" class="px-4 py-3"><span class="sr-only">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (category of categories(); track category.id) {
+                <tr class="border-b border-gray-100 hover:bg-gray-50">
+                  <td class="px-4 py-3 font-medium text-gray-900">{{ category.name }}</td>
+                  <td class="px-4 py-3">{{ category.description || '—' }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-right">
+                    @if (auth.hasPermission('inventory.update')) {
+                      <button type="button" class="font-medium text-blue-700 hover:underline" (click)="edit(category)">Editar</button>
+                      <button type="button" class="ml-4 font-medium text-red-700 hover:underline" (click)="confirmCategory.set(category)">Desactivar</button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="3" class="px-4 py-10 text-center text-gray-500">{{ loading() ? 'Cargando categorías…' : 'No hay categorías registradas.' }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-          <label>
-            Descripción
-            <input
-              name="description"
-              [(ngModel)]="description"
-              maxlength="255"
-            />
-          </label>
-
-          <button type="submit"
-                  [disabled]="form.invalid || saving()">
-            {{ saving() ? 'Guardando...' : 'Guardar categoría' }}
-          </button>
-
-          @if (editingId() !== null) {
-            <button type="button" (click)="cancelEdit()">
-              Cancelar edición
-            </button>
-          }
-        </form>
+      @if (confirmCategory(); as category) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="cat-deactivate-title">
+          <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h2 id="cat-deactivate-title" class="text-lg font-bold text-gray-900">¿Desactivar «{{ category.name }}»?</h2>
+            <p class="mt-2 text-sm text-gray-600">La categoría dejará de ofrecerse al registrar artículos. Los artículos existentes no se modifican.</p>
+            <div class="mt-6 flex justify-end gap-3">
+              <button type="button" class="btn-secondary" (click)="confirmCategory.set(null)">Cancelar</button>
+              <button type="button" class="btn-primary !bg-red-600 hover:!bg-red-700" (click)="deactivate(category)">Desactivar</button>
+            </div>
+          </div>
+        </div>
       }
-
-      <h2>Categorías registradas</h2>
-
-      @if (loading()) {
-        <p>Cargando categorías...</p>
-      }
-
-      <table>
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Descripción</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          @for (category of categories(); track category.id) {
-            <tr>
-              <td>{{ category.name }}</td>
-              <td>{{ category.description || '—' }}</td>
-              <td>
-                @if (auth.hasPermission('inventory.update')) {
-                  <button type="button"
-                          (click)="edit(category)">
-                    Editar
-                  </button>
-
-                  <button type="button"
-                          (click)="deactivate(category)">
-                    Desactivar
-                  </button>
-                }
-              </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="3">No hay categorías registradas.</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </main>
-  `,
-  styles: [`
-    .categories-page { padding: 24px; max-width: 1100px; margin: auto; }
-    form {
-      display: grid; gap: 12px; padding: 20px;
-      border: 1px solid #ddd; border-radius: 12px;
-      margin: 24px 0;
-    }
-    label { display: grid; gap: 6px; }
-    input { padding: 10px; border: 1px solid #aaa; border-radius: 7px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
-    button { margin-right: 8px; padding: 8px 12px; cursor: pointer; }
-    .error { color: #b42318; }
-  `]
+    </section>
+  `
 })
 export class InventoryCategoriesComponent implements OnInit {
   private readonly service = inject(InventoryService);
@@ -128,6 +100,7 @@ export class InventoryCategoriesComponent implements OnInit {
   readonly saving = signal(false);
   readonly error = signal('');
   readonly editingId = signal<number | null>(null);
+  readonly confirmCategory = signal<InventoryCategory | null>(null);
 
   name = '';
   description = '';
@@ -200,9 +173,7 @@ export class InventoryCategoriesComponent implements OnInit {
   }
 
   deactivate(category: InventoryCategory): void {
-    if (!window.confirm(
-      `¿Desactivar la categoría "${category.name}"?`
-    )) return;
+    this.confirmCategory.set(null);
 
     this.service.deactivateCategory(category.id)
       .subscribe({

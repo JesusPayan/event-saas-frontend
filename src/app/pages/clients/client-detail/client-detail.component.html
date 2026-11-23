@@ -1,70 +1,80 @@
-<section class="panel">
+<section class="space-y-6 p-4 md:p-6">
+  <a routerLink="/clients" class="text-sm font-medium">← Volver a clientes</a>
 
-      <a routerLink="/clients">← Volver a clientes</a>
+  @if (error()) {
+    <p role="alert" class="alert-error">{{ error() }}</p>
+  }
 
-      @if (loading()) {
-        <p>Cargando cliente...</p>
+  @if (loading() && !client()) {
+    <div class="card space-y-3" aria-busy="true">
+      @for (i of [1, 2, 3]; track i) { <div class="h-8 animate-pulse rounded bg-gray-100"></div> }
+    </div>
+  }
+
+  @if (client(); as c) {
+    <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <div class="flex flex-wrap items-center gap-3">
+          <h1 class="page-title">
+            {{ c.client_type === 'business' && c.business_name ? c.business_name : c.first_name + ' ' + (c.last_name ?? '') }}
+          </h1>
+          <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+            [class]="c.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'">
+            {{ c.status === 'active' ? 'Activo' : 'Inactivo' }}
+          </span>
+        </div>
+        <p class="page-subtitle">{{ c.client_type === 'business' ? 'Empresa' : 'Persona física' }}</p>
+      </div>
+
+      @if (auth.hasPermission('clients.update')) {
+        <div class="flex flex-wrap gap-3">
+          <a [routerLink]="['/clients', c.id, 'edit']" class="btn-primary">Editar cliente</a>
+          @if (c.status === 'active') {
+            <button type="button" class="btn-secondary !text-red-700" [disabled]="busy()" (click)="confirmOpen.set(true)">
+              Desactivar
+            </button>
+          }
+        </div>
       }
+    </header>
 
-      @if (error()) {
-        <p role="alert" class="error">{{ error() }}</p>
-      }
-
-      @if (client(); as c) {
-        <h1>
-          {{ c.client_type === 'business' && c.business_name
-            ? c.business_name
-            : c.first_name + ' ' + (c.last_name ?? '') }}
-        </h1>
-
-        <p>Estado: {{ c.status }}</p>
-
-        <h2>Información general</h2>
-
-        <dl>
-          <dt>Tipo</dt>
-          <dd>{{ c.client_type }}</dd>
-
-          <dt>Nombre de contacto</dt>
-          <dd>{{ c.first_name }} {{ c.last_name }}</dd>
-
-          <dt>Correo</dt>
-          <dd>{{ c.email || 'Sin registrar' }}</dd>
-
-          <dt>Teléfono</dt>
-          <dd>{{ c.phone || 'Sin registrar' }}</dd>
-
-          <dt>WhatsApp</dt>
-          <dd>{{ c.whatsapp || 'Sin registrar' }}</dd>
-
-          <dt>Dirección</dt>
-          <dd>{{ c.address || 'Sin registrar' }}</dd>
-
-          <dt>Ciudad</dt>
-          <dd>{{ c.city || 'Sin registrar' }}</dd>
-
-          <dt>Estado / Provincia</dt>
-          <dd>{{ c.state || 'Sin registrar' }}</dd>
-
-          <dt>Observaciones</dt>
-          <dd>{{ c.notes || 'Sin observaciones' }}</dd>
+    <div class="grid gap-6 lg:grid-cols-2">
+      <div class="card">
+        <h2 class="mb-4 text-lg font-semibold text-gray-900">Contacto</h2>
+        <dl class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+          <div><dt class="text-gray-500">Nombre de contacto</dt><dd class="font-medium text-gray-900">{{ c.first_name }} {{ c.last_name }}</dd></div>
+          <div><dt class="text-gray-500">Correo</dt><dd class="font-medium text-gray-900 break-all">{{ c.email || 'Sin registrar' }}</dd></div>
+          <div><dt class="text-gray-500">Teléfono</dt><dd class="font-medium text-gray-900">{{ c.phone || 'Sin registrar' }}</dd></div>
+          <div><dt class="text-gray-500">WhatsApp</dt><dd class="font-medium text-gray-900">{{ c.whatsapp || 'Sin registrar' }}</dd></div>
         </dl>
+      </div>
 
-        @if (auth.hasPermission('clients.update')) {
-          <div class="form-actions">
-            <a [routerLink]="['/clients', c.id, 'edit']">
-              Editar cliente
-            </a>
+      <div class="card">
+        <h2 class="mb-4 text-lg font-semibold text-gray-900">Dirección</h2>
+        <dl class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+          <div class="sm:col-span-2"><dt class="text-gray-500">Calle y número</dt><dd class="font-medium text-gray-900">{{ c.address || 'Sin registrar' }}</dd></div>
+          <div><dt class="text-gray-500">Ciudad</dt><dd class="font-medium text-gray-900">{{ c.city || 'Sin registrar' }}</dd></div>
+          <div><dt class="text-gray-500">Estado</dt><dd class="font-medium text-gray-900">{{ c.state || 'Sin registrar' }}</dd></div>
+        </dl>
+      </div>
 
-            @if (c.status === 'active') {
-              <button
-                type="button"
-                [disabled]="busy()"
-                (click)="deactivate()">
-                Desactivar cliente
-              </button>
-            }
+      <div class="card lg:col-span-2">
+        <h2 class="mb-2 text-lg font-semibold text-gray-900">Observaciones</h2>
+        <p class="whitespace-pre-line text-sm text-gray-700">{{ c.notes || 'Sin observaciones' }}</p>
+      </div>
+    </div>
+
+    @if (confirmOpen()) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="deactivate-title">
+        <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+          <h2 id="deactivate-title" class="text-lg font-bold text-gray-900">¿Desactivar este cliente?</h2>
+          <p class="mt-2 text-sm text-gray-600">El cliente dejará de aparecer como activo. Su historial de eventos, cotizaciones y contratos se conserva.</p>
+          <div class="mt-6 flex justify-end gap-3">
+            <button type="button" class="btn-secondary" (click)="confirmOpen.set(false)">Cancelar</button>
+            <button type="button" class="btn-primary !bg-red-600 hover:!bg-red-700" (click)="deactivate()">Desactivar</button>
           </div>
-        }
-      }
-    </section>
+        </div>
+      </div>
+    }
+  }
+</section>

@@ -1,47 +1,48 @@
-
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { finalize, switchMap } from 'rxjs';
+import { finalize } from 'rxjs';
 
-import { AuthService } from '../../services/auth.service';
+import { AuthService, TenantSummary } from '../../services/auth.service';
 
-@Component({
-  standalone: true,
-  templateUrl: './tenants.component.html'
-})
+const ROLE_LABELS: Record<string, string> = { owner: 'Propietario', admin: 'Administrador', member: 'Miembro' };
+
+@Component({ standalone: true, templateUrl: './tenants.component.html' })
 export class TenantsComponent {
-
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-
   readonly error = signal('');
-  readonly busy = signal(false);
+  readonly busy = signal<number | null>(null);
+
+  readonly tenants = computed<TenantSummary[]>(() => {
+    const me = this.auth.me();
+    if (!me) return [];
+    return me.tenant_details ?? me.tenants.map(id => ({ id, name: null, slug: null, role: null }));
+  });
+
+  constructor() {
+    // Con una sola empresa no hace falta elegir.
+    const list = this.tenants();
+    if (list.length === 1) this.select(list[0].id);
+  }
+
+  initial(name: string | null): string {
+    return (name ?? 'E').trim().charAt(0).toUpperCase() || 'E';
+  }
+
+  roleLabel(role: string): string {
+    return ROLE_LABELS[role] ?? role;
+  }
 
   select(id: number): void {
-    if (this.busy()) return;
-
-    this.busy.set(true);
+    if (this.busy() !== null) return;
+    this.busy.set(id);
     this.error.set('');
-
-    this.auth.chooseTenant(id).pipe(
-      switchMap(() => this.auth.loadPermissions()),
-      finalize(() => this.busy.set(false))
-    ).subscribe({
-      next: () => {
-        // void this.router.navigateByUrl('/dashboard');
-        void this.router.navigate(['/events']);
-      },
-     error: err => {
-  console.error('Status:', err.status);
-  console.error('URL:', err.url);
-  console.error('Respuesta:', err.error);
-
-  this.error.set(
-    err.status === 200
-      ? 'El servidor devolvió una respuesta que no es JSON.'
-      : `Error HTTP ${err.status}`
-  );
-}
+    // chooseTenant ya carga la empresa y sus permisos.
+    this.auth.chooseTenant(id).pipe(finalize(() => this.busy.set(null))).subscribe({
+      next: () => void this.router.navigate(['/dashboard']),
+      error: (err: HttpErrorResponse) => this.error.set(
+        err.status === 403 ? 'Ya no tienes acceso a esta empresa.' : 'No fue posible abrir la empresa. Intenta de nuevo.'),
     });
   }
 }

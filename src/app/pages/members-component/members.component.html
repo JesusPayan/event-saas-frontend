@@ -1,14 +1,35 @@
-<section class="panel">
-    <h1>Miembros de la empresa</h1>
-@if(error()){<p role="alert" class="error">{{error()}}
+<section class="space-y-6 p-4 md:p-6">
+  <app-page-header title="Miembros de la empresa" description="Usuarios con acceso a esta empresa y su rol." />
 
-</p>}
-<table>
-    <thead>
-        <tr><th>ID</th><th>Usuario</th><th>Rol</th><th>Estado</th></tr>
-    </thead>
-    <tbody>
-        @for(m of members();track m.id){<tr><td>{{m.id}}</td><td>{{m.user_id}}</td><td>{{m.role_id}}</td><td>{{m.status}}</td></tr>}
-    </tbody>
-</table>
+  @if (error()) {
+    <p role="alert" class="alert-error">{{ error() }}</p>
+  }
+
+  <div class="relative overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+    <table class="w-full text-left text-sm text-gray-700">
+      <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+        <tr>
+          <th scope="col" class="px-4 py-3">Usuario</th>
+          <th scope="col" class="px-4 py-3">Rol</th>
+          <th scope="col" class="px-4 py-3">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (m of members(); track m.id) {
+          <tr class="border-b border-gray-100">
+            <td class="px-4 py-3 font-medium text-gray-900">{{ m.email ?? 'Usuario #' + m.user_id }}</td>
+            <td class="px-4 py-3">{{ roleLabel(m) }}</td>
+            <td class="px-4 py-3">
+              <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                [class]="m.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'">
+                {{ m.status === 'active' ? 'Activo' : m.status }}
+              </span>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="3" class="px-4 py-10 text-center text-gray-500">{{ loading() ? 'Cargando…' : 'Sin miembros.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
 </section>
