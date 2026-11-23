@@ -18,6 +18,8 @@ const CHECKOUT_ERRORS: Record<string, string> = {
   invalid_payer_email: 'Ingresa un correo válido para Mercado Pago.',
   invalid_return_url: 'El pago no está disponible temporalmente (configuración del servidor).',
   payment_provider_unavailable: 'Mercado Pago no respondió. Intenta de nuevo en unos minutos.',
+  payment_provider_rejected: 'Mercado Pago rechazó la solicitud. Verifica que el correo sea de una cuenta de Mercado Pago distinta a la del vendedor y del mismo tipo (prueba o real).',
+  payment_provider_misconfigured: 'El cobro no está disponible: la configuración de Mercado Pago del servidor no es válida.',
 };
 
 @Component({
@@ -93,7 +95,10 @@ export class BillingPlansComponent {
   }
 
   cancelSelection(): void {
-    if (!this.busy()) this.selected.set(null);
+    if (!this.busy()) {
+      this.selected.set(null);
+      this.error.set('');
+    }
   }
 
   async confirmCheckout(): Promise<void> {
