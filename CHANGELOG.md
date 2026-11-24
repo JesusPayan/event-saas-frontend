@@ -3,6 +3,12 @@
 La versión técnica **1.1.0** corresponde al lanzamiento comercial **EasiAcc Events 1.0**.
 Detalle conjunto con el backend, estado y riesgos: repositorio backend, `CHANGELOG.md` y `docs/PROJECT_STATUS.md`.
 
+## [Sin publicar]
+
+### Cambiado
+- Correo comercial `contacto@easiacc.com` en `BRAND.contactEmail`: activa «Solicitar una demostración» en la
+  landing y el enlace «Contacto» en el pie y en las páginas legales.
+
 ## [1.1.0] — EasiAcc Events 1.0 (versión candidata)
 
 ### Añadido
