@@ -1,0 +1,158 @@
+<section class="space-y-6 p-4 md:p-6">
+  <app-page-header title="Miembros de la empresa" description="Usuarios con acceso a esta empresa y su rol.">
+    @if (canManage()) {
+      <button type="button" class="btn-primary" (click)="openInvite()">+ Invitar miembro</button>
+    }
+  </app-page-header>
+
+  @if (error() && !inviteOpen()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+  @if (message()) { <p role="status" class="alert-success">{{ message() }}</p> }
+
+  <div class="relative overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm" [attr.aria-busy]="loading()">
+    <table class="w-full text-left text-sm text-gray-700">
+      <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+        <tr>
+          <th scope="col" class="px-4 py-3">Usuario</th>
+          <th scope="col" class="px-4 py-3">Rol</th>
+          <th scope="col" class="px-4 py-3">Estado</th>
+          <th scope="col" class="px-4 py-3"><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (m of members(); track m.id) {
+          <tr class="border-b border-gray-100">
+            <td class="px-4 py-3 font-medium text-gray-900">
+              {{ m.email ?? 'Usuario #' + m.user_id }}
+              @if (isSelf(m)) { <span class="ml-2 text-xs font-normal text-gray-500">(tú)</span> }
+            </td>
+            <td class="px-4 py-3">
+              @if (editable(m)) {
+                <label class="sr-only" [attr.for]="'role-' + m.id">Rol de {{ m.email }}</label>
+                <select [id]="'role-' + m.id" class="form-control w-44 py-1.5" [ngModel]="m.role_name" (ngModelChange)="changeRole(m, $event)" [disabled]="busy()">
+                  @for (r of roleOptions; track r.key) { <option [value]="r.key">{{ r.label }}</option> }
+                </select>
+              } @else {
+                {{ roleLabel(m) }}
+              }
+            </td>
+            <td class="px-4 py-3">
+              <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                [class]="m.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'">
+                {{ m.status === 'active' ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="whitespace-nowrap px-4 py-3 text-right">
+              @if (editable(m)) {
+                @if (m.status === 'active') {
+                  <button type="button" class="font-medium text-red-700 hover:underline" (click)="pending.set({ kind: 'deactivate', member: m })">Desactivar</button>
+                } @else {
+                  <button type="button" class="font-medium text-blue-700 hover:underline" (click)="pending.set({ kind: 'activate', member: m })">Reactivar</button>
+                }
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="4" class="px-4 py-10 text-center text-gray-500">{{ loading() ? 'Cargando…' : 'Sin miembros.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (invitations().length > 0) {
+    <div class="card">
+      <h2 class="mb-4 text-lg font-semibold text-gray-900">Invitaciones pendientes</h2>
+      <ul class="divide-y divide-gray-100 text-sm">
+        @for (inv of invitations(); track inv.id) {
+          <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+            <span>
+              <span class="font-medium text-gray-900">{{ inv.email }}</span>
+              <span class="text-gray-500"> · {{ roleName(inv.role) }} ·
+                @if (inv.expired) { <span class="text-red-700">vencida</span> } @else { vence {{ inv.expires_at | date:'mediumDate' }} }
+              </span>
+            </span>
+            @if (canManage()) {
+              <button type="button" class="font-medium text-red-700 hover:underline" (click)="pending.set({ kind: 'revoke', invitation: inv })">Cancelar</button>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  <!-- Invitar -->
+  @if (inviteOpen()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="invite-title">
+      <div class="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
+        <h2 id="invite-title" class="text-lg font-bold text-gray-900">Invitar miembro</h2>
+        @if (lastInvite(); as r) {
+          @if (r.email_sent) {
+            <p role="status" class="alert-success mt-4">Enviamos la invitación a <strong>{{ r.invitation.email }}</strong>. Vence en 7 días.</p>
+          } @else {
+            <p role="status" class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              No pudimos enviar el correo. Comparte este enlace con <strong>{{ r.invitation.email }}</strong> por un medio seguro:
+            </p>
+          }
+          <div class="mt-3 flex gap-2">
+            <input class="form-control font-mono text-xs" [value]="r.invite_url" readonly aria-label="Enlace de invitación">
+            <button type="button" class="btn-secondary shrink-0" (click)="copyLink(r.invite_url)">Copiar</button>
+          </div>
+          <div class="mt-6 flex justify-end gap-3">
+            <button type="button" class="btn-secondary" (click)="openInvite()">Invitar a otra persona</button>
+            <button type="button" class="btn-primary" (click)="inviteOpen.set(false)">Listo</button>
+          </div>
+        } @else {
+          <form class="mt-4 space-y-5" (ngSubmit)="sendInvite()" #f="ngForm">
+            <div>
+              <label for="invite-email" class="form-label">Correo electrónico</label>
+              <input id="invite-email" class="form-control" type="email" name="email" [(ngModel)]="inviteEmail" required email maxlength="254" placeholder="persona@empresa.com">
+            </div>
+            <fieldset>
+              <legend class="form-label">Rol</legend>
+              <div class="space-y-2">
+                @for (r of roleOptions; track r.key) {
+                  <label class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 font-normal"
+                    [class]="inviteRole === r.key ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
+                    <input type="radio" name="role" class="mt-1" [value]="r.key" [(ngModel)]="inviteRole">
+                    <span><span class="block text-sm font-semibold text-gray-900">{{ r.label }}</span>
+                      <span class="block text-xs text-gray-500">{{ r.help }}</span></span>
+                  </label>
+                }
+              </div>
+            </fieldset>
+            @if (error()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+            <div class="flex justify-end gap-3">
+              <button type="button" class="btn-secondary" (click)="inviteOpen.set(false)" [disabled]="busy()">Cancelar</button>
+              <button type="submit" class="btn-primary" [disabled]="busy() || f.invalid">{{ busy() ? 'Enviando…' : 'Enviar invitación' }}</button>
+            </div>
+          </form>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Confirmaciones -->
+  @if (pending(); as action) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+        @switch (action.kind) {
+          @case ('revoke') {
+            <h2 id="confirm-title" class="text-lg font-bold text-gray-900">¿Cancelar la invitación?</h2>
+            <p class="mt-2 text-sm text-gray-600">El enlace enviado dejará de funcionar.</p>
+          }
+          @case ('deactivate') {
+            <h2 id="confirm-title" class="text-lg font-bold text-gray-900">¿Desactivar el acceso?</h2>
+            <p class="mt-2 text-sm text-gray-600">La persona no podrá entrar a esta empresa hasta que la reactives. Su trabajo registrado se conserva.</p>
+          }
+          @default {
+            <h2 id="confirm-title" class="text-lg font-bold text-gray-900">¿Reactivar el acceso?</h2>
+            <p class="mt-2 text-sm text-gray-600">La persona podrá volver a entrar con su rol actual.</p>
+          }
+        }
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" class="btn-secondary" (click)="pending.set(null)" [disabled]="busy()">Volver</button>
+          <button type="button" class="btn-primary" [class.!bg-red-600]="action.kind !== 'activate'" (click)="confirm()" [disabled]="busy()">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  }
+</section>

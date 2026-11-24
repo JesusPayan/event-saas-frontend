@@ -1,0 +1,16 @@
+<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+    <p class="text-sm font-medium text-gray-500">
+        {{ title() }}
+    </p>
+
+    <p class="mt-2 text-3xl font-bold" [class.text-green-600]="variant() === 'success'"
+        [class.text-blue-700]="variant() === 'primary'" [class.text-gray-900]="variant() === 'default'">
+        {{ value() }}
+    </p>
+
+    @if (description()) {
+    <p class="mt-2 text-xs text-gray-400">
+        {{ description() }}
+    </p>
+    }
+</div>

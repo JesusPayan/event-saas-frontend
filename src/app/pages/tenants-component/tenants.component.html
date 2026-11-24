@@ -1,0 +1,43 @@
+<main class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">
+  <div class="w-full max-w-lg">
+    <div class="mb-6 flex flex-col items-center gap-2">
+          <app-brand-logo [size]="44" [showProduct]="true" />
+          <p class="text-sm text-slate-500">{{ brand.tagline }}</p>
+        </div>
+
+    <section class="card p-8">
+      <h1 class="page-title">Selecciona tu empresa</h1>
+      <p class="page-subtitle">{{ auth.me()?.email }}</p>
+
+      @if (error()) {
+        <p role="alert" class="alert-error mt-6">{{ error() }}</p>
+      }
+
+      <ul class="mt-6 space-y-3">
+        @for (tenant of tenants(); track tenant.id) {
+          <li>
+            <button type="button" (click)="select(tenant.id)" [disabled]="busy() !== null"
+              class="flex w-full items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 text-left hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-wait disabled:opacity-60">
+              <span class="flex items-center gap-3">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 font-bold text-blue-800" aria-hidden="true">
+                  {{ initial(tenant.name) }}
+                </span>
+                <span>
+                  <span class="block font-semibold text-gray-900">{{ tenant.name ?? 'Empresa #' + tenant.id }}</span>
+                  <span class="block text-xs text-gray-500">{{ tenant.slug }}{{ tenant.role ? ' · ' + roleLabel(tenant.role) : '' }}</span>
+                </span>
+              </span>
+              <span class="text-sm font-medium text-blue-700">{{ busy() === tenant.id ? 'Entrando…' : 'Entrar →' }}</span>
+            </button>
+          </li>
+        } @empty {
+          <li class="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
+            No tienes empresas activas.
+          </li>
+        }
+      </ul>
+
+      <button type="button" (click)="auth.logout()" class="btn-secondary mt-6 w-full">Cerrar sesión</button>
+    </section>
+  </div>
+</main>

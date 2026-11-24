@@ -1,0 +1,214 @@
+<div class="min-h-screen bg-white text-gray-900">
+  <!-- Encabezado -->
+  <header class="sticky top-0 z-40 border-b border-gray-100 bg-white/95 backdrop-blur">
+    <nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6" aria-label="Principal">
+      <a routerLink="/" class="hover:no-underline" aria-label="EasiAcc Events, inicio">
+        <app-brand-logo [size]="36" [showProduct]="true" />
+      </a>
+      <div class="hidden items-center gap-6 text-sm font-medium md:flex">
+        <a href="#funciones" class="!text-gray-700 hover:!text-blue-700">Funciones</a>
+        <a href="#planes" class="!text-gray-700 hover:!text-blue-700">Planes</a>
+        <a href="#preguntas" class="!text-gray-700 hover:!text-blue-700">Preguntas</a>
+        <a routerLink="/login" class="!text-gray-700 hover:!text-blue-700">Iniciar sesión</a>
+        <a routerLink="/register" class="btn-primary">Crear cuenta gratis</a>
+      </div>
+      <button type="button" class="rounded-lg p-2 text-gray-700 hover:bg-gray-100 md:hidden" (click)="menuOpen.set(!menuOpen())"
+        [attr.aria-expanded]="menuOpen()" aria-controls="menu-movil" aria-label="Abrir menú">☰</button>
+    </nav>
+    @if (menuOpen()) {
+      <div id="menu-movil" class="space-y-1 border-t border-gray-100 px-4 py-3 md:hidden">
+        <a href="#funciones" (click)="menuOpen.set(false)" class="block rounded-lg px-3 py-2 !text-gray-700 hover:bg-gray-50">Funciones</a>
+        <a href="#planes" (click)="menuOpen.set(false)" class="block rounded-lg px-3 py-2 !text-gray-700 hover:bg-gray-50">Planes</a>
+        <a href="#preguntas" (click)="menuOpen.set(false)" class="block rounded-lg px-3 py-2 !text-gray-700 hover:bg-gray-50">Preguntas</a>
+        <a routerLink="/login" class="block rounded-lg px-3 py-2 !text-gray-700 hover:bg-gray-50">Iniciar sesión</a>
+        <a routerLink="/register" class="btn-primary mt-2 w-full">Crear cuenta gratis</a>
+      </div>
+    }
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="bg-gradient-to-b from-[#F8FAFC] to-white">
+      <div class="mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 md:px-6 lg:grid-cols-2 lg:py-24">
+        <div>
+          <p class="text-sm font-semibold uppercase tracking-widest text-blue-700">{{ brand.tagline }}</p>
+          <h1 class="mt-3 text-4xl font-extrabold tracking-tight text-[#0F172A] md:text-5xl">Tu negocio de eventos, bajo control.</h1>
+          <p class="mt-5 text-lg text-gray-600">
+            Administra clientes, eventos, inventarios, cotizaciones, contratos y pagos desde una sola plataforma.
+            Simplifica tu operación y dedica más tiempo a hacer crecer tu negocio.
+          </p>
+          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a routerLink="/register" class="btn-primary px-6 py-3 text-base">Crear cuenta gratis</a>
+            <a href="#planes" class="btn-secondary px-6 py-3 text-base">Ver planes</a>
+          </div>
+          <p class="mt-4 text-sm text-gray-500">Empieza con el plan Gratuito. Sin tarjeta.</p>
+        </div>
+        <figure class="overflow-hidden rounded-2xl border border-gray-200 shadow-xl">
+          <img src="landing/dashboard.png" alt="Panel de control de EasiAcc Events con indicadores y próximos eventos" width="1440" height="900" class="h-auto w-full">
+        </figure>
+      </div>
+    </section>
+
+    <!-- Beneficios -->
+    <section class="mx-auto max-w-7xl px-4 py-16 md:px-6">
+      <h2 class="text-center text-3xl font-bold text-[#0F172A]">Menos pendientes, más eventos</h2>
+      <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        @for (b of benefits; track b.title; let i = $index) {
+          <div class="card">
+            <div class="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700" aria-hidden="true">{{ i + 1 }}</div>
+            <h3 class="font-semibold text-gray-900">{{ b.title }}</h3>
+            <p class="mt-2 text-sm text-gray-600">{{ b.text }}</p>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Funciones -->
+    <section id="funciones" class="scroll-mt-20 bg-[#F8FAFC]">
+      <div class="mx-auto max-w-7xl px-4 py-16 md:px-6">
+        <h2 class="text-center text-3xl font-bold text-[#0F172A]">Todo lo que necesita tu negocio de eventos</h2>
+        <p class="mx-auto mt-3 max-w-2xl text-center text-gray-600">Funciones disponibles hoy en EasiAcc Events.</p>
+        <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          @for (f of features; track f.title) {
+            <div class="rounded-xl border border-gray-200 bg-white p-5">
+              <h3 class="font-semibold text-gray-900">{{ f.title }}</h3>
+              <p class="mt-2 text-sm text-gray-600">{{ f.text }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Capturas -->
+    <section class="mx-auto max-w-7xl px-4 py-16 md:px-6">
+      <h2 class="text-center text-3xl font-bold text-[#0F172A]">Así se ve por dentro</h2>
+      <p class="mt-3 text-center text-sm text-gray-500">Capturas reales de la plataforma con datos de ejemplo.</p>
+      <div class="mt-10 grid gap-6 md:grid-cols-2">
+        @for (s of screenshots; track s.src) {
+          <figure class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <img [src]="s.src" [alt]="s.alt" width="1440" height="900" loading="lazy" class="h-auto w-full">
+            <figcaption class="border-t border-gray-100 px-4 py-3 text-sm font-medium text-gray-700">{{ s.caption }}</figcaption>
+          </figure>
+        }
+      </div>
+    </section>
+
+    <!-- Planes -->
+    <section id="planes" class="scroll-mt-20 bg-[#F8FAFC]">
+      <div class="mx-auto max-w-7xl px-4 py-16 md:px-6">
+        <h2 class="text-center text-3xl font-bold text-[#0F172A]">Planes</h2>
+        <p class="mt-3 text-center text-gray-600">Precios en pesos mexicanos (MXN). Pago con Mercado Pago.</p>
+        <div class="mt-6 flex justify-center">
+          <div class="inline-flex rounded-lg border border-gray-200 bg-white p-1 shadow-sm" role="group" aria-label="Periodo de facturación">
+            <button type="button" (click)="interval.set('month')" [attr.aria-pressed]="interval() === 'month'" class="rounded-md px-4 py-2 text-sm font-medium"
+              [class]="interval() === 'month' ? 'bg-blue-700 text-white' : 'text-gray-700 hover:bg-gray-100'">Mensual</button>
+            <button type="button" (click)="interval.set('year')" [attr.aria-pressed]="interval() === 'year'" class="rounded-md px-4 py-2 text-sm font-medium"
+              [class]="interval() === 'year' ? 'bg-blue-700 text-white' : 'text-gray-700 hover:bg-gray-100'">Anual</button>
+          </div>
+        </div>
+
+        @if (plansError()) {
+          <p class="mx-auto mt-8 max-w-xl text-center text-gray-600">No pudimos cargar los planes en este momento. <a routerLink="/register" class="font-semibold">Crea tu cuenta</a> para verlos.</p>
+        } @else if (!catalog()) {
+          <div class="mt-10 grid gap-6 md:grid-cols-4" aria-busy="true">
+            @for (i of [1, 2, 3, 4]; track i) { <div class="h-80 animate-pulse rounded-xl border border-gray-200 bg-white"></div> }
+          </div>
+        } @else {
+          <div class="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            @if (catalog()?.free_tier; as free) {
+              <article class="flex flex-col rounded-xl border border-gray-200 bg-white p-6">
+                <h3 class="text-xl font-bold text-gray-900">{{ free.name }}</h3>
+                <p class="mt-1 text-sm text-gray-500">{{ free.description }}</p>
+                <p class="mt-5"><span class="text-3xl font-extrabold text-gray-900">$0</span><span class="text-sm text-gray-500"> / siempre</span></p>
+                <ul class="mt-5 flex-1 space-y-2 text-sm text-gray-700">
+                  @for (e of free.entitlements; track e.feature_code) {
+                    <li class="flex justify-between gap-3 border-b border-gray-100 pb-2"><span>{{ label(e.feature_code) }}</span>
+                      <span class="font-medium" [class.text-gray-400]="e.limit_value === 0">{{ limitLabel(e.limit_value, e.feature_code) }}</span></li>
+                  }
+                </ul>
+                <a routerLink="/register" class="btn-secondary mt-6 w-full">Empezar gratis</a>
+              </article>
+            }
+            @for (plan of catalog()!.plans; track plan.code) {
+              @let price = priceFor(plan);
+              <article class="flex flex-col rounded-xl border bg-white p-6" [class]="plan.code === 'professional' ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'">
+                <h3 class="text-xl font-bold text-gray-900">{{ plan.name }}</h3>
+                <p class="mt-1 text-sm text-gray-500">{{ plan.description }}</p>
+                @if (price) {
+                  <p class="mt-5">
+                    <span class="text-3xl font-extrabold text-gray-900">{{ price.amount | currency:'MXN':'symbol-narrow':'1.2-2' }}</span>
+                    <span class="text-sm text-gray-500"> / {{ price.billing_interval === 'month' ? 'mes' : 'año' }}</span>
+                  </p>
+                  @if (price.billing_interval === 'year') {
+                    <p class="text-xs text-gray-500">Equivale a {{ monthlyEquivalent(price) | currency:'MXN':'symbol-narrow':'1.2-2' }} al mes</p>
+                  }
+                } @else {
+                  <p class="mt-5 text-sm text-gray-500">No disponible en este periodo.</p>
+                }
+                <ul class="mt-5 flex-1 space-y-2 text-sm text-gray-700">
+                  @for (e of plan.entitlements; track e.feature_code) {
+                    <li class="flex justify-between gap-3 border-b border-gray-100 pb-2"><span>{{ label(e.feature_code) }}</span>
+                      <span class="font-medium" [class.text-gray-400]="e.limit_value === 0">{{ limitLabel(e.limit_value, e.feature_code) }}</span></li>
+                  }
+                </ul>
+                <a routerLink="/register" class="btn-primary mt-6 w-full">Comenzar</a>
+              </article>
+            }
+          </div>
+          <p class="mt-6 text-center text-xs text-gray-500">Creas tu cuenta gratis y contratas el plan desde la plataforma. Cancela cuando quieras.</p>
+        }
+      </div>
+    </section>
+
+    <!-- Preguntas frecuentes -->
+    <section id="preguntas" class="mx-auto max-w-3xl scroll-mt-20 px-4 py-16 md:px-6">
+      <h2 class="text-center text-3xl font-bold text-[#0F172A]">Preguntas frecuentes</h2>
+      <div class="mt-8 divide-y divide-gray-200 rounded-xl border border-gray-200">
+        @for (f of faqs; track f.q; let i = $index) {
+          <div>
+            <h3>
+              <button type="button" class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left font-medium text-gray-900 hover:bg-gray-50"
+                [attr.aria-expanded]="openFaq() === i" [attr.aria-controls]="'faq-' + i" (click)="toggleFaq(i)">
+                <span>{{ f.q }}</span><span aria-hidden="true" class="text-gray-400">{{ openFaq() === i ? '−' : '+' }}</span>
+              </button>
+            </h3>
+            @if (openFaq() === i) {
+              <p [id]="'faq-' + i" class="px-5 pb-4 text-sm text-gray-600">{{ f.a }}</p>
+            }
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Llamada final -->
+    <section class="bg-[#0F172A]">
+      <div class="mx-auto max-w-4xl px-4 py-16 text-center md:px-6">
+        <h2 class="text-3xl font-bold text-white">Simplifica tu negocio desde hoy</h2>
+        <p class="mt-3 text-slate-300">Crea tu cuenta en minutos y empieza con el plan Gratuito.</p>
+        <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          <a routerLink="/register" class="btn-primary px-6 py-3 text-base">Crear cuenta gratis</a>
+          @if (contactHref()) {
+            <a [href]="contactHref()" class="btn-secondary px-6 py-3 text-base">Solicitar una demostración</a>
+          }
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Pie -->
+  <footer class="border-t border-gray-200 bg-white">
+    <div class="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 md:flex-row md:items-center md:justify-between md:px-6">
+      <div>
+        <app-brand-logo [size]="30" />
+        <p class="mt-2 text-sm text-gray-500">{{ brand.secondaryTagline }}</p>
+      </div>
+      <nav class="flex flex-wrap gap-x-6 gap-y-2 text-sm" aria-label="Legal y contacto">
+        <a routerLink="/privacidad" class="!text-gray-600 hover:!text-blue-700">Aviso de privacidad</a>
+        <a routerLink="/terminos" class="!text-gray-600 hover:!text-blue-700">Términos y condiciones</a>
+        @if (brand.contactEmail) { <a [href]="'mailto:' + brand.contactEmail" class="!text-gray-600 hover:!text-blue-700">Contacto</a> }
+        <a routerLink="/login" class="!text-gray-600 hover:!text-blue-700">Iniciar sesión</a>
+      </nav>
+    </div>
+    <p class="border-t border-gray-100 py-4 text-center text-xs text-gray-400">© {{ year }} {{ brand.name }}. Todos los derechos reservados.</p>
+  </footer>
+</div>

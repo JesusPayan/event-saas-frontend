@@ -22,181 +22,98 @@ import {
   standalone: true,
   imports: [FormsModule, RouterLink],
   template: `
-    <main class="form-page">
-      <a routerLink="/inventory">← Volver al inventario</a>
-
-      <h1>
-        {{ editing() ? 'Editar artículo' : 'Nuevo artículo' }}
-      </h1>
+    <section class="space-y-6 p-4 md:p-6">
+      <div>
+        <a routerLink="/inventory" class="text-sm font-medium">← Volver al inventario</a>
+        <h1 class="page-title mt-2">{{ editing() ? 'Editar artículo' : 'Nuevo artículo' }}</h1>
+        <p class="page-subtitle">Datos del artículo, existencias y precios de renta.</p>
+      </div>
 
       @if (error()) {
-        <p class="error" role="alert">{{ error() }}</p>
+        <p class="alert-error" role="alert">{{ error() }}</p>
       }
 
       @if (loading()) {
-        <p>Cargando información...</p>
+        <div class="card space-y-4" aria-busy="true">
+          @for (i of [1, 2, 3, 4]; track i) { <div class="h-10 animate-pulse rounded-lg bg-gray-100"></div> }
+        </div>
       } @else {
-        <form #form="ngForm" (ngSubmit)="save()">
+        <form #form="ngForm" (ngSubmit)="save()" class="card space-y-8">
 
-          <label>
-            SKU
-            <input
-              name="sku"
-              [(ngModel)]="model.sku"
-              required
-              maxlength="60"
-            />
-          </label>
+          <fieldset>
+            <legend class="mb-4 text-base font-semibold text-gray-900">Identificación</legend>
+            <div class="grid gap-5 md:grid-cols-3">
+              <div>
+                <label for="sku" class="form-label">SKU <span class="text-red-600">*</span></label>
+                <input id="sku" name="sku" class="form-control" [(ngModel)]="model.sku" required maxlength="60" placeholder="SILLA-TIFFANY-01" />
+              </div>
+              <div class="md:col-span-2">
+                <label for="name" class="form-label">Nombre <span class="text-red-600">*</span></label>
+                <input id="name" name="name" class="form-control" [(ngModel)]="model.name" required maxlength="180" />
+              </div>
+              <div>
+                <label for="category_id" class="form-label">Categoría</label>
+                <select id="category_id" name="category_id" class="form-control" [(ngModel)]="model.category_id">
+                  <option [ngValue]="null">Sin categoría</option>
+                  @for (category of categories(); track category.id) {
+                    <option [ngValue]="category.id">{{ category.name }}</option>
+                  }
+                </select>
+              </div>
+              <div>
+                <label for="item_type" class="form-label">Tipo <span class="text-red-600">*</span></label>
+                <select id="item_type" name="item_type" class="form-control" [(ngModel)]="model.item_type" required>
+                  <option value="product">Producto</option>
+                  <option value="service">Servicio</option>
+                </select>
+              </div>
+              <div>
+                <label for="unit" class="form-label">Unidad de medida <span class="text-red-600">*</span></label>
+                <select id="unit" name="unit" class="form-control" [(ngModel)]="model.unit" required>
+                  <option value="piece">Pieza</option>
+                  <option value="set">Juego</option>
+                  <option value="table">Mesa</option>
+                  <option value="chair">Silla</option>
+                  <option value="service">Servicio</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
 
-          <label>
-            Nombre
-            <input
-              name="name"
-              [(ngModel)]="model.name"
-              required
-              maxlength="180"
-            />
-          </label>
+          <fieldset>
+            <legend class="mb-4 text-base font-semibold text-gray-900">Existencias y precios</legend>
+            <div class="grid gap-5 md:grid-cols-3">
+              <div>
+                <label for="quantity_total" class="form-label">Existencias <span class="text-red-600">*</span></label>
+                <input id="quantity_total" name="quantity_total" type="number" min="0" required class="form-control" [(ngModel)]="model.quantity_total" />
+              </div>
+              <div>
+                <label for="replacement_cost" class="form-label">Costo de reposición (MXN)</label>
+                <input id="replacement_cost" name="replacement_cost" type="number" min="0" step="0.01" class="form-control" [(ngModel)]="model.replacement_cost" placeholder="0.00" />
+                <p class="form-hint">Se usa para cobrar daños o pérdidas.</p>
+              </div>
+              <div>
+                <label for="rental_price" class="form-label">Precio de renta (MXN)</label>
+                <input id="rental_price" name="rental_price" type="number" min="0" step="0.01" class="form-control" [(ngModel)]="model.rental_price" placeholder="0.00" />
+              </div>
+            </div>
+          </fieldset>
 
-          <label>
-            Categoría
-            <select
-              name="category_id"
-              [(ngModel)]="model.category_id">
+          <div>
+            <label for="description" class="form-label">Descripción</label>
+            <textarea id="description" name="description" class="form-control" [(ngModel)]="model.description" rows="4"></textarea>
+          </div>
 
-              <option [ngValue]="null">
-                Sin categoría
-              </option>
-
-              @for (category of categories(); track category.id) {
-                <option [ngValue]="category.id">
-                  {{ category.name }}
-                </option>
-              }
-            </select>
-          </label>
-
-          <label>
-            Tipo
-            <select
-              name="item_type"
-              [(ngModel)]="model.item_type"
-              required>
-              <option value="product">Producto</option>
-              <option value="service">Servicio</option>
-            </select>
-          </label>
-
-          <label>
-            Existencias
-            <input
-              name="quantity_total"
-              type="number"
-              min="0"
-              required
-              [(ngModel)]="model.quantity_total"
-            />
-          </label>
-
-          <label>
-            Unidad de medida
-            <select
-              name="unit"
-              [(ngModel)]="model.unit"
-              required>
-              <option value="piece">Pieza</option>
-              <option value="set">Juego</option>
-              <option value="table">Mesa</option>
-              <option value="chair">Silla</option>
-              <option value="service">Servicio</option>
-            </select>
-          </label>
-
-          <label>
-            Costo de reposición
-            <input
-              name="replacement_cost"
-              type="number"
-              min="0"
-              step="0.01"
-              [(ngModel)]="model.replacement_cost"
-            />
-          </label>
-
-          <label>
-            Precio de renta
-            <input
-              name="rental_price"
-              type="number"
-              min="0"
-              step="0.01"
-              [(ngModel)]="model.rental_price"
-            />
-          </label>
-
-          <label>
-            Descripción
-            <textarea
-              name="description"
-              [(ngModel)]="model.description"
-              rows="4">
-            </textarea>
-          </label>
-
-          <div class="actions">
-            <a routerLink="/inventory">Cancelar</a>
-
-            <button
-              type="submit"
-              [disabled]="form.invalid || saving()">
+          <div class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:justify-end">
+            <a routerLink="/inventory" class="btn-secondary">Cancelar</a>
+            <button type="submit" class="btn-primary" [disabled]="form.invalid || saving()">
               {{ saving() ? 'Guardando...' : 'Guardar artículo' }}
             </button>
           </div>
         </form>
       }
-    </main>
-  `,
-  styles: [`
-    .form-page {
-      max-width: 850px;
-      margin: auto;
-      padding: 24px;
-    }
-
-    form {
-      display: grid;
-      gap: 16px;
-      margin-top: 24px;
-    }
-
-    label {
-      display: grid;
-      gap: 6px;
-      font-weight: 500;
-    }
-
-    input, select, textarea {
-      padding: 11px;
-      border: 1px solid #bbb;
-      border-radius: 8px;
-      font: inherit;
-    }
-
-    .actions {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-    }
-
-    button {
-      padding: 12px 18px;
-      cursor: pointer;
-    }
-
-    .error {
-      color: #b42318;
-    }
-  `]
+    </section>
+  `
 })
 export class InventoryFormComponent implements OnInit {
   private readonly service = inject(InventoryService);

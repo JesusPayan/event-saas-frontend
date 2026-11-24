@@ -4,55 +4,59 @@ import { Routes } from '@angular/router';
 import {
   authGuard,
   tenantGuard,
-  permissionGuard
+  permissionGuard,
+  operatorGuard,
+  landingGuard
 } from './services/auth.guard';
 
-import { AdminLayoutComponent } from './layout/sidebar/admin-layout.component';
+import { AdminLayoutComponent } from './layout/sidebar/admin-layout/admin-layout.component';
 
-import { ClientsComponent } from './pages/clients/clients.component';
-import { ClientFormComponent } from './pages/clients/client-form.component';
-import { ClientDetailComponent } from './pages/clients/client-detail.component';
 
-import { EventsComponent } from './pages/events/events.component';
-import { EventFormComponent } from './pages/events/event-detail/even-form/event-form.component';
-import { EventDetailComponent } from './pages/events/event-detail/event-detail.component';
-import { EventCalendarComponent } from './pages/events/event-calendar.component';
 
-import { InventoryComponent } from './pages/inventory/inventory.component';
-import { InventoryFormComponent } from './pages/inventory/inventory-form.component';
-import { InventoryCategoriesComponent } from './pages/inventory/inventory-categories.component';
-import {QuoteList} from './pages/quotes/quote-list/quote-list';
-import {QuoteForm} from './pages/quotes/quote-form/quote-form';
-import {QuoteDetail} from './pages/quotes/quote-detail/quote-detail';
+
 export const routes: Routes = [
+  // =====================================
+  // SITIO COMERCIAL (público). Con sesión iniciada, '/' lleva al panel.
+  // =====================================
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'login'
+    canActivate: [landingGuard],
+    loadComponent: () => import('./pages/landing/landing.component').then(m => m.LandingComponent)
+  },
+  {
+    path: 'privacidad',
+    data: { doc: 'privacy' },
+    loadComponent: () => import('./pages/legal/legal-page.component').then(m => m.LegalPageComponent)
+  },
+  {
+    path: 'terminos',
+    data: { doc: 'terms' },
+    loadComponent: () => import('./pages/legal/legal-page.component').then(m => m.LegalPageComponent)
   },
   {
     path: 'login',
     loadComponent: () =>
-      import('./pages/login.component')
+      import('./pages/login-component/login.component')
         .then(m => m.LoginComponent)
   },
   {
     path: 'register',
     loadComponent: () =>
-      import('./pages/register.component')
+      import('./pages/registrer-component/register.component')
         .then(m => m.RegisterComponent)
   },
   {
     path: 'tenants',
     loadComponent: () =>
-      import('./pages/tenants.component')
+      import('./pages/tenants-component/tenants.component')
         .then(m => m.TenantsComponent),
     canActivate: [authGuard]
   },
   {
     path: 'forbidden',
     loadComponent: () =>
-      import('./pages/forbidden.component')
+      import('./pages/forbidden-component/forbidden.component')
         .then(m => m.ForbiddenComponent),
     canActivate: [authGuard]
   },
@@ -68,13 +72,20 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () =>
-          import('./pages/dashboard.component')
+          import('./pages/dashboard-component/dashboard.component')
             .then(m => m.DashboardComponent)
+      },
+      {
+        path: 'company/receipt-settings',
+        loadComponent: () => 
+          import('./pages/company-settings/company-receipt-settings.component')
+        .then(m => m.CompanyReceiptSettingsComponent),
+        canActivate: [permissionGuard('contracts.read')]
       },
       {
         path: 'members',
         loadComponent: () =>
-          import('./pages/members.component')
+          import('./pages/members-component/members.component')
             .then(m => m.MembersComponent),
         canActivate: [permissionGuard('members.read')]
       },
@@ -84,22 +95,22 @@ export const routes: Routes = [
       // =====================================
       {
         path: 'clients',
-        component: ClientsComponent,
+        loadComponent: () => import('./pages/clients/clients-component/clients.component').then(m => m.ClientsComponent),
         canActivate: [permissionGuard('clients.read')]
       },
       {
         path: 'clients/new',
-        component: ClientFormComponent,
+        loadComponent: () => import('./pages/clients/client-form/client-form.component').then(m => m.ClientFormComponent),
         canActivate: [permissionGuard('clients.create')]
       },
       {
         path: 'clients/:id/edit',
-        component: ClientFormComponent,
+        loadComponent: () => import('./pages/clients/client-form/client-form.component').then(m => m.ClientFormComponent),
         canActivate: [permissionGuard('clients.update')]
       },
       {
         path: 'clients/:id',
-        component: ClientDetailComponent,
+        loadComponent: () => import('./pages/clients/client-detail/client-detail.component').then(m => m.ClientDetailComponent),
         canActivate: [permissionGuard('clients.read')]
       },
 
@@ -108,27 +119,27 @@ export const routes: Routes = [
       // =====================================
       {
         path: 'events',
-        component: EventsComponent,
+        loadComponent: () => import('./pages/events/event-list/events.component').then(m => m.EventsComponent),
         canActivate: [permissionGuard('events.read')]
       },
       {
         path: 'events/new',
-        component: EventFormComponent,
+        loadComponent: () => import('./pages/events/event-detail/even-form/event-form.component').then(m => m.EventFormComponent),
         canActivate: [permissionGuard('events.create')]
       },
       {
         path: 'events/calendar',
-        component: EventCalendarComponent,
+        loadComponent: () => import('./pages/events/event-calendar/event-calendar.component').then(m => m.EventCalendarComponent),
         canActivate: [permissionGuard('events.read')]
       },
       {
         path: 'events/:id/edit',
-        component: EventFormComponent,
+        loadComponent: () => import('./pages/events/event-detail/even-form/event-form.component').then(m => m.EventFormComponent),
         canActivate: [permissionGuard('events.update')]
       },
       {
         path: 'events/:id',
-        component: EventDetailComponent,
+        loadComponent: () => import('./pages/events/event-detail/event-detail.component').then(m => m.EventDetailComponent),
         canActivate: [permissionGuard('events.read')]
       },
 
@@ -176,17 +187,17 @@ export const routes: Routes = [
       // =====================================
       {
         path: 'inventory',
-        component: InventoryComponent,
+        loadComponent: () => import('./pages/inventory/inventory.component').then(m => m.InventoryComponent),
         canActivate: [permissionGuard('inventory.read')]
       },
       {
         path: 'inventory/new',
-        component: InventoryFormComponent,
+        loadComponent: () => import('./pages/inventory/inventory-form.component').then(m => m.InventoryFormComponent),
         canActivate: [permissionGuard('inventory.create')]
       },
       {
         path: 'inventory/categories',
-        component: InventoryCategoriesComponent,
+        loadComponent: () => import('./pages/inventory/inventory-categories.component').then(m => m.InventoryCategoriesComponent),
         canActivate: [permissionGuard('inventory.read')]
       },
       {
@@ -231,28 +242,175 @@ export const routes: Routes = [
             .then(m => m.InventoryCapacityAlertsComponent),
         canActivate: [permissionGuard('inventory.read')]
       },
+      
+      // =====================================
+      // REPORTES DE INVENTARIO
+      // =====================================
       {
-        path: 'inventory/:id/edit',
-        component: InventoryFormComponent,
-        canActivate: [permissionGuard('inventory.update')]
-      }
-    ]
-  },
-  
-{
   path: 'inventory/dashboard',
   loadComponent: () =>
+    import('./pages/inventory/inventory-dashboard/inventory-dashboard.component')
+      .then(m => m.InventoryDashboardComponent),
+  canActivate: [permissionGuard('inventory.read')]
+},
+{
+  path: 'inventory/reports',
+  loadComponent: () =>
     import(
-
-      // './pages/inventory-dashboard/inventory-dashboard.component'
-      './pages/inventory/inventory-dashboard/inventory-dashboard'
-    ).then(m => m.InventoryDashboardComponent),
+      './pages/inventory/inventory-reports/inventory-reports.component'
+    ).then(m => m.InventoryReportsComponent),
+  canActivate: [
+    permissionGuard('inventory.read')
+  ]
+},
+// =====================================
+// INV-50-03 - LOGÍSTICA
+// =====================================
+{
+  path: 'logistics',
+  loadComponent: () =>
+    import('./pages/logistics/logistics-list.component/logistics-list.component')
+      .then(m => m.LogisticsListComponent),
+  canActivate: [permissionGuard('inventory.read')]
+},
+{
+  path: 'logistics/new',
+  loadComponent: () =>
+    import('./pages/logistics/logistics-create.component/logistics-create.component')
+      .then(m => m.LogisticsCreateComponent),
+  canActivate: [permissionGuard('inventory.create')]
+},
+{
+  path: 'logistics/:id',
+  loadComponent: () =>
+    import('./pages/logistics/logistics-detail.component/logistics-detail.component')
+      .then(m => m.LogisticsDetailComponent),
   canActivate: [permissionGuard('inventory.read')]
 },
 
+      // =====================================
+      // EDITAR ARTICULO
+      // =====================================
+      {
+        path: 'inventory/:id/edit',
+        loadComponent: () => import('./pages/inventory/inventory-form.component').then(m => m.InventoryFormComponent),
+        canActivate: [
+          permissionGuard('inventory.update')
+        ]
+      },
+{
+  path: 'contracts',
+  canActivate: [
+    permissionGuard('contracts.read')
+  ],
+  children: [
+    {
+      path: '',
+      pathMatch: 'full',
+      loadComponent: () =>
+        import(
+          './pages/contracts/contracts-list.component'
+        ).then(m => m.ContractsListComponent)
+    },
+    {
+      path: ':id/signatures',
+      loadComponent: () =>
+        import(
+          './pages/contract-signatures/contract-signatures.component'
+        ).then(m => m.ContractSignaturesComponent)
+    },
+    {
+  path: ':id/payments',
+  loadComponent: () =>
+    import('./pages/contract-payments/contract-payments.component')
+      .then(m => m.ContractPaymentsComponent),
+  canActivate: [permissionGuard('contracts.read')]
+}
+  ]
+},
+
+      // =====================================
+      // BILL-03 - PLANES Y SUSCRIPCIONES (tenant)
+      // =====================================
+      {
+        path: 'billing/plans',
+        loadComponent: () =>
+          import('./pages/billing/billing-plans/billing-plans.component')
+            .then(m => m.BillingPlansComponent),
+        canActivate: [permissionGuard('tenant.read')]
+      },
+      {
+        path: 'billing/subscription',
+        loadComponent: () =>
+          import('./pages/billing/billing-subscription/billing-subscription.component')
+            .then(m => m.BillingSubscriptionComponent),
+        canActivate: [permissionGuard('tenant.read')]
+      },
+      {
+        path: 'billing/return',
+        loadComponent: () =>
+          import('./pages/billing/billing-return/billing-return.component')
+            .then(m => m.BillingReturnComponent),
+        canActivate: [permissionGuard('tenant.read')]
+      },
+
+      // =====================================
+      // PANEL GLOBAL DEL OPERADOR (no es permiso de tenant)
+      // =====================================
+      {
+        path: 'platform/prices',
+        loadComponent: () =>
+          import('./pages/billing/billing-admin-prices/billing-admin-prices.component')
+            .then(m => m.BillingAdminPricesComponent),
+        canActivate: [operatorGuard]
+      },
+      {
+        path: 'platform/subscriptions',
+        loadComponent: () =>
+          import('./pages/billing/billing-admin-subscriptions/billing-admin-subscriptions.component')
+            .then(m => m.BillingAdminSubscriptionsComponent),
+        canActivate: [operatorGuard]
+      },
+      {
+        path: 'billing/admin/prices',
+        pathMatch: 'full',
+        redirectTo: 'platform/prices'
+      }
+
+    ] // Fin de children de AdminLayoutComponent
+  }, // Fin de AdminLayoutComponent
+
+  // =====================================
+  // FIRMA PÚBLICA DE CONTRATOS
+  // =====================================
+  {
+    path: 'sign/:token',
+    loadComponent: () =>
+      import('./pages/contract-signing/contract-signing.component')
+        .then(m => m.ContractSigningComponent)
+  },
+
+  // =====================================
+  // CUENTA: RECUPERACIÓN E INVITACIONES (públicas; el token viaja en el #fragmento)
+  // =====================================
+  {
+    path: 'forgot-password',
+    loadComponent: () => import('./pages/password-forgot/password-forgot.component').then(m => m.PasswordForgotComponent)
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () => import('./pages/password-reset/password-reset.component').then(m => m.PasswordResetComponent)
+  },
+  {
+    path: 'invite',
+    loadComponent: () => import('./pages/invite-accept/invite-accept.component').then(m => m.InviteAcceptComponent)
+  },
+
+  // =====================================
+  // RUTA NO ENCONTRADA
+  // =====================================
   {
     path: '**',
     redirectTo: 'login'
   }
 ];
-

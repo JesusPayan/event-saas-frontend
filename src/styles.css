@@ -1,33 +1,122 @@
-
 @import "tailwindcss";
 
 @plugin "flowbite/plugin";
 
 @source "../node_modules/flowbite";
 
-/* Estilos globales propios */
+/*
+ * Estilos base en @layer base: aplican a elementos sin clases, pero las utilidades
+ * de Tailwind siempre les ganan. (Antes estaban fuera de capa y anulaban clases
+ * como text-white en enlaces-botón o el diseño de los formularios.)
+ */
+@layer base {
+  /* Identidad visual EasiAcc (ver docs/BRAND_GUIDELINES.md). */
+  :root {
+    --brand-navy: #0F172A;
+    --brand-primary: #2563EB;
+    --brand-secondary: #60A5FA;
+    --brand-background: #F8FAFC;
+    --brand-text-muted: #64748B;
+    --brand-border: #E2E8F0;
+    --brand-success: #16A34A;
+    --brand-warning: #D97706;
+    --brand-error: #DC2626;
+  }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-  background: #f8fafc;
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--brand-background);
+    color: var(--brand-navy);
+    /* Inter si está instalada; si no, la fuente del sistema (sin dependencias externas). */
+    font: 16px Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+
+  a {
+    color: #1d4ed8;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Formularios aún no migrados: apariencia mínima consistente. */
+  label {
+    display: block;
+    margin: 16px 0 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    display: block;
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.625rem;
+    font: inherit;
+    font-size: 0.875rem;
+    background: #f9fafb;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
 }
 
-*{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#17253b;font:16px system-ui,Arial,sans-serif}a{color:#2255ad;text-decoration:none}a:hover{text-decoration:underline}.topbar{background:#12243f;color:white;padding:18px clamp(16px,5vw,70px);display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.brand{color:white;font-weight:800;font-size:20px}.topbar nav{display:flex;align-items:center;gap:20px;flex-wrap:wrap}.topbar nav a{color:#e8f0ff}main{max-width:1080px;margin:48px auto;padding:0 20px}.auth-card,.panel{background:white;border:1px solid #e0e6ef;border-radius:18px;padding:clamp(24px,4vw,48px);box-shadow:0 12px 35px #152b4b10}.auth-card{max-width:480px;margin:auto}h1{margin:0 0 12px;font-size:30px}p{color:#52647d;line-height:1.6}label{display:block;margin:18px 0 8px;font-weight:600}input{display:block;width:100%;margin-top:8px;border:1px solid #bdc8d8;border-radius:9px;padding:12px;font:inherit}button{border:0;background:#245bcb;color:white;padding:12px 18px;border-radius:9px;font:inherit;cursor:pointer;margin-top:12px}button:disabled{opacity:.55;cursor:wait}.outline{background:transparent;border:1px solid #b8c8e6}.tenant{display:block;width:100%;text-align:left}.error{color:#b3261e}.success{color:#13703b}.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin:24px 0}.tiles article{border:1px solid #e0e6ef;padding:20px;border-radius:12px}table{border-collapse:collapse;width:100%}td,th{text-align:left;border-bottom:1px solid #e0e6ef;padding:12px}.eyebrow{color:#4167a4;font-weight:700;letter-spacing:2px;font-size:12px}
-.module-card {
-  display: block;
-  padding: 24px;
-  border: 1px solid #dbe3ef;
-  border-radius: 12px;
-  background: white;
-  color: #17253b;
-  text-decoration: none;
-  transition: 0.2s ease;
-}
+/*
+ * Componentes estándar de la UI (Tailwind + Flowbite). Úsalos en pantallas nuevas
+ * para mantener un aspecto uniforme: tarjetas blancas, acentos azules, bordes suaves.
+ */
+@layer components {
+  .card {
+    @apply rounded-xl border border-gray-200 bg-white p-6 shadow-sm;
+  }
 
-.module-card:hover {
-  border-color: #2563eb;
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.12);
-  transform: translateY(-2px);
-}
+  .page-title {
+    @apply text-2xl font-bold text-gray-900;
+  }
 
+  .page-subtitle {
+    @apply mt-1 text-sm text-gray-500;
+  }
+
+  .form-label {
+    @apply mb-2 mt-0 block text-sm font-medium text-gray-900;
+  }
+
+  .form-control {
+    @apply block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .form-hint {
+    @apply mt-1 text-xs text-gray-500;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold !text-white hover:bg-blue-800 hover:no-underline focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium !text-gray-700 hover:bg-gray-50 hover:no-underline focus:outline-none focus:ring-4 focus:ring-gray-100 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .alert-error,
+  .error {
+    @apply rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800;
+  }
+
+  .alert-success {
+    @apply rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800;
+  }
+}

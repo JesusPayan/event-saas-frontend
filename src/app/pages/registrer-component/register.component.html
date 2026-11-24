@@ -1,0 +1,52 @@
+<main class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">
+  <div class="w-full max-w-md">
+    <div class="mb-6 flex flex-col items-center gap-2">
+          <app-brand-logo [size]="44" [showProduct]="true" />
+          <p class="text-sm text-slate-500">{{ brand.tagline }}</p>
+        </div>
+
+    <section class="card p-8">
+      <h1 class="page-title">Registra tu empresa</h1>
+      <p class="page-subtitle">Crea tu espacio de trabajo. Empiezas con el plan Gratuito.</p>
+
+      @if (success()) {
+        <div role="status" class="alert-success mt-6">
+          Empresa creada. <a routerLink="/login" class="font-semibold">Inicia sesión</a> para comenzar.
+        </div>
+      } @else {
+        <form class="mt-6 space-y-5" (ngSubmit)="submit()" #registerForm="ngForm">
+          <div>
+            <label for="company" class="form-label">Nombre de la empresa</label>
+            <input id="company" class="form-control" name="company" [(ngModel)]="company" (ngModelChange)="suggestSlug()" required minlength="3" maxlength="180">
+          </div>
+          <div>
+            <label for="slug" class="form-label">Identificador</label>
+            <input id="slug" class="form-control" name="slug" [(ngModel)]="slug" (ngModelChange)="slugTouched = true" required pattern="[a-z0-9]([a-z0-9-]{1,98}[a-z0-9])?">
+            <p class="form-hint">Minúsculas, números y guiones. Ejemplo: eventos-del-norte</p>
+          </div>
+          <div>
+            <label for="email" class="form-label">Correo del propietario</label>
+            <input id="email" class="form-control" name="email" type="email" [(ngModel)]="email" required autocomplete="email">
+          </div>
+          <div>
+            <label for="password" class="form-label">Contraseña</label>
+            <input id="password" class="form-control" name="password" type="password" [(ngModel)]="password" required minlength="12" autocomplete="new-password">
+            <p class="form-hint">Mínimo 12 caracteres.</p>
+          </div>
+
+          @if (error()) {
+            <p role="alert" class="alert-error">{{ error() }}</p>
+          }
+
+          <button type="submit" class="btn-primary w-full" [disabled]="busy() || registerForm.invalid">
+            {{ busy() ? 'Registrando…' : 'Crear empresa' }}
+          </button>
+        </form>
+      }
+
+      <p class="mt-6 text-center text-sm text-gray-600">
+        ¿Ya tienes cuenta? <a routerLink="/login" class="font-semibold">Iniciar sesión</a>
+      </p>
+    </section>
+  </div>
+</main>

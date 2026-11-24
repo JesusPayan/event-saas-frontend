@@ -1,0 +1,44 @@
+<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+
+    <!-- Herramientas y filtros -->
+    <div class="border-b border-gray-200 p-5">
+        <ng-content select="[table-toolbar]" />
+    </div>
+
+    <!-- Mensaje de error -->
+    @if (error()) {
+    <div role="alert" class="m-5 rounded-lg bg-red-50 p-4 text-sm text-red-700">
+        {{ error() }}
+    </div>
+    }
+
+    <!-- Cargando -->
+    @if (loading()) {
+    <div role="status" class="flex items-center justify-center gap-3 p-12 text-gray-500">
+        <span class="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></span>
+        {{ loadingMessage() }}
+    </div>
+    } @else if (!error()) {
+
+    @if (empty()) {
+    <div class="px-6 py-12 text-center">
+        <h3 class="text-sm font-semibold text-gray-900">
+            {{ emptyTitle() }}
+        </h3>
+
+        <p class="mt-2 text-sm text-gray-500">
+            {{ emptyDescription() }}
+        </p>
+    </div>
+    } @else {
+    <div class="overflow-x-auto">
+        <ng-content select="[table-content]" />
+    </div>
+    }
+
+    <!-- Pie: paginación y acciones -->
+    <div class="border-t border-gray-200 p-5">
+        <ng-content select="[table-footer]" />
+    </div>
+    }
+</div>

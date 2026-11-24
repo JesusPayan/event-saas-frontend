@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 64" role="img" aria-label="EasiAcc">
+  <title>EasiAcc</title>
+  <rect width="64" height="64" rx="15" fill="#0F172A"/><rect x="17" y="16" width="8" height="32" rx="4" fill="#FFFFFF"/><rect x="17" y="16" width="30" height="8" rx="4" fill="#FFFFFF"/><rect x="17" y="28" width="20" height="8" rx="4" fill="#FFFFFF"/><rect x="17" y="40" width="30" height="8" rx="4" fill="#FFFFFF"/><circle cx="44" cy="32" r="4" fill="#FFFFFF"/>
+  <text x="80" y="44" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="38" font-weight="700" letter-spacing="-1"><tspan fill="#0F172A">easi</tspan><tspan fill="#0F172A">acc</tspan></text>
+</svg>

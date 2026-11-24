@@ -1,0 +1,90 @@
+<section class="space-y-6 p-4 md:p-6">
+  <app-page-header [title]="auth.tenant()?.name ?? 'Panel de control'" description="Resumen de la operación de tu empresa.">
+    @if (auth.hasPermission('events.create')) {
+      <a routerLink="/events/new" class="btn-primary">+ Nuevo evento</a>
+    }
+  </app-page-header>
+
+  <!-- Indicadores -->
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    @if (auth.hasPermission('clients.read')) {
+      <a routerLink="/clients" class="card block hover:border-blue-400 hover:no-underline">
+        <p class="text-sm text-gray-500">Clientes</p>
+        <p class="mt-2 text-3xl font-bold text-gray-900">{{ loading() ? '—' : (clientsTotal() ?? '—') }}</p>
+        <p class="mt-1 text-xs text-blue-700">Ver cartera →</p>
+      </a>
+    }
+    @if (auth.hasPermission('events.read')) {
+      <a routerLink="/events" class="card block hover:border-blue-400 hover:no-underline">
+        <p class="text-sm text-gray-500">Eventos registrados</p>
+        <p class="mt-2 text-3xl font-bold text-gray-900">{{ loading() ? '—' : (eventsTotal() ?? '—') }}</p>
+        <p class="mt-1 text-xs text-blue-700">Ver eventos →</p>
+      </a>
+      <a routerLink="/events/calendar" class="card block hover:border-blue-400 hover:no-underline">
+        <p class="text-sm text-gray-500">Eventos en los próximos 30 días</p>
+        <p class="mt-2 text-3xl font-bold text-gray-900">{{ loading() ? '—' : upcoming().length }}</p>
+        <p class="mt-1 text-xs text-blue-700">Ver calendario →</p>
+      </a>
+    }
+    @if (subscription(); as sub) {
+      <a routerLink="/billing/subscription" class="card block hover:border-blue-400 hover:no-underline">
+        <p class="text-sm text-gray-500">Plan</p>
+        <p class="mt-2 text-xl font-bold text-gray-900">
+          {{ sub.subscription && sub.status !== 'canceled' && sub.status !== 'expired' ? sub.subscription.plan_name : 'Gratuito' }}
+        </p>
+        <p class="mt-1 text-xs text-gray-500">
+          {{ sub.subscription ? (statusLabels[sub.status] ?? sub.status) : 'Funciones básicas' }}
+          @if (sub.subscription?.current_period_end) { · hasta {{ sub.subscription?.current_period_end | date:'mediumDate' }} }
+        </p>
+      </a>
+    }
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <!-- Próximos eventos -->
+    @if (auth.hasPermission('events.read')) {
+      <div class="card lg:col-span-2">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-900">Próximos eventos</h2>
+          <a routerLink="/events" class="text-sm font-medium">Ver todos</a>
+        </div>
+        @if (loading()) {
+          <div class="space-y-3" aria-busy="true">
+            @for (i of [1, 2, 3]; track i) { <div class="h-12 animate-pulse rounded-lg bg-gray-100"></div> }
+          </div>
+        } @else {
+          <ul class="divide-y divide-gray-100">
+            @for (event of upcoming().slice(0, 6); track event.id) {
+              <li>
+                <a [routerLink]="['/events', event.id]" class="flex items-center justify-between gap-4 py-3 hover:no-underline">
+                  <span>
+                    <span class="block font-medium text-gray-900">{{ event.name }}</span>
+                    <span class="block text-xs text-gray-500">{{ event.starts_at | date:'EEE d MMM, HH:mm' }}{{ event.location ? ' · ' + event.location : '' }}</span>
+                  </span>
+                  <span class="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold" [class]="eventStatus(event.status).css">
+                    {{ eventStatus(event.status).label }}
+                  </span>
+                </a>
+              </li>
+            } @empty {
+              <li class="py-8 text-center text-sm text-gray-500">No hay eventos en los próximos 30 días.</li>
+            }
+          </ul>
+        }
+      </div>
+    }
+
+    <!-- Accesos rápidos -->
+    <div class="card">
+      <h2 class="mb-4 text-lg font-semibold text-gray-900">Accesos rápidos</h2>
+      <div class="grid gap-2">
+        @if (auth.hasPermission('clients.create')) { <a routerLink="/clients/new" class="btn-secondary justify-start">Nuevo cliente</a> }
+        @if (auth.hasPermission('quotes.create')) { <a routerLink="/quotes/new" class="btn-secondary justify-start">Nueva cotización</a> }
+        @if (auth.hasPermission('inventory.read')) { <a routerLink="/inventory" class="btn-secondary justify-start">Inventario</a> }
+        @if (auth.hasPermission('inventory.read')) { <a routerLink="/logistics" class="btn-secondary justify-start">Órdenes logísticas</a> }
+        @if (auth.hasPermission('contracts.read')) { <a routerLink="/contracts" class="btn-secondary justify-start">Contratos</a> }
+        @if (auth.hasPermission('members.read')) { <a routerLink="/members" class="btn-secondary justify-start">Miembros de la empresa</a> }
+      </div>
+    </div>
+  </div>
+</section>

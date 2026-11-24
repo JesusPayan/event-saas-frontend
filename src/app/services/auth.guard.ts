@@ -15,3 +15,16 @@ export const permissionGuard = (permission: string): CanActivateFn => () => {
   const auth = inject(AuthService); const router = inject(Router);
   return auth.hasPermission(permission) ? true : router.createUrlTree(['/forbidden']);
 };
+
+/** Panel global: solo operadores configurados en el backend (BILLING_OPERATOR_USER_IDS). */
+export const operatorGuard: CanActivateFn = () => {
+  const auth = inject(AuthService); const router = inject(Router);
+  return auth.isOperator() ? true : router.createUrlTree(['/forbidden']);
+};
+
+/** La landing es pública; si ya hay sesión, se va directo al panel. */
+export const landingGuard: CanActivateFn = () => {
+  const auth = inject(AuthService); const router = inject(Router);
+  if (!auth.authenticated()) return true;
+  return router.createUrlTree([auth.tenant() ? '/dashboard' : '/tenants']);
+};

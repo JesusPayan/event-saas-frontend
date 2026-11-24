@@ -25,7 +25,7 @@ import { AuthService } from '../../../../services/auth.service';
 import { EventStatus } from '../../../../models/event.model';
 
 import { EventInventoryMovementsComponent }
-  from '../../event-inventory-movements.component';
+  from '../../event-inventory-movements/event-inventory-movements.component';
 
 @Component({
   selector: 'app-event-inventory-reservations',
