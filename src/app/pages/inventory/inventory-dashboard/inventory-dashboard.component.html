@@ -1,0 +1,75 @@
+<section class="space-y-6 p-4 md:p-6">
+  <app-page-header title="Resumen de inventario" description="Entregas, devoluciones y unidades pendientes de regresar.">
+    <a routerLink="/inventory/reports" class="btn-secondary">Reportes y exportación</a>
+  </app-page-header>
+
+  @if (error()) {
+    <p role="alert" class="alert-error">{{ error() }}</p>
+  }
+
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="card">
+      <p class="text-sm text-gray-500">Unidades entregadas</p>
+      <p class="mt-2 text-3xl font-bold text-gray-900">{{ summary().quantity_dispatched }}</p>
+    </div>
+    <div class="card">
+      <p class="text-sm text-gray-500">Unidades devueltas</p>
+      <p class="mt-2 text-3xl font-bold text-green-700">{{ summary().quantity_returned }}</p>
+    </div>
+    <div class="card">
+      <p class="text-sm text-gray-500">Pendientes de devolución</p>
+      <p class="mt-2 text-3xl font-bold text-amber-700">{{ summary().quantity_outstanding }}</p>
+    </div>
+  </div>
+
+  <div class="card p-0">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 p-4">
+      <h2 class="text-lg font-semibold text-gray-900">Movimientos recientes</h2>
+      <div class="inline-flex rounded-lg border border-gray-200 p-1" role="group" aria-label="Filtrar por tipo">
+        @for (opt of [{ v: '', l: 'Todos' }, { v: 'dispatch', l: 'Entregas' }, { v: 'return', l: 'Devoluciones' }]; track opt.v) {
+          <button type="button" class="rounded-md px-3 py-1.5 text-sm font-medium"
+            [class]="movementType() === opt.v ? 'bg-blue-700 text-white' : 'text-gray-700 hover:bg-gray-100'"
+            [attr.aria-pressed]="movementType() === opt.v" (click)="setType($any(opt.v))">{{ opt.l }}</button>
+        }
+      </div>
+    </div>
+    <div class="relative overflow-x-auto" [attr.aria-busy]="loading()">
+      <table class="w-full text-left text-sm text-gray-700">
+        <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+          <tr>
+            <th scope="col" class="px-4 py-3">Fecha</th>
+            <th scope="col" class="px-4 py-3">Artículo</th>
+            <th scope="col" class="px-4 py-3">Evento</th>
+            <th scope="col" class="px-4 py-3">Tipo</th>
+            <th scope="col" class="px-4 py-3 text-right">Cantidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of movements(); track m.movement_id) {
+            <tr class="border-b border-gray-100">
+              <td class="whitespace-nowrap px-4 py-3">{{ m.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="px-4 py-3"><span class="font-medium text-gray-900">{{ m.item_name }}</span>
+                <span class="block font-mono text-xs text-gray-500">{{ m.sku }}</span></td>
+              <td class="px-4 py-3"><a [routerLink]="['/events', m.event_id]" class="font-medium">#{{ m.event_id }}</a></td>
+              <td class="px-4 py-3">
+                <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  [class]="m.movement_type === 'dispatch' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'">{{ label(m.movement_type) }}</span>
+              </td>
+              <td class="px-4 py-3 text-right font-medium">{{ m.quantity }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5" class="px-4 py-10 text-center text-gray-500">{{ loading() ? 'Cargando…' : 'Sin movimientos registrados.' }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (pages() > 1) {
+      <div class="flex items-center justify-end gap-2 p-4 text-sm text-gray-600">
+        <span>{{ total() }} movimientos</span>
+        <button type="button" class="btn-secondary px-3 py-1.5" [disabled]="page() <= 1 || loading()" (click)="goTo(page() - 1)">Anterior</button>
+        <span>Página {{ page() }} de {{ pages() }}</span>
+        <button type="button" class="btn-secondary px-3 py-1.5" [disabled]="page() >= pages() || loading()" (click)="goTo(page() + 1)">Siguiente</button>
+      </div>
+    }
+  </div>
+</section>
