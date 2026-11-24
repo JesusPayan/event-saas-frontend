@@ -232,6 +232,13 @@ export const routes: Routes = [
       // REPORTES DE INVENTARIO
       // =====================================
       {
+  path: 'inventory/dashboard',
+  loadComponent: () =>
+    import('./pages/inventory/inventory-dashboard/inventory-dashboard.component')
+      .then(m => m.InventoryDashboardComponent),
+  canActivate: [permissionGuard('inventory.read')]
+},
+{
   path: 'inventory/reports',
   loadComponent: () =>
     import(

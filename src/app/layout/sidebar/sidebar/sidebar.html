@@ -102,6 +102,10 @@
     @if (inventoryOpen()) {
     <div id="inventory-submenu" class="submenu">
 
+      <a routerLink="/inventory/dashboard" routerLinkActive="active" (click)="closeMobile()">
+        Resumen
+      </a>
+
       <a routerLink="/inventory" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
         (click)="closeMobile()">
         Artículos

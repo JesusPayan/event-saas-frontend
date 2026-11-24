@@ -31,6 +31,14 @@ export interface PaginatedReport<T> {
   page: number;
   pages: number;
   per_page: number;
+  /** Solo en el reporte de movimientos: totales del periodo filtrado. */
+  summary?: MovementReportSummary;
+}
+
+export interface MovementReportSummary {
+  quantity_dispatched: number;
+  quantity_returned: number;
+  quantity_outstanding: number;
 }
 
 export interface MovementReportRow {
