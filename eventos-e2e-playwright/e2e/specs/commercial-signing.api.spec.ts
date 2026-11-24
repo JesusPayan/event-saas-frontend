@@ -118,7 +118,7 @@ test('E2E-03-05 invitación real y validación OTP mediante Mailpit', async ({re
   });
   expect(invitation.status()).toBe(201);
   const invite = await invitation.json();
-  const body = await readMail('Invitación para firmar contrato - Eventos SaaS');
+  const body = await readMail('Invitación para firmar contrato');
   const token = body.match(/\/sign\/([A-Za-z0-9_-]{32,256})\b/)?.[1];
   expect(Boolean(token), 'Invitation token missing').toBe(true);
   const details = await request.get(`${apiUrl}${prefix}/signatures/invitations/${token}`);

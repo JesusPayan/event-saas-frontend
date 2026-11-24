@@ -96,3 +96,23 @@ test('401 on public credential endpoints does not end the session', () => {
     assert.ok(interceptor.includes(`'${p}'`), p);
   }
 });
+
+test('EasiAcc brand: no legacy name in the app, correct spelling and assets present', async () => {
+  const { readdirSync, statSync } = await import('node:fs');
+  const files = [];
+  const walk = dir => { for (const f of readdirSync(dir)) { const p = resolve(dir, f); statSync(p).isDirectory() ? walk(p) : /\.(html|ts|css)$/.test(f) && files.push(p); } };
+  walk(resolve(root, 'src'));
+  for (const file of files) {
+    const text = readFileSync(file, 'utf8');
+    assert.doesNotMatch(text, /Eventos SaaS/, `marca anterior en ${file}`);
+    if (!file.endsWith('core/brand.ts')) assert.doesNotMatch(text, /EasyAcc/i, `«EasyAcc» mal escrito en ${file}`);
+  }
+  const index = read('src/index.html');
+  assert.match(index, /<title>EasiAcc Events/);
+  assert.match(index, /rel="manifest" href="site.webmanifest"/);
+  for (const asset of ['public/favicon.svg', 'public/favicon.ico', 'public/icons/icon-192.png', 'public/icons/icon-512.png',
+                       'public/brand/easiacc-horizontal.svg', 'public/brand/easiacc-isotipo.svg']) {
+    assert.ok(existsSync(resolve(root, asset)), `falta ${asset}`);
+  }
+  assert.equal(JSON.parse(read('public/site.webmanifest')).name, 'EasiAcc Events');
+});

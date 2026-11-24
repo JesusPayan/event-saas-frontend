@@ -15,6 +15,7 @@ import {
 
 import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
+import { BrandLogoComponent } from '../../../shared/components/brand-logo/brand-logo';
 
 import {
   LucideAngularModule,
@@ -47,7 +48,8 @@ import {
   imports: [
     RouterLink,
     RouterLinkActive,
-    LucideAngularModule
+    LucideAngularModule,
+    BrandLogoComponent
   ],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css'

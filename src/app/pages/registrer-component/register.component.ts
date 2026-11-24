@@ -1,3 +1,5 @@
+import { BRAND } from '../../core/brand';
+import { BrandLogoComponent } from '../../shared/components/brand-logo/brand-logo';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -5,8 +7,9 @@ import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 
-@Component({ standalone: true, imports: [FormsModule, RouterLink], templateUrl: './register.component.html' })
+@Component({ standalone: true, imports: [BrandLogoComponent, FormsModule, RouterLink], templateUrl: './register.component.html' })
 export class RegisterComponent {
+  readonly brand = BRAND;
   private readonly auth = inject(AuthService);
   company = '';
   slug = '';
