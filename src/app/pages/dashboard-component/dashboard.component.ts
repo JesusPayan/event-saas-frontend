@@ -58,7 +58,8 @@ export class DashboardComponent {
       tasks.push(firstValueFrom(this.events.list({ page: 1, per_page: 1 })).then(r => this.eventsTotal.set(r.total)).catch(() => undefined));
       const now = new Date();
       const in30 = new Date(now.getTime() + 30 * 24 * 3600 * 1000);
-      const iso = (d: Date) => d.toISOString().slice(0, 19);
+      // ISO completo con zona horaria (Z): el backend rechaza fechas sin zona (400).
+      const iso = (d: Date) => d.toISOString();
       tasks.push(firstValueFrom(this.events.calendar(iso(now), iso(in30)))
         .then(items => this.upcoming.set(items
           .filter(e => e.status !== 'cancelled' && new Date(e.starts_at) >= now)

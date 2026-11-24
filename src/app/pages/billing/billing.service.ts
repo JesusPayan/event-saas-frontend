@@ -30,6 +30,9 @@ export interface CheckoutStatus {
 export interface UsageItem { feature_code: string; limit_value: number | null; used: number | null; remaining: number | null; }
 export interface UsageResponse { status: string; tier?: 'paid' | 'free'; items: UsageItem[]; }
 
+/** Funciones que se cuentan (el límite es una cantidad, no «incluido/no incluido»). */
+export const COUNTED_FEATURES = new Set(['members', 'clients', 'events']);
+
 export const FEATURE_LABELS: Partial<Record<string, string>> = {
   members: 'Usuarios',
   clients: 'Clientes',

@@ -14,6 +14,8 @@ export const BRAND = {
   secondaryTagline: 'Una plataforma. Infinitas posibilidades.',
   websiteUrl: 'https://easiacc.com',
   appUrl: 'https://app.easiacc.com',
+  /** Correo comercial para demos y contacto. Vacío = los botones de contacto no se muestran. */
+  contactEmail: '',
 } as const;
 
 /** Paleta corporativa (también disponible como variables CSS --brand-* en styles.css). */

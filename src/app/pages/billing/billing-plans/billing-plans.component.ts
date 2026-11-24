@@ -8,7 +8,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header';
 import {
-  BillingInterval, BillingService, FEATURE_LABELS, Plan, PlanPrice, SubscriptionResponse,
+  BillingInterval, BillingService, FEATURE_LABELS, COUNTED_FEATURES, Plan, PlanPrice, SubscriptionResponse,
 } from '../billing.service';
 
 const CHECKOUT_ERRORS: Record<string, string> = {
@@ -76,10 +76,10 @@ export class BillingPlansComponent {
     return price.billing_interval === 'year' ? Number(price.amount) / 12 : Number(price.amount);
   }
 
-  limitLabel(limit: number | null): string {
+  limitLabel(limit: number | null, feature = ''): string {
     if (limit === null) return 'Ilimitado';
     if (limit === 0) return 'No incluido';
-    if (limit === 1) return 'Incluido';
+    if (limit === 1 && !COUNTED_FEATURES.has(feature)) return 'Incluido';
     return String(limit);
   }
 

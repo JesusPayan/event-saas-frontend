@@ -116,3 +116,16 @@ test('EasiAcc brand: no legacy name in the app, correct spelling and assets pres
   }
   assert.equal(JSON.parse(read('public/site.webmanifest')).name, 'EasiAcc Events');
 });
+
+test('dashboard sends timezone-aware dates to the events calendar (backend rejects naive ISO)', () => {
+  const dashboard = read('src/app/pages/dashboard-component/dashboard.component.ts');
+  assert.match(dashboard, /events\.calendar\(/);
+  assert.doesNotMatch(dashboard, /toISOString\(\)\.slice\(/);
+});
+
+test('app formats dates, numbers and currency in Spanish (Mexico)', () => {
+  const main = read('src/main.ts');
+  assert.match(main, /registerLocaleData\(localeEsMx\)/);
+  assert.match(main, /provide: LOCALE_ID, useValue: 'es-MX'/);
+  assert.match(main, /provide: DEFAULT_CURRENCY_CODE, useValue: 'MXN'/);
+});
