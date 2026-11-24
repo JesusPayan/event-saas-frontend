@@ -1,3 +1,5 @@
+import { BRAND } from '../../core/brand';
+import { BrandLogoComponent } from '../../shared/components/brand-logo/brand-logo';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -6,13 +8,13 @@ import { AuthService } from '../../services/auth.service';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [BrandLogoComponent, FormsModule, RouterLink],
   template: `
     <main class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">
       <div class="w-full max-w-md">
-        <div class="mb-6 flex items-center justify-center gap-3">
-          <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-700 text-lg font-bold text-white" aria-hidden="true">E</span>
-          <span class="text-xl font-bold text-gray-900">Eventos SaaS</span>
+        <div class="mb-6 flex flex-col items-center gap-2">
+          <app-brand-logo [size]="44" [showProduct]="true" />
+          <p class="text-sm text-slate-500">{{ brand.tagline }}</p>
         </div>
         <section class="card p-8">
           <h1 class="page-title">Recuperar contraseña</h1>
@@ -40,6 +42,7 @@ import { AuthService } from '../../services/auth.service';
     </main>`,
 })
 export class PasswordForgotComponent {
+  readonly brand = BRAND;
   private readonly auth = inject(AuthService);
   email = '';
   readonly busy = signal(false);

@@ -1,3 +1,5 @@
+import { BRAND } from '../../core/brand';
+import { BrandLogoComponent } from '../../shared/components/brand-logo/brand-logo';
 import { Component, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -7,8 +9,9 @@ import { AuthService, TenantSummary } from '../../services/auth.service';
 
 const ROLE_LABELS: Record<string, string> = { owner: 'Propietario', admin: 'Administrador', member: 'Miembro' };
 
-@Component({ standalone: true, templateUrl: './tenants.component.html' })
+@Component({ standalone: true, imports: [BrandLogoComponent], templateUrl: './tenants.component.html' })
 export class TenantsComponent {
+  readonly brand = BRAND;
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   readonly error = signal('');

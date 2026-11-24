@@ -6,7 +6,7 @@
   position: sticky;
   top: 0;
   overflow-y: auto;
-  background: #14233c;
+  background: var(--brand-navy, #0F172A);
   color: #e5eaf3;
   padding: 20px 12px;
   box-sizing: border-box;

@@ -11,6 +11,8 @@ export interface SigningInvitation {
   signer_role: 'client' | 'provider';
   status: 'pending' | 'verified' | 'signed' | 'expired' | 'revoked';
   expires_at: string;
+  /** Empresa que envía el contrato (identidad del tenant, no de la plataforma). */
+  company_name?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

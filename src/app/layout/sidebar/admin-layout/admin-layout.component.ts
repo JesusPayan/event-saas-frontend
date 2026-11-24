@@ -4,6 +4,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
 
 import { SidebarComponent } from '../sidebar/sidebar';
 import { AuthService } from '../../../services/auth.service';
+import { BRAND } from '../../../core/brand';
 import { BillingNoticeService } from '../../../services/billing-notice.service';
 
 @Component({
@@ -19,6 +20,7 @@ import { BillingNoticeService } from '../../../services/billing-notice.service';
 export class AdminLayoutComponent {
 
   readonly auth = inject(AuthService);
+  readonly brand = BRAND;
   readonly billingNotice = inject(BillingNoticeService);
 
   readonly companyName = computed(() => {

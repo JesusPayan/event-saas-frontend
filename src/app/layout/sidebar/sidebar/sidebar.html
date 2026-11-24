@@ -14,15 +14,7 @@
 
   <!-- Marca -->
   <div class="brand">
-    <div class="brand-icon">
-      <lucide-icon [img]="icons.calendar" [size]="22">
-      </lucide-icon>
-    </div>
-
-    <div class="brand-text">
-      <strong>Eventos SaaS</strong>
-      <small>Panel administrativo</small>
-    </div>
+    <app-brand-logo tone="dark" [size]="38" [showProduct]="true" />
 
     <button type="button" class="close-mobile" aria-label="Cerrar menú" (click)="closeMobile()">
       ✕

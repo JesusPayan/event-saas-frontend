@@ -1,6 +1,8 @@
-# Eventos SaaS — Frontend (Angular 20)
+# EasiAcc Events — Frontend (Angular 20)
 
-Aplicación standalone (Angular 20, Tailwind CSS 4, Flowbite) del SaaS multiempresa Eventos SaaS.
+> **EasiAcc** — *Simplifica tu negocio.* Marca centralizada en `src/app/core/brand.ts`; manual en `docs/BRAND_GUIDELINES.md`.
+
+Aplicación standalone (Angular 20, Tailwind CSS 4, Flowbite) de EasiAcc Events, SaaS multiempresa para negocios de eventos.
 Backend: repositorio `events-saas-backend` (documentación de despliegue y Mercado Pago en su carpeta `docs/`).
 
 ## Desarrollo
