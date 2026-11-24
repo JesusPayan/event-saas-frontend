@@ -6,6 +6,8 @@ Detalle conjunto con el backend, estado y riesgos: repositorio backend, `CHANGEL
 ## [Sin publicar]
 
 ### Cambiado
+- Calendario de eventos con el diseño estándar: encabezado y botones comunes, navegación del mes con flechas,
+  día actual resaltado y eventos coloreados por estado; «+ Nuevo evento» solo con permiso de creación.
 - Correo comercial `contacto@easiacc.com` en `BRAND.contactEmail`: activa «Solicitar una demostración» en la
   landing y el enlace «Contacto» en el pie y en las páginas legales.
 
