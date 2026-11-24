@@ -5,7 +5,8 @@ import {
   authGuard,
   tenantGuard,
   permissionGuard,
-  operatorGuard
+  operatorGuard,
+  landingGuard
 } from './services/auth.guard';
 
 import { AdminLayoutComponent } from './layout/sidebar/admin-layout/admin-layout.component';
@@ -14,10 +15,24 @@ import { AdminLayoutComponent } from './layout/sidebar/admin-layout/admin-layout
 
 
 export const routes: Routes = [
+  // =====================================
+  // SITIO COMERCIAL (público). Con sesión iniciada, '/' lleva al panel.
+  // =====================================
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'login'
+    canActivate: [landingGuard],
+    loadComponent: () => import('./pages/landing/landing.component').then(m => m.LandingComponent)
+  },
+  {
+    path: 'privacidad',
+    data: { doc: 'privacy' },
+    loadComponent: () => import('./pages/legal/legal-page.component').then(m => m.LegalPageComponent)
+  },
+  {
+    path: 'terminos',
+    data: { doc: 'terms' },
+    loadComponent: () => import('./pages/legal/legal-page.component').then(m => m.LegalPageComponent)
   },
   {
     path: 'login',
