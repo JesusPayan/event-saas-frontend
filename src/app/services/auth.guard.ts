@@ -28,3 +28,10 @@ export const landingGuard: CanActivateFn = () => {
   if (!auth.authenticated()) return true;
   return router.createUrlTree([auth.tenant() ? '/dashboard' : '/tenants']);
 };
+
+/** Panel de plataforma: exige alguno de los permisos de plataforma indicados (alcance global). */
+export const platformGuard = (...permissions: string[]): CanActivateFn => () => {
+  const auth = inject(AuthService); const router = inject(Router);
+  if (!auth.authenticated()) return router.createUrlTree(['/login']);
+  return auth.hasAnyPlatformPermission(...permissions) ? true : router.createUrlTree(['/forbidden']);
+};

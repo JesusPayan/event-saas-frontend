@@ -3,7 +3,7 @@ import { BrandLogoComponent } from '../../shared/components/brand-logo/brand-log
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 
@@ -11,6 +11,9 @@ import { AuthService } from '../../services/auth.service';
 export class RegisterComponent {
   readonly brand = BRAND;
   private readonly auth = inject(AuthService);
+  /** Código de referido de un promotor (?ref=). No otorga acceso a nadie: solo atribuye el alta. */
+  readonly referral = (inject(ActivatedRoute).snapshot.queryParamMap.get('ref') ?? '')
+    .trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 16) || null;
   company = '';
   slug = '';
   email = '';
@@ -31,7 +34,7 @@ export class RegisterComponent {
     if (this.busy()) return;
     this.busy.set(true);
     this.error.set('');
-    this.auth.register(this.email.trim(), this.password, this.company.trim(), this.slug).pipe(
+    this.auth.register(this.email.trim(), this.password, this.company.trim(), this.slug, this.referral).pipe(
       finalize(() => this.busy.set(false))
     ).subscribe({
       next: () => this.success.set(true),

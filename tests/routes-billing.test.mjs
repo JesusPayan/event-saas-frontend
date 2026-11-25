@@ -22,18 +22,31 @@ test('every lazy route points to an existing component that exports the referenc
 
 test('billing routes live inside the authenticated tenant layout', () => {
   const layoutEnd = routes.indexOf('// Fin de children de AdminLayoutComponent');
-  for (const path of ['billing/plans', 'billing/subscription', 'billing/return', 'platform/prices', 'platform/subscriptions']) {
+  for (const path of ['billing/plans', 'billing/subscription', 'billing/return']) {
     const index = routes.indexOf(`path: '${path}'`);
     assert.ok(index > 0 && index < layoutEnd, `${path} must be a child of the admin layout`);
   }
   assert.equal(routes.match(/path: 'sign\/:token'/g)?.length, 1, 'public signing route must be declared once');
 });
 
-test('global operator panel is protected by operatorGuard, not a tenant permission', () => {
-  for (const path of ['platform/prices', 'platform/subscriptions']) {
-    const block = routes.slice(routes.indexOf(`path: '${path}'`), routes.indexOf(`path: '${path}'`) + 400);
-    assert.match(block, /canActivate:\s*\[\s*operatorGuard\s*\]/);
+test('platform panel requires authentication and a platform permission on every page, not a tenant permission', () => {
+  // ROLES-01: el panel de plataforma no exige elegir empresa (promotores y administradores
+  // pueden no tener una), pero cada página exige su permiso de plataforma.
+  const start = routes.indexOf("path: 'platform',");
+  const end = routes.indexOf("path: 'promoter',");
+  assert.ok(start > 0 && end > start, 'platform parent route must exist');
+  const block = routes.slice(start, end);
+  assert.match(block, /canActivate:\s*\[authGuard\]/);
+  const expected = {
+    organizations: 'platform.orgs.manage', roles: 'platform.roles.manage', categories: 'platform.catalog.manage',
+    audit: 'platform.audit.read', prices: 'platform.plans.manage', subscriptions: 'platform.billing.operate',
+  };
+  for (const [path, permission] of Object.entries(expected)) {
+    const child = block.slice(block.indexOf(`path: '${path}'`), block.indexOf(`path: '${path}'`) + 400);
+    assert.match(child, new RegExp(`canActivate:\\s*\\[platformGuard\\('${permission.replace(/\./g, '\\.')}`), path);
+    assert.doesNotMatch(child, /permissionGuard/, `${path} must not use a tenant permission`);
   }
+  assert.match(routes.slice(end, end + 300), /platformGuard\('promoter\.referrals'\)/);
 });
 
 test('checkout never sends an amount from the browser', () => {

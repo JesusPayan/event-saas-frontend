@@ -5,6 +5,15 @@ Detalle conjunto con el backend, estado y riesgos: repositorio backend, `CHANGEL
 
 ## [Sin publicar]
 
+### Añadido
+- Panel de plataforma sin necesidad de elegir empresa: Organizaciones, Roles de plataforma (con transferencia de
+  propiedad), Categorías del catálogo y Auditoría; aceptación de invitaciones de plataforma (`/platform-invite`).
+- Panel del promotor (`/promoter`): enlace de referido, prospectos y avance de altas. Registro con `?ref=`.
+- Catálogo de servicios (`/catalog`), formulario de ofertas y proveedores (`/providers`).
+- Cotización con partidas del catálogo: filtro por categoría, proveedor, unidad de cobro, precio pendiente y total
+  confirmado; seguimiento de partidas en el detalle (importe acordado, confirmación y documentos).
+- Portal del proveedor (`/provider/items`) y rol «Proveedor» en Miembros, con accesos temporales de solo lectura.
+
 ### Cambiado
 - Calendario de eventos con el diseño estándar: encabezado y botones comunes, navegación del mes con flechas,
   día actual resaltado y eventos coloreados por estado; «+ Nuevo evento» solo con permiso de creación.

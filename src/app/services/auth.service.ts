@@ -1,11 +1,20 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, catchError, firstValueFrom, map, of, switchMap, tap, throwError } from 'rxjs';
+import { Observable, catchError, firstValueFrom, map, switchMap, tap, throwError } from 'rxjs';
 
 export interface TenantRef { id: number; name?: string; slug?: string; }
-export interface TenantSummary { id: number; name: string | null; slug: string | null; role: string | null; }
-export interface MeResponse { id: number; email: string; tenants: number[]; tenant_details?: TenantSummary[]; }
+export interface TenantSummary {
+  id: number; name: string | null; slug: string | null; role: string | null;
+  status?: string | null;
+  /** Acceso delegado temporal (solo lectura). */
+  purpose?: 'support' | 'training'; expires_at?: string;
+}
+export interface PlatformAccess { roles: string[]; permissions: string[]; }
+export interface MeResponse {
+  id: number; email: string; tenants: number[]; tenant_details?: TenantSummary[];
+  platform?: PlatformAccess;
+}
 export interface LoginResponse { access_token: string; token_type: string; expires_in: number; }
 
 interface StoredSession { token: string; tenantId: number | null; expiresAt: number; }
@@ -37,6 +46,13 @@ export class AuthService {
   readonly permissions = signal<string[]>([]);
   /** Operador global de la plataforma (validado siempre por el backend). */
   readonly isOperator = signal(false);
+  /** Roles y permisos de plataforma (alcance global). */
+  readonly platformRoles = computed(() => this.me()?.platform?.roles ?? []);
+  readonly platformPermissions = computed(() => this.me()?.platform?.permissions ?? []);
+  /** Proveedor vinculado al usuario en la empresa actual (rol «provider»). */
+  readonly providerId = signal<number | null>(null);
+  /** La empresa actual se consulta con un acceso delegado de solo lectura. */
+  readonly delegatedAccess = signal(false);
   /** Motivo del último cierre de sesión forzado (para mostrarlo en el login). */
   readonly endedReason = signal<'expired' | null>(null);
   readonly authenticated = computed(() => this.accessToken() !== null && this.me() !== null);
@@ -49,9 +65,13 @@ export class AuthService {
       tap(r => { this.endedReason.set(null); this.setToken(r.access_token, r.expires_in); }));
   }
 
-  register(email: string, password: string, company_name: string, slug: string) {
-    return this.http.post(`${this.hostUrl}/auth/register`, { email, password, company_name, slug });
+  register(email: string, password: string, company_name: string, slug: string, ref?: string | null) {
+    return this.http.post(`${this.hostUrl}/auth/register`,
+      ref ? { email, password, company_name, slug, ref } : { email, password, company_name, slug });
   }
+
+  hasPlatformPermission(code: string): boolean { return this.platformPermissions().includes(code); }
+  hasAnyPlatformPermission(...codes: string[]): boolean { return codes.some(code => this.hasPlatformPermission(code)); }
 
   forgotPassword(email: string) {
     return this.http.post<{ accepted: boolean }>(`${this.hostUrl}/auth/password/forgot`, { email });
@@ -63,13 +83,12 @@ export class AuthService {
 
   loadMe(): Observable<MeResponse> {
     return this.http.get<MeResponse>(`${this.hostUrl}/auth/me`).pipe(
-      tap(me => this.me.set(me)),
-      switchMap(me => this.http.get<{ operator: boolean }>(`${this.hostUrl}/billing/admin/me`).pipe(
-        map(r => r.operator === true),
-        catchError(() => of(false)),
-        tap(isOperator => this.isOperator.set(isOperator)),
-        map(() => me),
-      )),
+      tap(me => {
+        this.me.set(me);
+        // El panel global se muestra según los permisos de plataforma; el backend los valida siempre.
+        const perms = me.platform?.permissions ?? [];
+        this.isOperator.set(perms.includes('platform.billing.operate') || perms.includes('platform.plans.manage'));
+      }),
     );
   }
 
@@ -92,9 +111,14 @@ export class AuthService {
     );
   }
 
-  loadPermissions(): Observable<{ permissions: string[] }> {
-    return this.http.get<{ permissions: string[] }>(`${this.hostUrl}/auth/permissions`).pipe(
-      tap(response => this.permissions.set(response.permissions)),
+  loadPermissions(): Observable<{ permissions: string[]; provider_id?: number | null; delegated?: boolean }> {
+    return this.http.get<{ permissions: string[]; provider_id?: number | null; delegated?: boolean }>(
+      `${this.hostUrl}/auth/permissions`).pipe(
+      tap(response => {
+        this.permissions.set(response.permissions);
+        this.providerId.set(response.provider_id ?? null);
+        this.delegatedAccess.set(response.delegated === true);
+      }),
     );
   }
 

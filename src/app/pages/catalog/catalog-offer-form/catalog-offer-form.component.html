@@ -1,0 +1,147 @@
+<section class="mx-auto w-full max-w-4xl space-y-6">
+  <app-page-header [title]="offerId ? 'Editar oferta' : 'Nueva oferta'"
+    description="Servicio o producto que tu empresa o uno de tus proveedores ofrece para eventos.">
+    <a routerLink="/catalog" class="btn-secondary">Volver al catálogo</a>
+  </app-page-header>
+
+  <form class="space-y-6" (ngSubmit)="save()" #f="ngForm">
+    <div class="card space-y-4">
+      <h2 class="text-lg font-semibold text-gray-900">Datos generales</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div class="md:col-span-2">
+          <label for="o-name" class="form-label">Nombre</label>
+          <input id="o-name" class="form-control" name="name" [(ngModel)]="form.name" required maxlength="180">
+        </div>
+        <div>
+          <label for="o-category" class="form-label">Categoría</label>
+          <select id="o-category" class="form-control" name="category" [ngModel]="form.category_id" (ngModelChange)="onCategory($event)" required>
+            <option [ngValue]="null" disabled>Elige una categoría</option>
+            @for (c of categories(); track c.id) { <option [ngValue]="c.id">{{ label(c) }}</option> }
+          </select>
+        </div>
+        <div>
+          <label for="o-provider" class="form-label">Proveedor</label>
+          <select id="o-provider" class="form-control" name="provider" [(ngModel)]="form.provider_id">
+            <option [ngValue]="null">Mi empresa</option>
+            @for (p of providers(); track p.id) { <option [ngValue]="p.id">{{ p.name }}</option> }
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label for="o-desc" class="form-label">Descripción</label>
+          <textarea id="o-desc" class="form-control" rows="3" name="description" [(ngModel)]="form.description" maxlength="5000"></textarea>
+        </div>
+        <div>
+          <label for="o-status" class="form-label">Publicación</label>
+          <select id="o-status" class="form-control" name="status" [(ngModel)]="form.status">
+            <option value="published">Publicada (se puede cotizar)</option>
+            <option value="draft">Borrador</option>
+            <option value="archived">Archivada</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card space-y-4">
+      <h2 class="text-lg font-semibold text-gray-900">Precio y disponibilidad</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div>
+          <label for="o-mode" class="form-label">Modalidad de precio</label>
+          <select id="o-mode" class="form-control" name="pricing_mode" [(ngModel)]="form.pricing_mode">
+            @for (m of pricingModes; track m) { <option [value]="m">{{ pricingLabels[m] }}</option> }
+          </select>
+        </div>
+        @if (form.pricing_mode !== 'quote') {
+          <div>
+            <label for="o-price" class="form-label">Precio ({{ pricingLabels[form.pricing_mode].toLowerCase() }})</label>
+            <input id="o-price" class="form-control" type="number" min="0" step="0.01" name="unit_price" [(ngModel)]="form.unit_price" required>
+          </div>
+        } @else {
+          <p class="self-end text-sm text-amber-700">Aparecerá como «Precio pendiente» y no sumará al total hasta acordar el importe.</p>
+        }
+        <div>
+          <label for="o-fulfillment" class="form-label">Cómo se confirma</label>
+          <select id="o-fulfillment" class="form-control" name="fulfillment" [(ngModel)]="form.fulfillment_type">
+            @for (t of fulfillmentTypes; track t) { <option [value]="t">{{ fulfillmentLabels[t] }}</option> }
+          </select>
+        </div>
+        @if (form.fulfillment_type === 'inventory') {
+          <div>
+            <label for="o-item" class="form-label">Artículo de inventario</label>
+            <select id="o-item" class="form-control" name="inventory_item" [(ngModel)]="form.inventory_item_id" required>
+              <option [ngValue]="null" disabled>Elige un artículo</option>
+              @for (i of inventoryItems(); track i.id) { <option [ngValue]="i.id">{{ i.name }} ({{ i.sku }})</option> }
+            </select>
+          </div>
+        }
+        @if (form.fulfillment_type === 'schedule') {
+          <div>
+            <label for="o-capacity" class="form-label">Eventos que atiende por día</label>
+            <input id="o-capacity" class="form-control" type="number" min="1" max="1000" name="capacity" [(ngModel)]="form.daily_capacity">
+            <p class="form-hint">Sin este dato, la fecha queda pendiente de confirmación.</p>
+          </div>
+        }
+      </div>
+      <label class="flex items-center gap-2 text-sm font-normal">
+        <input type="checkbox" name="confirm" [(ngModel)]="form.requires_provider_confirmation" [disabled]="special()">
+        Requiere confirmación del proveedor antes de cerrar la contratación
+        @if (special()) { <span class="text-xs text-amber-700">(obligatorio en esta categoría)</span> }
+      </label>
+    </div>
+
+    @if (form.fulfillment_type !== 'inventory') {
+      <div class="card space-y-4">
+        <h2 class="text-lg font-semibold text-gray-900">Detalles del servicio</h2>
+        <div class="grid gap-4 md:grid-cols-3">
+          <div>
+            <label for="o-hours" class="form-label">Duración (horas)</label>
+            <input id="o-hours" class="form-control" type="number" min="0.25" max="240" step="0.25" name="hours" [(ngModel)]="form.duration_hours">
+          </div>
+          <div>
+            <label for="o-min" class="form-label">Mínimo de invitados</label>
+            <input id="o-min" class="form-control" type="number" min="1" name="min_guests" [(ngModel)]="form.min_guests">
+          </div>
+          <div>
+            <label for="o-max" class="form-label">Máximo de invitados</label>
+            <input id="o-max" class="form-control" type="number" min="1" name="max_guests" [(ngModel)]="form.max_guests">
+          </div>
+          <div class="md:col-span-2">
+            <label for="o-coverage" class="form-label">Cobertura</label>
+            <input id="o-coverage" class="form-control" name="coverage" [(ngModel)]="form.coverage" maxlength="255" placeholder="Zona metropolitana, hasta 50 km…">
+          </div>
+          <div>
+            <label for="o-notice" class="form-label">Anticipación mínima (días)</label>
+            <input id="o-notice" class="form-control" type="number" min="0" name="notice" [(ngModel)]="form.min_notice_days">
+          </div>
+          <div class="md:col-span-3">
+            <label for="o-setup" class="form-label">Necesidades de montaje</label>
+            <input id="o-setup" class="form-control" name="setup" [(ngModel)]="form.setup_requirements" maxlength="1000"
+              placeholder="Toma de corriente, espacio de 3×3 m, acceso para camioneta…">
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (special() || form.venue_restrictions || form.required_documents) {
+      <div class="card space-y-4 border-amber-200">
+        <h2 class="text-lg font-semibold text-gray-900">Restricciones y documentación</h2>
+        <p class="text-sm text-gray-600">Se mostrará en la solicitud y deberá revisarse antes de aceptar la cotización.</p>
+        <div>
+          <label for="o-venue" class="form-label">Restricciones del recinto</label>
+          <input id="o-venue" class="form-control" name="venue" [(ngModel)]="form.venue_restrictions" maxlength="1000"
+            placeholder="Solo exteriores, distancia mínima al público…">
+        </div>
+        <div>
+          <label for="o-docs" class="form-label">Documentación requerida</label>
+          <input id="o-docs" class="form-control" name="docs" [(ngModel)]="form.required_documents" maxlength="1000"
+            placeholder="Permiso municipal, póliza de responsabilidad civil…">
+        </div>
+      </div>
+    }
+
+    @if (error()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+    <div class="flex justify-end gap-3">
+      <a routerLink="/catalog" class="btn-secondary">Cancelar</a>
+      <button type="submit" class="btn-primary" [disabled]="saving() || f.invalid">{{ saving() ? 'Guardando…' : 'Guardar oferta' }}</button>
+    </div>
+  </form>
+</section>

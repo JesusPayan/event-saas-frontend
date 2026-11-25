@@ -5,7 +5,7 @@
     }
   </app-page-header>
 
-  @if (error() && !inviteOpen()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+  @if (error() && !inviteOpen() && !grantOpen()) { <p role="alert" class="alert-error">{{ error() }}</p> }
   @if (message()) { <p role="status" class="alert-success">{{ message() }}</p> }
 
   <div class="relative overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm" [attr.aria-busy]="loading()">
@@ -29,10 +29,13 @@
               @if (editable(m)) {
                 <label class="sr-only" [attr.for]="'role-' + m.id">Rol de {{ m.email }}</label>
                 <select [id]="'role-' + m.id" class="form-control w-44 py-1.5" [ngModel]="m.role_name" (ngModelChange)="changeRole(m, $event)" [disabled]="busy()">
-                  @for (r of roleOptions; track r.key) { <option [value]="r.key">{{ r.label }}</option> }
+                  @for (r of inlineRoles(m); track r.key) { <option [value]="r.key">{{ r.label }}</option> }
                 </select>
               } @else {
                 {{ roleLabel(m) }}
+              }
+              @if (m.role_name === 'provider' && m.provider_id) {
+                <span class="mt-1 block text-xs text-gray-500">{{ providerName(m.provider_id) }}</span>
               }
             </td>
             <td class="px-4 py-3">
@@ -79,6 +82,82 @@
     </div>
   }
 
+  <!-- Accesos temporales (ROLES-01) -->
+  <div class="card">
+    <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900">Accesos temporales</h2>
+        <p class="mt-1 text-sm text-gray-500">
+          Permiso de solo lectura, con vencimiento, para soporte de la plataforma o capacitación de tu promotor.
+          Cada consulta queda registrada.
+        </p>
+      </div>
+      @if (canManage()) {
+        <button type="button" class="btn-secondary" (click)="openGrant()">+ Conceder acceso</button>
+      }
+    </div>
+    @if (grants().length === 0) {
+      <p class="text-sm text-gray-500">Nadie externo tiene acceso a esta empresa.</p>
+    } @else {
+      <ul class="divide-y divide-gray-100 text-sm">
+        @for (gr of grants(); track gr.id) {
+          <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+            <span>
+              <span class="font-medium text-gray-900">{{ gr.grantee_email }}</span>
+              <span class="text-gray-500"> · {{ purposeLabels[gr.purpose] }} ·
+                @switch (gr.state) {
+                  @case ('active') { vence {{ gr.expires_at | date:'medium' }} }
+                  @case ('expired') { <span>vencido</span> }
+                  @default { <span class="text-red-700">revocado</span> }
+                }
+              </span>
+              @if (gr.reason) { <span class="block text-xs text-gray-500">{{ gr.reason }}</span> }
+            </span>
+            @if (canManage() && gr.state === 'active') {
+              <button type="button" class="font-medium text-red-700 hover:underline"
+                (click)="pending.set({ kind: 'revoke-grant', grant: gr })">Revocar</button>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  @if (grantOpen()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="grant-title">
+      <div class="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
+        <h2 id="grant-title" class="text-lg font-bold text-gray-900">Conceder acceso temporal</h2>
+        <form class="mt-4 space-y-4" (ngSubmit)="saveGrant()" #gf="ngForm">
+          <div>
+            <label for="grant-email" class="form-label">Correo de la cuenta</label>
+            <input id="grant-email" class="form-control" type="email" name="email" [(ngModel)]="grantEmail" required email maxlength="254">
+          </div>
+          <div>
+            <label for="grant-purpose" class="form-label">Motivo</label>
+            <select id="grant-purpose" class="form-control" name="purpose" [(ngModel)]="grantPurpose">
+              <option value="support">Soporte de plataforma</option>
+              <option value="training">Capacitación del promotor que nos refirió</option>
+            </select>
+          </div>
+          <div>
+            <label for="grant-days" class="form-label">Duración (días)</label>
+            <input id="grant-days" class="form-control w-32" type="number" name="days" min="1" max="30" [(ngModel)]="grantDays" required>
+          </div>
+          <div>
+            <label for="grant-reason" class="form-label">Nota (opcional)</label>
+            <input id="grant-reason" class="form-control" name="reason" maxlength="500" [(ngModel)]="grantReason">
+          </div>
+          <p class="form-hint">Solo lectura: no podrá crear, modificar ni exportar información de administración.</p>
+          @if (error()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+          <div class="flex justify-end gap-3">
+            <button type="button" class="btn-secondary" (click)="grantOpen.set(false)" [disabled]="busy()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="busy() || gf.invalid">Conceder</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
   <!-- Invitar -->
   @if (inviteOpen()) {
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="invite-title">
@@ -119,6 +198,18 @@
                 }
               </div>
             </fieldset>
+            @if (inviteRole === 'provider') {
+              <div>
+                <label for="invite-provider" class="form-label">Proveedor</label>
+                <select id="invite-provider" class="form-control" name="provider" [(ngModel)]="inviteProvider" required>
+                  <option [ngValue]="null" disabled>Elige un proveedor</option>
+                  @for (p of providers(); track p.id) { <option [ngValue]="p.id">{{ p.name }}</option> }
+                </select>
+                @if (providers().length === 0) {
+                  <p class="form-hint">Primero registra el proveedor en Catálogo → Proveedores.</p>
+                }
+              </div>
+            }
             @if (error()) { <p role="alert" class="alert-error">{{ error() }}</p> }
             <div class="flex justify-end gap-3">
               <button type="button" class="btn-secondary" (click)="inviteOpen.set(false)" [disabled]="busy()">Cancelar</button>
@@ -138,6 +229,10 @@
           @case ('revoke') {
             <h2 id="confirm-title" class="text-lg font-bold text-gray-900">¿Cancelar la invitación?</h2>
             <p class="mt-2 text-sm text-gray-600">El enlace enviado dejará de funcionar.</p>
+          }
+          @case ('revoke-grant') {
+            <h2 id="confirm-title" class="text-lg font-bold text-gray-900">¿Revocar el acceso temporal?</h2>
+            <p class="mt-2 text-sm text-gray-600">La persona dejará de ver la información de la empresa de inmediato.</p>
           }
           @case ('deactivate') {
             <h2 id="confirm-title" class="text-lg font-bold text-gray-900">¿Desactivar el acceso?</h2>

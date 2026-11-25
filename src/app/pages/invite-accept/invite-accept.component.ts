@@ -9,7 +9,9 @@ import { tokenFromFragment } from '../password-reset/password-reset.component';
 
 interface InvitationInfo { tenant_name: string | null; email: string; role: string; user_exists: boolean; expires_at: string; }
 
-const ROLE_LABELS: Record<string, string> = { admin: 'Administrador', staff: 'Operativo', viewer: 'Solo lectura' };
+const ROLE_LABELS: Record<string, string> = {
+  owner: 'Propietario', admin: 'Administrador', staff: 'Operativo', viewer: 'Solo lectura', provider: 'Proveedor',
+};
 
 @Component({
   standalone: true,

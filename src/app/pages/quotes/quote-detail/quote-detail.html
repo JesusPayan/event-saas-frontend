@@ -132,8 +132,50 @@
                     {{ item.description }}
                   </p>
                   <p class="text-xs text-gray-500">
-                    {{ itemTypeLabel(item.item_type) }}
+                    {{ item.category_name ?? itemTypeLabel(item.item_type) }}
+                    @if (item.offer_id) { · {{ item.provider_name ?? 'Mi empresa' }} · {{ pricingLabel(item.pricing_mode) }} }
                   </p>
+                  @if (item.offer_id || item.price_status === 'pending') {
+                    <div class="mt-2 flex flex-wrap gap-1 text-xs">
+                      <span class="rounded-full px-2 py-0.5 font-semibold"
+                        [class]="item.price_status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'">
+                        {{ item.price_status === 'pending' ? 'Precio pendiente' : 'Precio confirmado' }}</span>
+                      @if (item.fulfillment_status && item.fulfillment_status !== 'not_required') {
+                        <span class="rounded-full px-2 py-0.5 font-semibold" [class]="itemStatusClasses[item.fulfillment_status]">
+                          Fecha: {{ itemStatusLabels[item.fulfillment_status] }}</span>
+                      }
+                      @if (item.compliance_status && item.compliance_status !== 'not_required') {
+                        <span class="rounded-full px-2 py-0.5 font-semibold" [class]="itemStatusClasses[item.compliance_status]">
+                          Recinto y documentos: {{ itemStatusLabels[item.compliance_status] }}</span>
+                      }
+                    </div>
+                    @if (item.service_details; as d) {
+                      <p class="mt-1 text-xs text-gray-500">
+                        @if (d['notes']) { {{ d['notes'] }} }
+                        @if (d['venue_restrictions']) { · Recinto: {{ d['venue_restrictions'] }} }
+                        @if (d['required_documents']) { · Documentos: {{ d['required_documents'] }} }
+                      </p>
+                    }
+                    @if (canTrackItems()) {
+                      <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                        @if (item.price_status === 'pending') {
+                          <label class="sr-only" [attr.for]="'agreed-' + item.id">Importe acordado de {{ item.description }}</label>
+                          <input [id]="'agreed-' + item.id" type="number" min="0" step="0.01" placeholder="Importe acordado"
+                            class="w-32 rounded border border-gray-300 px-2 py-1" [(ngModel)]="agreedPrices[item.id]">
+                          <button type="button" class="font-semibold text-blue-700 hover:underline"
+                            [disabled]="itemBusy() === item.id" (click)="saveAgreedPrice(item)">Registrar importe</button>
+                        }
+                        @if (item.fulfillment_status === 'pending_confirmation' || item.fulfillment_status === 'available' || item.fulfillment_status === 'unavailable') {
+                          <button type="button" class="font-semibold text-green-700 hover:underline"
+                            [disabled]="itemBusy() === item.id" (click)="updateItem(item, { fulfillment_status: 'confirmed' })">Confirmar con proveedor</button>
+                        }
+                        @if (item.compliance_status === 'pending') {
+                          <button type="button" class="font-semibold text-green-700 hover:underline"
+                            [disabled]="itemBusy() === item.id" (click)="updateItem(item, { compliance_status: 'approved' })">Aprobar recinto y documentos</button>
+                        }
+                      </div>
+                    }
+                  }
                 </td>
 
                 <td class="px-4 py-4 text-right">
@@ -141,7 +183,7 @@
                 </td>
 
                 <td class="px-4 py-4 text-right">
-                  {{ money(item.unit_price) }}
+                  @if (item.price_status === 'pending') { <span class="text-amber-700">Pendiente</span> } @else { {{ money(item.unit_price) }} }
                 </td>
 
                 <td class="px-4 py-4 text-right">
@@ -153,7 +195,7 @@
                 </td>
 
                 <td class="px-4 py-4 text-right font-semibold">
-                  {{ money(item.total) }}
+                  @if (item.price_status === 'pending') { <span class="text-amber-700">Por cotizar</span> } @else { {{ money(item.total) }} }
                 </td>
               </tr>
             } @empty {
@@ -189,11 +231,17 @@
           </div>
 
           <div class="flex justify-between border-t border-gray-300 pt-3">
-            <span class="text-lg font-bold">Total</span>
+            <span class="text-lg font-bold">{{ (q.pending?.price_pending ?? 0) > 0 ? 'Total confirmado' : 'Total' }}</span>
             <span class="text-xl font-bold text-blue-700">
               {{ money(q.total) }}
             </span>
           </div>
+          @if ((q.pending?.blocking ?? 0) > 0) {
+            <p class="text-sm text-amber-700">
+              {{ q.pending?.price_pending }} con precio pendiente · {{ q.pending?.confirmation_pending }} por confirmar ·
+              {{ q.pending?.compliance_pending }} con documentos por revisar. Se requieren antes de aceptar.
+            </p>
+          }
 
         </div>
       </div>
