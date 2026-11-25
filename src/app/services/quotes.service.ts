@@ -86,5 +86,13 @@ export class QuotesService {
       `${this.baseUrl}/${contractId}`
     );
   }
-}
 
+  /** CAT-01: importe acordado, confirmación del proveedor o revisión documental de una partida. */
+  updateItem(
+    quoteId: number,
+    itemId: number,
+    body: { unit_price?: string; fulfillment_status?: string; compliance_status?: string; notes?: string }
+  ) {
+    return this.http.patch<Quote>(`${this.apiUrl}/${quoteId}/items/${itemId}`, body);
+  }
+}

@@ -1,0 +1,81 @@
+<section class="mx-auto w-full max-w-7xl space-y-6">
+  <app-page-header title="Proveedores" description="Empresas o personas que prestan servicios en tus eventos. Cada proveedor ve solo sus partidas.">
+    <a routerLink="/catalog" class="btn-secondary">Catálogo</a>
+    @if (canManage()) { <button type="button" class="btn-primary" (click)="open(null)">+ Nuevo proveedor</button> }
+  </app-page-header>
+
+  @if (error() && !editing()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+  <p class="text-sm text-gray-600">Para que un proveedor confirme sus partidas, invítalo desde <a routerLink="/members" class="font-medium text-blue-700">Miembros</a> con el rol «Proveedor».</p>
+
+  <div class="relative overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm" [attr.aria-busy]="loading()">
+    <table class="w-full text-left text-sm text-gray-700">
+      <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+        <tr>
+          <th scope="col" class="px-4 py-3">Proveedor</th>
+          <th scope="col" class="px-4 py-3">Contacto</th>
+          <th scope="col" class="px-4 py-3">Estado</th>
+          <th scope="col" class="px-4 py-3"><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of items(); track p.id) {
+          <tr class="border-b border-gray-100">
+            <td class="px-4 py-3 font-medium text-gray-900">{{ p.name }}
+              @if (p.notes) { <span class="block text-xs font-normal text-gray-500">{{ p.notes }}</span> }</td>
+            <td class="px-4 py-3">{{ p.contact_name ?? '—' }}
+              <span class="block text-xs text-gray-500">{{ p.contact_email }} {{ p.phone }}</span></td>
+            <td class="px-4 py-3">
+              <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                [class]="p.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'">
+                {{ p.status === 'active' ? 'Activo' : 'Inactivo' }}</span>
+            </td>
+            <td class="whitespace-nowrap px-4 py-3 text-right">
+              @if (canManage()) {
+                <button type="button" class="font-medium text-blue-700 hover:underline" (click)="open(p)">Editar</button>
+                <button type="button" class="ml-4 font-medium text-gray-600 hover:underline" (click)="toggle(p)">
+                  {{ p.status === 'active' ? 'Desactivar' : 'Activar' }}</button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="4" class="px-4 py-10 text-center text-gray-500">{{ loading() ? 'Cargando…' : 'Aún no registras proveedores.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (editing(); as target) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="prov-title">
+      <form class="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl" (ngSubmit)="save()" #f="ngForm">
+        <h2 id="prov-title" class="text-lg font-bold text-gray-900">{{ target === 'new' ? 'Nuevo proveedor' : 'Editar proveedor' }}</h2>
+        <div>
+          <label for="pv-name" class="form-label">Nombre</label>
+          <input id="pv-name" class="form-control" name="name" [(ngModel)]="form.name" required maxlength="180">
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="pv-contact" class="form-label">Contacto</label>
+            <input id="pv-contact" class="form-control" name="contact" [(ngModel)]="form.contact_name" maxlength="180">
+          </div>
+          <div>
+            <label for="pv-phone" class="form-label">Teléfono</label>
+            <input id="pv-phone" class="form-control" name="phone" [(ngModel)]="form.phone" maxlength="40">
+          </div>
+        </div>
+        <div>
+          <label for="pv-email" class="form-label">Correo</label>
+          <input id="pv-email" class="form-control" type="email" name="email" [(ngModel)]="form.contact_email" email maxlength="254">
+        </div>
+        <div>
+          <label for="pv-notes" class="form-label">Notas</label>
+          <input id="pv-notes" class="form-control" name="notes" [(ngModel)]="form.notes" maxlength="1000">
+        </div>
+        @if (error()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+        <div class="flex justify-end gap-3">
+          <button type="button" class="btn-secondary" (click)="editing.set(null)" [disabled]="busy()">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="busy() || f.invalid">Guardar</button>
+        </div>
+      </form>
+    </div>
+  }
+</section>

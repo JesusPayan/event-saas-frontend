@@ -1,0 +1,102 @@
+<section class="mx-auto w-full max-w-7xl space-y-6">
+  <app-page-header title="Catálogo de productos y servicios"
+    description="Renta de mobiliario y servicios para eventos que tu empresa ofrece, propios o de tus proveedores.">
+    <a routerLink="/providers" class="btn-secondary">Proveedores</a>
+    @if (canManage()) { <a routerLink="/catalog/new" class="btn-primary">+ Nueva oferta</a> }
+  </app-page-header>
+
+  @if (error()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+
+  <nav aria-label="Categorías" class="flex flex-wrap gap-2">
+    <button type="button" class="rounded-full border px-3 py-1.5 text-sm font-medium"
+      [class]="selected() === null ? 'border-blue-600 bg-blue-600 !text-white' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'"
+      (click)="pick(null)">Todas</button>
+    @for (c of roots(); track c.id) {
+      <button type="button" class="rounded-full border px-3 py-1.5 text-sm font-medium"
+        [class]="isActive(c.id) ? 'border-blue-600 bg-blue-600 !text-white' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'"
+        (click)="pick(c.id)">{{ c.name }}</button>
+    }
+  </nav>
+  @if (subcategories().length > 0) {
+    <nav aria-label="Subcategorías" class="flex flex-wrap gap-2 pl-2">
+      @for (s of subcategories(); track s.id) {
+        <button type="button" class="rounded-full border px-3 py-1 text-xs font-medium"
+          [class]="selected() === s.id ? 'border-blue-600 bg-blue-50 text-blue-800' : 'border-gray-200 bg-white text-gray-600'"
+          (click)="pick(s.id)">{{ s.name }}</button>
+      }
+    </nav>
+  }
+
+  <form class="card flex flex-wrap items-end gap-3 !p-4" (ngSubmit)="load()">
+    <div class="min-w-56 flex-1">
+      <label for="cat-search" class="form-label">Buscar</label>
+      <input id="cat-search" class="form-control" name="search" [(ngModel)]="search" placeholder="Nombre, descripción o SKU">
+    </div>
+    <div>
+      <label for="cat-status" class="form-label">Estado</label>
+      <select id="cat-status" class="form-control" name="status" [(ngModel)]="status" (ngModelChange)="load()">
+        <option value="">Vigentes</option>
+        <option value="published">Publicados</option>
+        <option value="draft">Borradores</option>
+        <option value="archived">Archivados</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-secondary">Buscar</button>
+  </form>
+
+  <div class="relative overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm" [attr.aria-busy]="loading()">
+    <table class="w-full text-left text-sm text-gray-700">
+      <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+        <tr>
+          <th scope="col" class="px-4 py-3">Oferta</th>
+          <th scope="col" class="px-4 py-3">Categoría</th>
+          <th scope="col" class="px-4 py-3">Proveedor</th>
+          <th scope="col" class="px-4 py-3">Precio</th>
+          <th scope="col" class="px-4 py-3">Disponibilidad</th>
+          <th scope="col" class="px-4 py-3">Estado</th>
+          <th scope="col" class="px-4 py-3"><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (o of items(); track o.kind + o.id) {
+          <tr class="border-b border-gray-100">
+            <td class="px-4 py-3">
+              <span class="font-medium text-gray-900">{{ o.name }}</span>
+              @if (o.kind === 'inventory') { <span class="block text-xs text-gray-500">Inventario · {{ o.sku }}</span> }
+              @if (o.requires_special_permits) {
+                <span class="mt-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">Requiere permisos</span>
+              }
+            </td>
+            <td class="px-4 py-3">{{ o.category_name }}</td>
+            <td class="px-4 py-3">{{ o.provider_name ?? 'Mi empresa' }}</td>
+            <td class="whitespace-nowrap px-4 py-3">
+              @if (o.price_pending) {
+                <span class="font-medium text-amber-700">Precio pendiente</span>
+              } @else {
+                {{ o.unit_price | currency:'MXN':'symbol-narrow' }} <span class="text-xs text-gray-500">{{ o.pricing_label }}</span>
+              }
+            </td>
+            <td class="px-4 py-3 text-xs">
+              {{ fulfillmentLabels[o.fulfillment_type] }}
+              @if (o.daily_capacity) { <span class="block text-gray-500">{{ o.daily_capacity }} evento(s) por día</span> }
+            </td>
+            <td class="px-4 py-3">
+              <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                [class]="o.status === 'published' ? 'bg-green-100 text-green-800' : o.status === 'draft' ? 'bg-gray-100 text-gray-700' : 'bg-red-100 text-red-700'">
+                {{ statusLabel(o.status) }}</span>
+            </td>
+            <td class="whitespace-nowrap px-4 py-3 text-right">
+              @if (o.kind === 'offer' && canManage()) {
+                <a [routerLink]="['/catalog', o.id, 'edit']" class="font-medium text-blue-700 hover:underline">Editar</a>
+              } @else if (o.kind === 'inventory' && auth.hasPermission('inventory.update')) {
+                <a [routerLink]="['/inventory', o.id, 'edit']" class="font-medium text-blue-700 hover:underline">Inventario</a>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="7" class="px-4 py-10 text-center text-gray-500">{{ loading() ? 'Cargando…' : 'No hay ofertas en esta categoría.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

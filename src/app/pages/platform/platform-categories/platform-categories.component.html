@@ -1,0 +1,93 @@
+<section class="space-y-6 p-4 md:p-6">
+  <app-page-header title="Categorías del catálogo"
+    description="Categorías y subcategorías que usan todas las organizaciones. Los cambios aplican al momento." />
+
+  @if (error()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+  @if (message()) { <p role="status" class="alert-success">{{ message() }}</p> }
+
+  <form class="card space-y-4" (ngSubmit)="create()" #f="ngForm">
+    <h2 class="text-lg font-semibold text-gray-900">Agregar categoría o subcategoría</h2>
+    <div class="grid gap-4 md:grid-cols-2">
+      <div>
+        <label for="cat-name" class="form-label">Nombre</label>
+        <input id="cat-name" class="form-control" name="name" [(ngModel)]="form.name" required maxlength="120">
+      </div>
+      <div>
+        <label for="cat-parent" class="form-label">Pertenece a</label>
+        <select id="cat-parent" class="form-control" name="parent" [(ngModel)]="form.parent_id">
+          <option [ngValue]="null">— Categoría principal —</option>
+          @for (c of roots(); track c.id) { <option [ngValue]="c.id">{{ c.name }}</option> }
+        </select>
+      </div>
+      <div class="md:col-span-2">
+        <label for="cat-desc" class="form-label">Descripción (opcional)</label>
+        <input id="cat-desc" class="form-control" name="description" [(ngModel)]="form.description" maxlength="500">
+      </div>
+    </div>
+    <label class="flex items-start gap-2 text-sm font-normal">
+      <input type="checkbox" class="mt-1" name="special" [(ngModel)]="form.requires_special_permits">
+      <span>Requiere restricciones del recinto, documentación y confirmación del proveedor (como pirotecnia).</span>
+    </label>
+    <div class="flex justify-end">
+      <button type="submit" class="btn-primary" [disabled]="busy() || f.invalid">Agregar</button>
+    </div>
+  </form>
+
+  <div class="card !p-0" [attr.aria-busy]="loading()">
+    <ul class="divide-y divide-gray-100">
+      @for (c of roots(); track c.id) {
+        <li class="px-4 py-3 sm:px-6">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <span class="font-medium" [class]="c.is_active ? 'text-gray-900' : 'text-gray-400 line-through'">{{ c.name }}</span>
+              @if (c.is_inventory) { <span class="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">Inventario</span> }
+              @if (c.requires_special_permits) { <span class="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">Permisos especiales</span> }
+              @if (c.description) { <span class="block text-xs text-gray-500">{{ c.description }}</span> }
+            </div>
+            <div class="flex gap-4 text-sm">
+              <button type="button" class="font-medium text-blue-700 hover:underline" (click)="startEdit(c)">Editar</button>
+              <button type="button" class="font-medium hover:underline" [class]="c.is_active ? 'text-red-700' : 'text-blue-700'"
+                (click)="toggle(c)" [disabled]="busy()">{{ c.is_active ? 'Desactivar' : 'Activar' }}</button>
+            </div>
+          </div>
+          @if (children(c.id).length > 0) {
+            <ul class="mt-2 space-y-1 border-l-2 border-gray-100 pl-4">
+              @for (s of children(c.id); track s.id) {
+                <li class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                  <span [class]="s.is_active ? 'text-gray-700' : 'text-gray-400 line-through'">{{ s.name }}</span>
+                  <span class="flex gap-4">
+                    <button type="button" class="font-medium text-blue-700 hover:underline" (click)="startEdit(s)">Editar</button>
+                    <button type="button" class="font-medium hover:underline" [class]="s.is_active ? 'text-red-700' : 'text-blue-700'"
+                      (click)="toggle(s)" [disabled]="busy()">{{ s.is_active ? 'Desactivar' : 'Activar' }}</button>
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+        </li>
+      } @empty {
+        <li class="px-4 py-10 text-center text-gray-500">{{ loading() ? 'Cargando…' : 'Sin categorías.' }}</li>
+      }
+    </ul>
+  </div>
+
+  @if (editing(); as c) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="edit-title">
+      <form class="w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl" (ngSubmit)="saveEdit()" #ef="ngForm">
+        <h2 id="edit-title" class="text-lg font-bold text-gray-900">Editar «{{ c.name }}»</h2>
+        <div>
+          <label for="edit-name" class="form-label">Nombre</label>
+          <input id="edit-name" class="form-control" name="name" [(ngModel)]="editForm.name" required maxlength="120">
+        </div>
+        <div>
+          <label for="edit-desc" class="form-label">Descripción</label>
+          <input id="edit-desc" class="form-control" name="description" [(ngModel)]="editForm.description" maxlength="500">
+        </div>
+        <div class="flex justify-end gap-3">
+          <button type="button" class="btn-secondary" (click)="editing.set(null)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="busy() || ef.invalid">Guardar</button>
+        </div>
+      </form>
+    </div>
+  }
+</section>

@@ -26,6 +26,11 @@ export class AdminLayoutComponent {
   readonly companyName = computed(() => {
     const tenant = this.auth.tenant();
 
+    // Panel de plataforma o de promotor: alcance global, sin empresa elegida.
+    if (!tenant) {
+      return 'Plataforma';
+    }
+
     return tenant?.name ||
       tenant?.slug ||
       `Empresa #${this.auth.tenantId() ?? '—'}`;

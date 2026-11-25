@@ -1,0 +1,53 @@
+<section class="space-y-6 p-4 md:p-6">
+  <app-page-header title="Auditoría" description="Cambios de roles, suspensiones y accesos autorizados a datos privados." />
+  @if (error()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+
+  <form class="card flex flex-wrap items-end gap-3 !p-4" (ngSubmit)="load()">
+    <div class="min-w-56 flex-1">
+      <label for="audit-action" class="form-label">Acción</label>
+      <select id="audit-action" class="form-control" name="action" [(ngModel)]="action" (ngModelChange)="load()">
+        <option value="">Todas</option>
+        @for (a of actions; track a[0]) { <option [value]="a[0]">{{ a[1] }}</option> }
+      </select>
+    </div>
+    <div>
+      <label for="audit-tenant" class="form-label">Organización (#)</label>
+      <input id="audit-tenant" class="form-control w-32" type="number" min="1" name="tenant" [(ngModel)]="tenantId">
+    </div>
+    <button type="submit" class="btn-secondary">Filtrar</button>
+  </form>
+
+  <div class="relative overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm" [attr.aria-busy]="loading()">
+    <table class="w-full text-left text-sm text-gray-700">
+      <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+        <tr>
+          <th scope="col" class="px-4 py-3">Fecha</th>
+          <th scope="col" class="px-4 py-3">Actor</th>
+          <th scope="col" class="px-4 py-3">Acción</th>
+          <th scope="col" class="px-4 py-3">Alcance</th>
+          <th scope="col" class="px-4 py-3">Detalle</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (e of items(); track e.id) {
+          <tr class="border-b border-gray-100 align-top">
+            <td class="whitespace-nowrap px-4 py-3">{{ e.created_at | date:'short' }}</td>
+            <td class="px-4 py-3">{{ e.actor_email ?? 'Sistema' }}</td>
+            <td class="px-4 py-3 font-medium text-gray-900">{{ label(e.action) }}</td>
+            <td class="px-4 py-3">{{ e.scope_type === 'tenant' ? 'Organización #' + e.tenant_id : 'Plataforma' }}</td>
+            <td class="max-w-md px-4 py-3"><code class="whitespace-pre-wrap break-words text-xs text-gray-600">{{ e.details | json }}</code></td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5" class="px-4 py-10 text-center text-gray-500">{{ loading() ? 'Cargando…' : 'Sin registros.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (total() > 50) {
+    <div class="flex items-center justify-end gap-3 text-sm">
+      <button type="button" class="btn-secondary !px-3 !py-1.5" [disabled]="page() <= 1" (click)="load(page() - 1)">Anterior</button>
+      <span>Página {{ page() }}</span>
+      <button type="button" class="btn-secondary !px-3 !py-1.5" [disabled]="page() * 50 >= total()" (click)="load(page() + 1)">Siguiente</button>
+    </div>
+  }
+</section>
