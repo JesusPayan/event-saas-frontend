@@ -2,66 +2,49 @@
 import {
   Component, OnInit, inject, signal, computed
 } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, TitleCasePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { EventsService } from '../../../services/events.service';
-import { Event } from '../../../models/event.model';
+import { Event, EventStatus } from '../../../models/event.model';
+import { AuthService } from '../../../services/auth.service';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header';
+
+const STATUS_LABELS: Record<EventStatus, string> = {
+  draft: 'Borrador',
+  quoted: 'Cotizado',
+  confirmed: 'Confirmado',
+  in_progress: 'En progreso',
+  completed: 'Completado',
+  cancelled: 'Cancelado',
+};
+
+const STATUS_CLASSES: Record<EventStatus, string> = {
+  draft: 'bg-gray-100 !text-gray-700',
+  quoted: 'bg-amber-100 !text-amber-800',
+  confirmed: 'bg-blue-100 !text-blue-800',
+  in_progress: 'bg-purple-100 !text-purple-800',
+  completed: 'bg-green-100 !text-green-800',
+  cancelled: 'bg-red-100 !text-red-800',
+};
 
 interface CalendarDay {
   date: Date;
   currentMonth: boolean;
+  isToday: boolean;
   events: Event[];
 }
 
 @Component({
   selector: 'app-event-calendar',
   standalone: true,
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, TitleCasePipe, PageHeaderComponent],
   templateUrl: './event-calendar.component.html',
-  styles: [`
-    .calendar-page { padding: 24px; max-width: 1400px; margin: auto; }
-    header, .calendar-toolbar {
-      display: flex; justify-content: space-between;
-      align-items: center; gap: 16px; flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-    nav { display: flex; gap: 14px; }
-    .calendar-grid {
-      display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
-      border-top: 1px solid #ddd; border-left: 1px solid #ddd;
-    }
-    .weekday {
-      text-align: center; font-weight: 600;
-      padding: 12px 4px; border-right: 1px solid #ddd;
-      border-bottom: 1px solid #ddd;
-    }
-    .calendar-day {
-      min-height: 115px; padding: 7px;
-      border-right: 1px solid #ddd;
-      border-bottom: 1px solid #ddd;
-      overflow: hidden;
-    }
-    .other-month { opacity: .4; background: #8881; }
-    .day-number { font-size: 13px; font-weight: 600; }
-    .calendar-event {
-      display: block; margin-top: 5px; padding: 5px;
-      border-radius: 5px; background: #dbeafe;
-      color: #1e40af; text-decoration: none;
-      font-size: 12px; overflow: hidden;
-      text-overflow: ellipsis; white-space: nowrap;
-    }
-    .cancelled { background: #fee2e2; color: #991b1b; }
-    .error { color: #b42318; }
-    @media(max-width: 650px) {
-      .calendar-day { min-height: 75px; padding: 3px; }
-      .calendar-event { font-size: 10px; padding: 3px; }
-    }
-  `]
 })
 export class EventCalendarComponent implements OnInit {
   private readonly service = inject(EventsService);
+  readonly auth = inject(AuthService);
 
   readonly currentDate = signal(new Date());
   readonly events = signal<Event[]>([]);
@@ -80,6 +63,8 @@ export class EventCalendarComponent implements OnInit {
 
     const gridStart = new Date(year, month, 1 - offset);
     const days: CalendarDay[] = [];
+    const now = new Date();
+    const todayKey = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
     for (let i = 0; i < 42; i++) {
       const date = new Date(
@@ -96,6 +81,7 @@ export class EventCalendarComponent implements OnInit {
       days.push({
         date,
         currentMonth: date.getMonth() === month,
+        isToday: date.getTime() === todayKey,
         events: this.events().filter(event => {
           const start = new Date(event.starts_at).getTime();
           const end = new Date(event.ends_at).getTime();
@@ -107,6 +93,20 @@ export class EventCalendarComponent implements OnInit {
 
     return days;
   });
+
+  readonly isCurrentMonth = computed(() => {
+    const d = this.currentDate();
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  });
+
+  statusLabel(status: EventStatus): string {
+    return STATUS_LABELS[status] ?? status;
+  }
+
+  statusClass(status: EventStatus): string {
+    return STATUS_CLASSES[status] ?? STATUS_CLASSES.draft;
+  }
 
   ngOnInit(): void {
     this.load();
