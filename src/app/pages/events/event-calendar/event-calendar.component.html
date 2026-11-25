@@ -1,55 +1,93 @@
- <main class="calendar-page">
-      <header>
-        <div>
-          <h1>Calendario de eventos</h1>
-          <p>Programación mensual de tu empresa.</p>
+<section class="mx-auto w-full max-w-7xl space-y-6">
+
+  <app-page-header
+    title="Calendario de eventos"
+    description="Programación mensual de tu empresa."
+  >
+    <a routerLink="/events" class="btn-secondary">Ver listado</a>
+
+    @if (auth.hasPermission('events.create')) {
+      <a routerLink="/events/new" class="btn-primary">+ Nuevo evento</a>
+    }
+  </app-page-header>
+
+  <div class="card !p-0 overflow-hidden">
+
+    <!-- Navegación del mes -->
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 sm:px-6">
+      <h2 class="m-0 text-lg font-semibold text-gray-900">
+        {{ currentDate() | date:'MMMM yyyy' | titlecase }}
+      </h2>
+
+      <div class="flex items-center gap-2">
+        <button type="button" class="btn-secondary !px-3 !py-2" (click)="today()"
+                [disabled]="isCurrentMonth()">
+          Hoy
+        </button>
+
+        <div class="inline-flex rounded-lg shadow-sm" role="group" aria-label="Cambiar de mes">
+          <button type="button" (click)="previousMonth()" aria-label="Mes anterior" title="Mes anterior"
+                  class="rounded-s-lg border border-gray-300 bg-white px-3 py-2 text-gray-700 hover:bg-gray-50 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100">
+            <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button type="button" (click)="nextMonth()" aria-label="Mes siguiente" title="Mes siguiente"
+                  class="-ms-px rounded-e-lg border border-gray-300 bg-white px-3 py-2 text-gray-700 hover:bg-gray-50 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100">
+            <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
+      </div>
+    </div>
 
-        <nav>
-          <a routerLink="/events">Ver listado</a>
-          <a routerLink="/events/new">+ Nuevo evento</a>
-        </nav>
-      </header>
+    @if (error()) {
+      <div class="px-4 pt-4 sm:px-6">
+        <p class="alert-error m-0" role="alert">{{ error() }}</p>
+      </div>
+    }
 
-      <div class="calendar-toolbar">
-        <button type="button" (click)="previousMonth()">‹ Anterior</button>
-        <h2>{{ currentDate() | date:'MMMM yyyy' }}</h2>
-        <button type="button" (click)="nextMonth()">Siguiente ›</button>
-        <button type="button" (click)="today()">Hoy</button>
+    <!-- Cuadrícula -->
+    <div class="relative">
+      @if (loading()) {
+        <div class="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
+          <span class="text-sm text-gray-500">Cargando calendario…</span>
+        </div>
+      }
+
+      <div class="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
+        @for (name of weekdays; track name) {
+          <div class="py-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">{{ name }}</div>
+        }
       </div>
 
-      @if (loading()) {
-        <p>Cargando calendario...</p>
-      }
-
-      @if (error()) {
-        <p class="error" role="alert">{{ error() }}</p>
-      }
-
-      <div class="calendar-grid">
-        @for (name of weekdays; track name) {
-          <div class="weekday">{{ name }}</div>
-        }
-
-        @for (day of calendarDays(); track day.date.getTime()) {
-          <div
-            class="calendar-day"
-            [class.other-month]="!day.currentMonth">
-
-            <span class="day-number">
+      <div class="grid grid-cols-7">
+        @for (day of calendarDays(); track day.date.getTime(); let i = $index) {
+          <div class="min-h-20 border-b border-gray-100 p-1 sm:min-h-28 sm:p-2"
+               [class.border-r]="(i + 1) % 7 !== 0"
+               [class.bg-gray-50]="!day.currentMonth">
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium"
+                  [class.bg-blue-700]="day.isToday"
+                  [class.text-white]="day.isToday"
+                  [class.text-gray-900]="day.currentMonth && !day.isToday"
+                  [class.text-gray-400]="!day.currentMonth && !day.isToday">
               {{ day.date.getDate() }}
             </span>
 
-            @for (event of day.events; track event.id) {
-              <a
-                class="calendar-event"
-                [class.cancelled]="event.status === 'cancelled'"
-                [routerLink]="['/events', event.id]"
-                [title]="event.name">
-                {{ event.name }}
-              </a>
-            }
+            <div class="mt-1 space-y-1">
+              @for (event of day.events; track event.id) {
+                <a [routerLink]="['/events', event.id]" [title]="event.name + ' · ' + statusLabel(event.status)"
+                   class="block truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium hover:no-underline hover:opacity-80 sm:text-xs"
+                   [class]="statusClass(event.status)"
+                   [class.line-through]="event.status === 'cancelled'">
+                  {{ event.name }}
+                </a>
+              }
+            </div>
           </div>
         }
       </div>
-    </main>
+    </div>
+  </div>
+</section>
