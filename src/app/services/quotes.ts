@@ -36,10 +36,16 @@ export interface QuoteItem {
   fulfillment_status?: string;
   compliance_status?: string;
   service_details?: Record<string, string> | null;
+  supplier_tenant_id?: number | null;
+  supplier_name?: string | null;
+  network_offer_id?: number | null;
+  cost_unit_price?: string | null;
+  cost_status?: 'confirmed' | 'pending' | null;
 }
 
 export interface QuotePendingSummary {
-  price_pending: number; confirmation_pending: number; compliance_pending: number; blocking: number;
+  price_pending: number; cost_pending?: number; confirmation_pending: number; compliance_pending: number;
+  blocking: number;
 }
 
 export interface Quote {
@@ -81,6 +87,7 @@ export interface CreateQuoteItem {
   discount_amount: string;
   tax_rate: string;
   offer_id?: number;
+  network_offer_id?: number;
   guests?: number;
   hours?: number;
   service_notes?: string;

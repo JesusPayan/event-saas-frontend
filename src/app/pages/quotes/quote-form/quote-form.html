@@ -159,6 +159,12 @@
 
             <!-- CAT-01: catálogo de productos y servicios -->
             <div class="space-y-3 border-b border-slate-200 bg-slate-50 p-5">
+                <div class="inline-flex rounded-lg border border-slate-300 bg-white p-1" role="tablist" aria-label="Origen del catálogo">
+                    <button type="button" role="tab" class="rounded-md px-3 py-1 text-sm font-medium" [attr.aria-selected]="catalogSource() === 'mine'"
+                        [class]="catalogSource() === 'mine' ? 'bg-blue-600 !text-white' : 'text-slate-700'" (click)="setCatalogSource('mine')">Mi catálogo</button>
+                    <button type="button" role="tab" class="rounded-md px-3 py-1 text-sm font-medium" [attr.aria-selected]="catalogSource() === 'network'"
+                        [class]="catalogSource() === 'network' ? 'bg-blue-600 !text-white' : 'text-slate-700'" (click)="setCatalogSource('network')">Red de organizaciones</button>
+                </div>
                 <div class="flex flex-wrap items-end gap-3">
                     <div>
                         <label for="catalog-category" class="mb-2 block text-sm font-medium text-slate-700">Agregar desde el catálogo</label>
@@ -182,7 +188,8 @@
                     <li class="flex flex-wrap items-center justify-between gap-3 px-3 py-2 text-sm">
                         <span>
                             <span class="font-medium text-slate-900">{{ entry.name }}</span>
-                            <span class="block text-xs text-slate-500">{{ entry.category_name }} · {{ entry.provider_name ?? 'Mi empresa' }} ·
+                            <span class="block text-xs text-slate-500">{{ entry.category_name }} ·
+                                {{ entry.kind === 'network' ? entry.supplier_name + ' (red)' : (entry.provider_name ?? 'Mi empresa') }} ·
                                 @if (entry.price_pending) { <span class="text-amber-700">precio pendiente</span> }
                                 @else { {{ +(entry.unit_price ?? 0) | currency:'MXN' }} {{ entry.pricing_label }} }
                             </span>
@@ -212,10 +219,17 @@
                         </button>
                     </div>
 
-                    @if (item.get('offer_id')?.value || item.get('category_name')?.value) {
+                    @if (item.get('offer_id')?.value || item.get('network_offer_id')?.value || item.get('category_name')?.value) {
                     <div class="flex flex-wrap items-center gap-2 text-xs">
                         <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-700">{{ item.get('category_name')?.value }}</span>
+                        @if (item.get('network_offer_id')?.value) {
+                        <span class="rounded-full bg-purple-100 px-2.5 py-0.5 font-semibold text-purple-800">Organización de la red: {{ item.get('supplier_name')?.value }}</span>
+                        <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-700">
+                            Costo: @if (item.get('cost_unit_price')?.value) { {{ +item.get('cost_unit_price')?.value | currency:'MXN' }} } @else { por cotizar }
+                        </span>
+                        } @else {
                         <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-700">Proveedor: {{ item.get('provider_name')?.value }}</span>
+                        }
                         <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-700">{{ pricingLabel(item.get('pricing_mode')?.value) }}</span>
                         @if (item.get('price_pending')?.value) {
                         <span class="rounded-full bg-amber-100 px-2.5 py-0.5 font-semibold text-amber-800">Precio pendiente</span>
@@ -231,7 +245,7 @@
 
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
 
-                        @if (!item.get('offer_id')?.value) {
+                        @if (!item.get('offer_id')?.value && !item.get('network_offer_id')?.value) {
                         <div>
                             <label class="mb-2 block text-sm font-medium text-slate-700">
                                 Tipo *
@@ -245,7 +259,7 @@
                         </div>
                         }
 
-                        @if (item.get('item_type')?.value === 'inventory' && !item.get('offer_id')?.value) {
+                        @if (item.get('item_type')?.value === 'inventory' && !item.get('offer_id')?.value && !item.get('network_offer_id')?.value) {
                         <div>
 
                    
@@ -349,7 +363,7 @@
 
                         <div>
                             <label class="mb-2 block text-sm font-medium text-slate-700">
-                                Precio unitario *
+                                {{ item.get('network_offer_id')?.value ? 'Tu precio de venta *' : 'Precio unitario *' }}
                             </label>
                             @if (item.get('price_pending')?.value) {
                             <p class="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-sm text-amber-800">Bajo cotización</p>
@@ -375,7 +389,7 @@
                                 class="w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm" />
                         </div>
 
-                        @if (item.get('offer_id')?.value) {
+                        @if (item.get('offer_id')?.value || item.get('network_offer_id')?.value) {
                         <div class="md:col-span-3">
                             <label class="mb-2 block text-sm font-medium text-slate-700">Notas para el proveedor</label>
                             <input type="text" formControlName="service_notes" maxlength="1000"
@@ -386,6 +400,12 @@
                     </div>
 
                     <div class="flex justify-end gap-6 rounded-lg bg-slate-50 p-4 text-sm">
+                        @if (lineMargin(i); as margin) {
+                        <div>
+                            <span class="text-slate-500">Margen: </span>
+                            <strong [class]="margin < 0 ? 'text-red-700' : 'text-green-700'">{{ margin | currency:'MXN' }}</strong>
+                        </div>
+                        }
                         <div>
                             <span class="text-slate-500">Subtotal: </span>
                             <strong>

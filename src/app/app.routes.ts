@@ -162,6 +162,12 @@ export const routes: Routes = [
         canActivate: [permissionGuard('catalog.read')]
       },
       {
+        path: 'network/requests',
+        loadComponent: () => import('./pages/catalog/network-requests/network-requests.component')
+          .then(m => m.NetworkRequestsComponent),
+        canActivate: [permissionGuard('catalog.read')]
+      },
+      {
         path: 'provider/items',
         loadComponent: () => import('./pages/catalog/provider-items/provider-items.component')
           .then(m => m.ProviderItemsComponent),

@@ -83,11 +83,29 @@ export class QuoteForm implements OnInit {
   readonly catalogCategory = signal<number | null>(null);
   readonly catalogSearch = signal('');
   readonly pricingLabels = PRICING_LABELS;
+  /** NET-01: mi catálogo o el de la red. */
+  readonly catalogSource = signal<'mine' | 'network'>('mine');
+
+  setCatalogSource(source: 'mine' | 'network'): void {
+    this.catalogSource.set(source);
+    this.loadCatalog();
+  }
+
+  /** Margen de una partida de la red: (precio de venta − costo) × cantidad. */
+  lineMargin(index: number): number | null {
+    const item = this.items.at(index).value;
+    if (!item.network_offer_id || item.price_pending || item.cost_unit_price === null || item.cost_unit_price === '') {
+      return null;
+    }
+    return this.round((Number(item.unit_price ?? 0) - Number(item.cost_unit_price)) * Number(item.quantity ?? 0));
+  }
 
   loadCatalog(): void {
     this.catalogLoading.set(true);
-    this.catalogService.offers({ categoryId: this.catalogCategory(), search: this.catalogSearch().trim(),
-                                 publishedOnly: true })
+    const filters = { categoryId: this.catalogCategory(), search: this.catalogSearch().trim() };
+    (this.catalogSource() === 'network'
+      ? this.catalogService.network(filters)
+      : this.catalogService.offers({ ...filters, publishedOnly: true }))
       .pipe(finalize(() => this.catalogLoading.set(false)))
       .subscribe({
         next: r => this.catalogResults.set(r.items),
@@ -114,7 +132,7 @@ export class QuoteForm implements OnInit {
   /** Agrega mobiliario o un servicio del catálogo como partida de la misma solicitud. */
   addFromCatalog(entry: CatalogEntry): void {
     const first = this.items.at(0)?.value;
-    if (this.items.length === 1 && !first.description && !first.offer_id && !first.inventory_item_id) {
+    if (this.items.length === 1 && !first.description && !first.offer_id && !first.network_offer_id && !first.inventory_item_id) {
       this.items.removeAt(0);
     }
     const group = this.createItem();
@@ -122,7 +140,18 @@ export class QuoteForm implements OnInit {
     let quantity = 1;
     if (entry.pricing_mode === 'per_person') quantity = guests ?? entry.min_guests ?? 1;
     if (entry.pricing_mode === 'per_hour') quantity = Number(entry.duration_hours ?? 1) || 1;
-    if (entry.kind === 'inventory') {
+    if (entry.kind === 'network') {
+      const costPending = entry.cost_unit_price === null || entry.cost_unit_price === undefined;
+      group.patchValue({
+        item_type: 'service', network_offer_id: entry.id, description: `${entry.name} (${entry.supplier_name})`,
+        pricing_mode: entry.pricing_mode, price_pending: costPending,
+        unit_price: costPending ? 0 : Number(entry.cost_unit_price),
+        cost_unit_price: costPending ? null : entry.cost_unit_price, supplier_name: entry.supplier_name ?? '',
+        provider_name: entry.supplier_name ?? '', category_name: entry.category_name ?? '',
+        requires_permits: entry.requires_special_permits || !!entry.venue_restrictions || !!entry.required_documents,
+        needs_confirmation: true, quantity,
+      });
+    } else if (entry.kind === 'inventory') {
       group.patchValue({
         item_type: 'inventory', inventory_item_id: entry.id, description: entry.name,
         unit_price: entry.unit_price !== null ? Number(entry.unit_price) : 0, quantity,
@@ -304,6 +333,9 @@ onInventorySelected(index: number): void {
       ]],
       // CAT-01: datos de la oferta del catálogo (solo informativos en el formulario).
       offer_id: [null as number | null],
+      network_offer_id: [null as number | null],
+      cost_unit_price: [null as string | null],
+      supplier_name: [''],
       pricing_mode: [null as string | null],
       price_pending: [false],
       provider_name: [''],
@@ -414,7 +446,7 @@ onInventorySelected(index: number): void {
       }
 
       if (
-        item.item_type === 'inventory' && !item.offer_id &&
+        item.item_type === 'inventory' && !item.offer_id && !item.network_offer_id &&
         (!item.inventory_item_id ||
           Number(item.inventory_item_id) <= 0)
       ) {
@@ -448,6 +480,21 @@ onInventorySelected(index: number): void {
     const value = this.form.getRawValue();
 
     const items: CreateQuotePayload['items'] = value.items.map(item => {
+      if (item.network_offer_id) {
+        const networkItem: CreateQuotePayload['items'][number] = {
+          network_offer_id: Number(item.network_offer_id),
+          description: item.description ?? '',
+          quantity: String(item.quantity ?? 0),
+          discount_amount: String(item.price_pending ? 0 : item.discount_amount ?? 0),
+          tax_rate: String(Number(item.tax_rate ?? 0) / 100),
+        };
+        // Precio de venta al cliente; si el costo está pendiente, se fija después.
+        if (!item.price_pending) networkItem.unit_price = String(item.unit_price ?? 0);
+        if (item.pricing_mode === 'per_person') networkItem.guests = Number(item.quantity);
+        if (item.pricing_mode === 'per_hour') networkItem.hours = Number(item.quantity);
+        if (item.service_notes?.trim()) networkItem.service_notes = item.service_notes.trim();
+        return networkItem;
+      }
       if (item.offer_id) {
         const offerItem: CreateQuotePayload['items'][number] = {
           offer_id: Number(item.offer_id),

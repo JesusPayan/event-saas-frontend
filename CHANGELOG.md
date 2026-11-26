@@ -13,6 +13,9 @@ Detalle conjunto con el backend, estado y riesgos: repositorio backend, `CHANGEL
 - Cotización con partidas del catálogo: filtro por categoría, proveedor, unidad de cobro, precio pendiente y total
   confirmado; seguimiento de partidas en el detalle (importe acordado, confirmación y documentos).
 - Portal del proveedor (`/provider/items`) y rol «Proveedor» en Miembros, con accesos temporales de solo lectura.
+- Catálogo compartido entre organizaciones: «Compartir en el catálogo de la red» en las ofertas, pestaña «Catálogo
+  de la red», servicios de otras organizaciones en la cotización (costo, precio de venta y margen) y bandeja
+  «Solicitudes de la red» (`/network/requests`).
 
 ### Cambiado
 - Calendario de eventos con el diseño estándar: encabezado y botones comunes, navegación del mes con flechas,
