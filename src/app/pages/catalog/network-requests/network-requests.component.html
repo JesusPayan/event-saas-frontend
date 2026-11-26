@@ -1,0 +1,75 @@
+<section class="mx-auto w-full max-w-7xl space-y-6">
+  <app-page-header title="Solicitudes de la red"
+    description="Servicios que otras organizaciones agregaron a sus eventos desde tus ofertas compartidas." />
+
+  @if (error()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+  @if (message()) { <p role="status" class="alert-success">{{ message() }}</p> }
+
+  <div class="space-y-4" [attr.aria-busy]="loading()">
+    @for (i of items(); track i.id) {
+      <article class="card space-y-3">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-purple-700">{{ i.requester_name }}</p>
+            <h2 class="text-lg font-semibold text-gray-900">{{ i.description }}</h2>
+            <p class="text-sm text-gray-500">{{ i.event_name }} · {{ i.event_starts_at | date:'medium' }}
+              @if (i.event_location) { · {{ i.event_location }} }
+              @if (i.estimated_guests) { · {{ i.estimated_guests }} invitados }</p>
+            <p class="text-xs text-gray-500">Cotización {{ i.quote_number }} · {{ i.category_name }}</p>
+          </div>
+          <div class="text-right">
+            @if (i.cost_status === 'pending') {
+              <span class="font-semibold text-amber-700">Precio por cotizar</span>
+            } @else {
+              <span class="text-lg font-bold text-gray-900">{{ i.cost_total | currency:'MXN':'symbol-narrow' }}</span>
+              <span class="block text-xs text-gray-500">{{ i.quantity }} × {{ i.cost_unit_price | currency:'MXN':'symbol-narrow' }} {{ pricing(i.pricing_mode) }}</span>
+            }
+          </div>
+        </div>
+
+        <div class="grid gap-3 rounded-lg bg-gray-50 p-3 text-sm text-gray-700 sm:grid-cols-2">
+          <div>
+            <p class="font-medium text-gray-900">Cliente</p>
+            <p>{{ i.client.name ?? i.client.business_name ?? '—' }}</p>
+            @if (i.client.email) { <p class="text-xs">{{ i.client.email }}</p> }
+            @if (i.client.phone || i.client.whatsapp) { <p class="text-xs">{{ i.client.phone ?? i.client.whatsapp }}</p> }
+          </div>
+          <div>
+            <p class="font-medium text-gray-900">Detalles</p>
+            @if (i.service_details; as d) {
+              @if (d['guests']) { <p class="text-xs">Invitados: {{ d['guests'] }}</p> }
+              @if (d['hours']) { <p class="text-xs">Horas: {{ d['hours'] }}</p> }
+              @if (d['notes']) { <p class="text-xs">Notas: {{ d['notes'] }}</p> }
+              @if (d['required_documents']) { <p class="text-xs">Documentos: {{ d['required_documents'] }}</p> }
+            } @else { <p class="text-xs text-gray-500">Sin notas.</p> }
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2 text-xs">
+          <span class="rounded-full px-2.5 py-0.5 font-semibold" [class]="statusClasses[i.fulfillment_status]">Fecha: {{ statusLabels[i.fulfillment_status] }}</span>
+          @if (i.compliance_status !== 'not_required') {
+            <span class="rounded-full px-2.5 py-0.5 font-semibold" [class]="statusClasses[i.compliance_status]">Recinto y documentos: {{ statusLabels[i.compliance_status] }}</span>
+          }
+        </div>
+
+        @if (editable(i)) {
+          <div class="flex flex-wrap items-end gap-3 border-t border-gray-100 pt-3">
+            <button type="button" class="btn-primary !py-2" [disabled]="busy() === i.id || i.fulfillment_status === 'confirmed'"
+              (click)="respond(i, { fulfillment_status: 'confirmed' })">Confirmar fecha</button>
+            <button type="button" class="btn-secondary !py-2 !text-red-700" [disabled]="busy() === i.id || i.fulfillment_status === 'unavailable'"
+              (click)="respond(i, { fulfillment_status: 'unavailable' })">No disponible</button>
+            <div class="flex items-end gap-2">
+              <div>
+                <label [attr.for]="'cost-' + i.id" class="form-label">Tu precio por unidad</label>
+                <input [id]="'cost-' + i.id" class="form-control w-40" type="number" min="0" step="0.01" [(ngModel)]="costs[i.id]">
+              </div>
+              <button type="button" class="btn-secondary !py-2" [disabled]="busy() === i.id || !costs[i.id]" (click)="setCost(i)">Enviar precio</button>
+            </div>
+          </div>
+        }
+      </article>
+    } @empty {
+      <p class="card text-center text-gray-500">{{ loading() ? 'Cargando…' : 'Aún no recibes solicitudes de otras organizaciones.' }}</p>
+    }
+  </div>
+</section>

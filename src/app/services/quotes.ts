@@ -25,6 +25,27 @@ export interface QuoteItem {
   tax_amount: string;
   total: string;
   sort_order: number;
+  // CAT-01: partidas del catálogo de servicios.
+  offer_id?: number | null;
+  provider_id?: number | null;
+  provider_name?: string | null;
+  category_id?: number | null;
+  category_name?: string | null;
+  pricing_mode?: string | null;
+  price_status?: 'confirmed' | 'pending';
+  fulfillment_status?: string;
+  compliance_status?: string;
+  service_details?: Record<string, string> | null;
+  supplier_tenant_id?: number | null;
+  supplier_name?: string | null;
+  network_offer_id?: number | null;
+  cost_unit_price?: string | null;
+  cost_status?: 'confirmed' | 'pending' | null;
+}
+
+export interface QuotePendingSummary {
+  price_pending: number; cost_pending?: number; confirmation_pending: number; compliance_pending: number;
+  blocking: number;
 }
 
 export interface Quote {
@@ -46,6 +67,8 @@ export interface Quote {
   created_at: string;
   updated_at: string;
   items?: QuoteItem[];
+  confirmed_total?: string;
+  pending?: QuotePendingSummary;
 }
 
 export interface QuotesPage {
@@ -57,12 +80,17 @@ export interface QuotesPage {
 }
 export interface CreateQuoteItem {
   inventory_item_id?: number | null;
-  item_type: 'inventory' | 'service' | 'custom';
+  item_type?: 'inventory' | 'service' | 'custom';
   description: string;
   quantity: string;
-  unit_price: string;
+  unit_price?: string;
   discount_amount: string;
   tax_rate: string;
+  offer_id?: number;
+  network_offer_id?: number;
+  guests?: number;
+  hours?: number;
+  service_notes?: string;
 }
 
 export interface CreateQuotePayload {
@@ -146,4 +174,13 @@ export class QuotesService {
   }
   
   
+
+  /** CAT-01: importe acordado, confirmación del proveedor o revisión documental de una partida. */
+  updateItem(
+    quoteId: number,
+    itemId: number,
+    body: { unit_price?: string; fulfillment_status?: string; compliance_status?: string; notes?: string }
+  ) {
+    return this.http.patch<Quote>(`${this.apiUrl}/${quoteId}/items/${itemId}`, body);
+  }
 }

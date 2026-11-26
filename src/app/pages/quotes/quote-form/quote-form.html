@@ -157,6 +157,51 @@
                 </button>
             </div>
 
+            <!-- CAT-01: catálogo de productos y servicios -->
+            <div class="space-y-3 border-b border-slate-200 bg-slate-50 p-5">
+                <div class="inline-flex rounded-lg border border-slate-300 bg-white p-1" role="tablist" aria-label="Origen del catálogo">
+                    <button type="button" role="tab" class="rounded-md px-3 py-1 text-sm font-medium" [attr.aria-selected]="catalogSource() === 'mine'"
+                        [class]="catalogSource() === 'mine' ? 'bg-blue-600 !text-white' : 'text-slate-700'" (click)="setCatalogSource('mine')">Mi catálogo</button>
+                    <button type="button" role="tab" class="rounded-md px-3 py-1 text-sm font-medium" [attr.aria-selected]="catalogSource() === 'network'"
+                        [class]="catalogSource() === 'network' ? 'bg-blue-600 !text-white' : 'text-slate-700'" (click)="setCatalogSource('network')">Red de organizaciones</button>
+                </div>
+                <div class="flex flex-wrap items-end gap-3">
+                    <div>
+                        <label for="catalog-category" class="mb-2 block text-sm font-medium text-slate-700">Agregar desde el catálogo</label>
+                        <select id="catalog-category" class="w-64 rounded-lg border border-slate-300 bg-white p-2.5 text-sm"
+                            [value]="catalogCategory() ?? ''"
+                            (change)="catalogCategory.set($any($event.target).value ? +$any($event.target).value : null); loadCatalog()">
+                            <option value="">Todas las categorías</option>
+                            @for (c of catalogCategories(); track c.id) { <option [value]="c.id">{{ categoryLabel(c) }}</option> }
+                        </select>
+                    </div>
+                    <div class="min-w-48 flex-1">
+                        <label for="catalog-search" class="sr-only">Buscar en el catálogo</label>
+                        <input id="catalog-search" type="search" placeholder="Buscar sillas, banquete, DJ…"
+                            class="w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm"
+                            [value]="catalogSearch()" (input)="catalogSearch.set($any($event.target).value)" (keyup.enter)="loadCatalog()">
+                    </div>
+                    <button type="button" class="btn-secondary !py-2" (click)="loadCatalog()">Buscar</button>
+                </div>
+                <ul class="max-h-64 divide-y divide-slate-200 overflow-y-auto rounded-lg border border-slate-200 bg-white" [attr.aria-busy]="catalogLoading()">
+                    @for (entry of catalogResults(); track entry.kind + entry.id) {
+                    <li class="flex flex-wrap items-center justify-between gap-3 px-3 py-2 text-sm">
+                        <span>
+                            <span class="font-medium text-slate-900">{{ entry.name }}</span>
+                            <span class="block text-xs text-slate-500">{{ entry.category_name }} ·
+                                {{ entry.kind === 'network' ? entry.supplier_name + ' (red)' : (entry.provider_name ?? 'Mi empresa') }} ·
+                                @if (entry.price_pending) { <span class="text-amber-700">precio pendiente</span> }
+                                @else { {{ +(entry.unit_price ?? 0) | currency:'MXN' }} {{ entry.pricing_label }} }
+                            </span>
+                        </span>
+                        <button type="button" class="font-medium text-blue-700 hover:underline" (click)="addFromCatalog(entry)">+ Agregar</button>
+                    </li>
+                    } @empty {
+                    <li class="px-3 py-4 text-center text-sm text-slate-500">{{ catalogLoading() ? 'Cargando…' : 'Sin resultados en el catálogo.' }}</li>
+                    }
+                </ul>
+            </div>
+
             <div formArrayName="items" class="divide-y divide-slate-200">
 
                 @for (item of items.controls; track item; let i = $index) {
@@ -174,8 +219,33 @@
                         </button>
                     </div>
 
+                    @if (item.get('offer_id')?.value || item.get('network_offer_id')?.value || item.get('category_name')?.value) {
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-700">{{ item.get('category_name')?.value }}</span>
+                        @if (item.get('network_offer_id')?.value) {
+                        <span class="rounded-full bg-purple-100 px-2.5 py-0.5 font-semibold text-purple-800">Organización de la red: {{ item.get('supplier_name')?.value }}</span>
+                        <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-700">
+                            Costo: @if (item.get('cost_unit_price')?.value) { {{ +item.get('cost_unit_price')?.value | currency:'MXN' }} } @else { por cotizar }
+                        </span>
+                        } @else {
+                        <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-700">Proveedor: {{ item.get('provider_name')?.value }}</span>
+                        }
+                        <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-700">{{ pricingLabel(item.get('pricing_mode')?.value) }}</span>
+                        @if (item.get('price_pending')?.value) {
+                        <span class="rounded-full bg-amber-100 px-2.5 py-0.5 font-semibold text-amber-800">Precio pendiente</span>
+                        }
+                        @if (item.get('needs_confirmation')?.value) {
+                        <span class="rounded-full bg-amber-100 px-2.5 py-0.5 font-semibold text-amber-800">Fecha por confirmar con el proveedor</span>
+                        }
+                        @if (item.get('requires_permits')?.value) {
+                        <span class="rounded-full bg-red-100 px-2.5 py-0.5 font-semibold text-red-800">Requiere revisar recinto y documentos</span>
+                        }
+                    </div>
+                    }
+
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
 
+                        @if (!item.get('offer_id')?.value && !item.get('network_offer_id')?.value) {
                         <div>
                             <label class="mb-2 block text-sm font-medium text-slate-700">
                                 Tipo *
@@ -187,8 +257,9 @@
                                 <option value="inventory">Inventario</option>
                             </select>
                         </div>
+                        }
 
-                        @if (item.get('item_type')?.value === 'inventory') {
+                        @if (item.get('item_type')?.value === 'inventory' && !item.get('offer_id')?.value && !item.get('network_offer_id')?.value) {
                         <div>
 
                    
@@ -284,7 +355,7 @@
 
                         <div>
                             <label class="mb-2 block text-sm font-medium text-slate-700">
-                                Cantidad *
+                                {{ quantityLabel(i) }}
                             </label>
                             <input type="number" min="0.01" step="0.01" formControlName="quantity"
                                 class="w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm" />
@@ -292,10 +363,14 @@
 
                         <div>
                             <label class="mb-2 block text-sm font-medium text-slate-700">
-                                Precio unitario *
+                                {{ item.get('network_offer_id')?.value ? 'Tu precio de venta *' : 'Precio unitario *' }}
                             </label>
+                            @if (item.get('price_pending')?.value) {
+                            <p class="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-sm text-amber-800">Bajo cotización</p>
+                            } @else {
                             <input type="number" min="0" step="0.01" formControlName="unit_price"
                                 class="w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm" />
+                            }
                         </div>
 
                         <div>
@@ -314,9 +389,23 @@
                                 class="w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm" />
                         </div>
 
+                        @if (item.get('offer_id')?.value || item.get('network_offer_id')?.value) {
+                        <div class="md:col-span-3">
+                            <label class="mb-2 block text-sm font-medium text-slate-700">Notas para el proveedor</label>
+                            <input type="text" formControlName="service_notes" maxlength="1000"
+                                placeholder="Horario, montaje, requerimientos del evento…"
+                                class="w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm" />
+                        </div>
+                        }
                     </div>
 
                     <div class="flex justify-end gap-6 rounded-lg bg-slate-50 p-4 text-sm">
+                        @if (lineMargin(i); as margin) {
+                        <div>
+                            <span class="text-slate-500">Margen: </span>
+                            <strong [class]="margin < 0 ? 'text-red-700' : 'text-green-700'">{{ margin | currency:'MXN' }}</strong>
+                        </div>
+                        }
                         <div>
                             <span class="text-slate-500">Subtotal: </span>
                             <strong>
@@ -334,7 +423,7 @@
                         <div>
                             <span class="text-slate-500">Total: </span>
                             <strong class="text-blue-700">
-                                {{ lineTotal(i) | currency:'MXN' }}
+                                @if (item.get('price_pending')?.value) { Precio pendiente } @else { {{ lineTotal(i) | currency:'MXN' }} }
                             </strong>
                         </div>
                     </div>
@@ -399,11 +488,16 @@
                 </div>
 
                 <div class="flex justify-between border-t border-slate-200 pt-4 text-lg font-bold">
-                    <span>Total</span>
+                    <span>{{ pendingCount > 0 ? 'Total confirmado' : 'Total' }}</span>
                     <span class="text-blue-700">
                         {{ total | currency:'MXN' }}
                     </span>
                 </div>
+                @if (pendingCount > 0) {
+                <p class="text-sm text-amber-700">
+                    {{ pendingCount }} partida(s) bajo cotización no suman al total hasta acordar su importe.
+                </p>
+                }
 
             </div>
         </div>

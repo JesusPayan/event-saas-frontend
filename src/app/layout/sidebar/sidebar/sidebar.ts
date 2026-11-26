@@ -1,5 +1,6 @@
 
 import {
+  computed,
   Component,
   inject,
   signal,
@@ -57,6 +58,10 @@ import {
 export class SidebarComponent implements OnDestroy {
 
   readonly auth = inject(AuthService);
+  /** Usuario de un proveedor externo: solo ve sus partidas. */
+  readonly providerOnly = computed(() =>
+    this.auth.hasPermission('provider.items') && !this.auth.hasPermission('events.read'));
+  readonly hasTenant = computed(() => this.auth.tenant() !== null);
   private readonly router = inject(Router);
   private readonly routerSubscription: Subscription;
 

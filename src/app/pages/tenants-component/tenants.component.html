@@ -25,17 +25,37 @@
                 <span>
                   <span class="block font-semibold text-gray-900">{{ tenant.name ?? 'Empresa #' + tenant.id }}</span>
                   <span class="block text-xs text-gray-500">{{ tenant.slug }}{{ tenant.role ? ' · ' + roleLabel(tenant.role) : '' }}</span>
+                  @if (tenant.role === 'delegated') {
+                    <span class="mt-1 block text-xs font-medium text-amber-700">Solo lectura hasta {{ tenant.expires_at | date:'medium' }}</span>
+                  }
+                  @if (tenant.status === 'suspended') {
+                    <span class="mt-1 block text-xs font-medium text-red-700">Empresa suspendida</span>
+                  }
                 </span>
               </span>
               <span class="text-sm font-medium text-blue-700">{{ busy() === tenant.id ? 'Entrando…' : 'Entrar →' }}</span>
             </button>
           </li>
         } @empty {
+          @if (auth.platformRoles().length === 0) {
           <li class="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
             No tienes empresas activas.
           </li>
+          }
         }
       </ul>
+
+      @if (auth.platformRoles().length > 0) {
+        <div class="mt-6 space-y-2 border-t border-gray-100 pt-6">
+          <p class="text-sm font-medium text-gray-700">Funciones de plataforma</p>
+          @if (platformHome(); as home) {
+            <a [routerLink]="home" class="btn-secondary w-full">Ir al panel de plataforma</a>
+          }
+          @if (auth.hasPlatformPermission('promoter.referrals')) {
+            <a routerLink="/promoter" class="btn-secondary w-full">Ir a mis referidos</a>
+          }
+        </div>
+      }
 
       <button type="button" (click)="auth.logout()" class="btn-secondary mt-6 w-full">Cerrar sesión</button>
     </section>

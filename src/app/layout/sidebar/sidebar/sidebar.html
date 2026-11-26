@@ -23,10 +23,25 @@
 
   <nav aria-label="Menú principal">
 
+    @if (hasTenant() && !providerOnly()) {
     <a routerLink="/dashboard" routerLinkActive="active" (click)="closeMobile()">
       <lucide-icon [img]="icons.dashboard" [size]="18" />
       <span>Dashboard</span>
     </a>
+    }
+
+    @if (auth.delegatedAccess()) {
+    <p class="mx-3 my-2 rounded-lg bg-amber-100 px-3 py-2 text-xs font-medium text-amber-900">
+      Acceso temporal de solo lectura. Tus consultas quedan registradas.
+    </p>
+    }
+
+    @if (auth.hasPermission('provider.items')) {
+    <div class="menu-heading">Proveedor</div>
+    <a routerLink="/provider/items" routerLinkActive="active" (click)="closeMobile()">
+      <span>Mis partidas</span>
+    </a>
+    }
 
     @if (auth.hasPermission('clients.read')) {
     <a routerLink="/clients" routerLinkActive="active" (click)="closeMobile()">
@@ -71,6 +86,21 @@
     <a routerLink="/quotes/new" routerLinkActive="active" (click)="closeMobile()">
       <lucide-icon [img]="icons.newQuote" [size]="18" />
       <span>Nueva cotización</span>
+    </a>
+    }
+
+    @if (auth.hasPermission('catalog.read')) {
+    <a routerLink="/catalog" routerLinkActive="active" (click)="closeMobile()">
+      <lucide-icon [img]="icons.quotes" [size]="18" />
+      <span>Catálogo de servicios</span>
+    </a>
+    <a routerLink="/providers" routerLinkActive="active" (click)="closeMobile()">
+      <lucide-icon [img]="icons.clients" [size]="18" />
+      <span>Proveedores</span>
+    </a>
+    <a routerLink="/network/requests" routerLinkActive="active" (click)="closeMobile()">
+      <lucide-icon [img]="icons.quotes" [size]="18" />
+      <span>Solicitudes de la red</span>
     </a>
     }
 
@@ -193,15 +223,42 @@
       <span>Configuración de comprobantes</span>
     </a>
     }
-    @if (auth.hasPermission('tenant.read')) {
+    @if (auth.hasPermission('members.read')) {
+    <a routerLink="/members" routerLinkActive="active" (click)="closeMobile()">
+      <span>Miembros y accesos</span>
+    </a>
+    }
+    @if (auth.hasPermission('tenant.read') && !providerOnly() && !auth.delegatedAccess()) {
     <div class="menu-heading">Suscripción</div>
     <a routerLink="/billing/plans" routerLinkActive="active" (click)="closeMobile()">Planes y precios</a>
     <a routerLink="/billing/subscription" routerLinkActive="active" (click)="closeMobile()">Mi suscripción</a>
     }
-    @if (auth.isOperator()) {
+    @if (auth.platformPermissions().length > 0 && !(auth.platformRoles().length === 1 && auth.platformRoles()[0] === 'promoter')) {
     <div class="menu-heading">Plataforma</div>
+    @if (auth.hasPlatformPermission('platform.orgs.manage')) {
+    <a routerLink="/platform/organizations" routerLinkActive="active" (click)="closeMobile()">Organizaciones</a>
+    }
+    @if (auth.hasAnyPlatformPermission('platform.roles.manage_admins', 'platform.roles.manage_promoters')) {
+    <a routerLink="/platform/roles" routerLinkActive="active" (click)="closeMobile()">Roles de plataforma</a>
+    }
+    @if (auth.hasPlatformPermission('platform.catalog.manage')) {
+    <a routerLink="/platform/categories" routerLinkActive="active" (click)="closeMobile()">Categorías del catálogo</a>
+    }
+    @if (auth.hasPlatformPermission('platform.billing.operate')) {
     <a routerLink="/platform/subscriptions" routerLinkActive="active" (click)="closeMobile()">Suscripciones</a>
+    }
+    @if (auth.hasPlatformPermission('platform.plans.manage')) {
     <a routerLink="/platform/prices" routerLinkActive="active" (click)="closeMobile()">Precios de planes</a>
     }
+    @if (auth.hasPlatformPermission('platform.audit.read')) {
+    <a routerLink="/platform/audit" routerLinkActive="active" (click)="closeMobile()">Auditoría</a>
+    }
+    }
+    @if (auth.hasPlatformPermission('promoter.referrals')) {
+    <div class="menu-heading">Promotor</div>
+    <a routerLink="/promoter" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobile()">Mis referidos</a>
+    }
+    <div class="menu-heading">Cuenta</div>
+    <a routerLink="/tenants" (click)="closeMobile()">Cambiar de empresa</a>
   </nav>
 </aside>

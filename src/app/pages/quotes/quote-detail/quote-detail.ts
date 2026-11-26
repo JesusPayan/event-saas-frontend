@@ -6,7 +6,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { finalize } from 'rxjs';
 
 import { QuotesService } from '../../../services/quotes.service';
-import { Quote, QuoteStatus } from '../../../services/quotes';
+import { Quote, QuoteItem, QuoteStatus } from '../../../services/quotes';
+import { AuthService } from '../../../services/auth.service';
+import { ITEM_STATUS_CLASSES, ITEM_STATUS_LABELS, PRICING_LABELS, PricingMode } from '../../../services/catalog.service';
 import { ClientsService } from '../../../services/clients.service';
 import { EventsService } from '../../../services/events.service';
 import {
@@ -52,6 +54,49 @@ readonly canGenerateContract = computed(() => {
   readonly operationNotes = signal('');
 
   readonly totalItems = computed(() => this.quote()?.items?.length ?? 0);
+
+  // CAT-01: seguimiento de partidas (precio acordado, confirmación y documentos)
+  readonly auth = inject(AuthService);
+  readonly itemStatusLabels = ITEM_STATUS_LABELS;
+  readonly itemStatusClasses = ITEM_STATUS_CLASSES;
+  readonly itemBusy = signal<number | null>(null);
+  agreedPrices: Record<number, string> = {};
+  readonly canTrackItems = computed(() => {
+    const q = this.quote();
+    return !!q && this.auth.hasPermission('quotes.create') && (q.status === 'draft' || q.status === 'sent');
+  });
+  readonly hasCatalogItems = computed(() =>
+    (this.quote()?.items ?? []).some(i => !!i.offer_id || i.price_status === 'pending'));
+
+  pricingLabel(mode: string | null | undefined): string {
+    return mode ? (PRICING_LABELS[mode as PricingMode] ?? mode) : '';
+  }
+
+  updateItem(item: QuoteItem, body: { unit_price?: string; fulfillment_status?: string; compliance_status?: string }): void {
+    const quote = this.quote();
+    if (!quote) return;
+    this.itemBusy.set(item.id);
+    this.error.set('');
+    this.success.set('');
+    this.quotesService.updateItem(quote.id, item.id, body)
+      .pipe(finalize(() => this.itemBusy.set(null)))
+      .subscribe({
+        next: updated => {
+          this.quote.set(updated);
+          this.success.set('Partida actualizada.');
+        },
+        error: (err: HttpErrorResponse) => this.error.set(this.getErrorMessage(err)),
+      });
+  }
+
+  saveAgreedPrice(item: QuoteItem): void {
+    const value = Number(this.agreedPrices[item.id]);
+    if (!(value >= 0)) {
+      this.error.set('Escribe un importe válido.');
+      return;
+    }
+    this.updateItem(item, { unit_price: value.toFixed(2) });
+  }
 
   readonly availableActions = computed<QuoteStatus[]>(() => {
     const status = this.quote()?.status;
@@ -256,6 +301,9 @@ confirmGenerateContract(): void {
     if (err.status === 401) return 'Tu sesión expiró. Inicia sesión nuevamente.';
     if (err.status === 403) return 'No tienes permisos para realizar esta operación.';
     if (err.status === 404) return 'No se encontró la cotización en la empresa seleccionada.';
+    if (err.status === 409 && err.error?.details?.items === 'pending_items') {
+      return 'No se puede aceptar: hay partidas con precio, confirmación del proveedor o documentos pendientes.';
+    }
     if (err.status === 409) return 'La transición de estado no está permitida.';
     if (err.status === 400 || err.status === 422) {
       const details = err.error?.details;

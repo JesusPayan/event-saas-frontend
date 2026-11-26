@@ -1,0 +1,130 @@
+<section class="space-y-6 p-4 md:p-6">
+  <app-page-header title="Roles de plataforma"
+    description="Personas con funciones globales. Los roles de cada empresa se gestionan en su pantalla de Miembros." />
+
+  @if (error() && !pending()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+  @if (message()) {
+    <div role="status" class="alert-success">
+      {{ message() }}
+      @if (inviteUrl(); as url) { <input class="form-control mt-2 font-mono text-xs" [value]="url" readonly aria-label="Enlace de invitación"> }
+    </div>
+  }
+
+  @if (assignable().length > 0) {
+    <form class="card space-y-4" (ngSubmit)="grant()" #f="ngForm">
+      <h2 class="text-lg font-semibold text-gray-900">Asignar rol</h2>
+      <div class="grid gap-4 md:grid-cols-[1fr_16rem_auto] md:items-end">
+        <div>
+          <label for="role-email" class="form-label">Correo</label>
+          <input id="role-email" class="form-control" type="email" name="email" [(ngModel)]="email" required email maxlength="254"
+            placeholder="persona@correo.com">
+        </div>
+        <div>
+          <label for="role-key" class="form-label">Rol</label>
+          <select id="role-key" class="form-control" name="role" [(ngModel)]="role">
+            @for (r of assignable(); track r) { <option [value]="r">{{ labels[r] }}</option> }
+          </select>
+        </div>
+        <button type="submit" class="btn-primary" [disabled]="busy() || f.invalid">Asignar</button>
+      </div>
+      <p class="form-hint">{{ help[role] }} Si la persona no tiene cuenta, le enviamos una invitación.</p>
+    </form>
+  }
+
+  <div class="relative overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm" [attr.aria-busy]="loading()">
+    <table class="w-full text-left text-sm text-gray-700">
+      <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+        <tr>
+          <th scope="col" class="px-4 py-3">Persona</th>
+          <th scope="col" class="px-4 py-3">Rol</th>
+          <th scope="col" class="px-4 py-3">Alcance</th>
+          <th scope="col" class="px-4 py-3">Asignado</th>
+          <th scope="col" class="px-4 py-3"><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of data()?.items ?? []; track row.id) {
+          <tr class="border-b border-gray-100">
+            <td class="px-4 py-3 font-medium text-gray-900">{{ row.email }}
+              @if (isSelf(row)) { <span class="ml-1 text-xs font-normal text-gray-500">(tú)</span> }</td>
+            <td class="px-4 py-3">
+              <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                [class]="row.role === 'platform_owner' ? 'bg-purple-100 text-purple-800' : row.role === 'platform_admin' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'">
+                {{ row.role_label }}
+              </span>
+            </td>
+            <td class="px-4 py-3">Toda la plataforma</td>
+            <td class="px-4 py-3 text-gray-500">{{ row.granted_at | date:'mediumDate' }}
+              @if (row.granted_by_email) { <span class="block text-xs">por {{ row.granted_by_email }}</span> }</td>
+            <td class="whitespace-nowrap px-4 py-3 text-right">
+              @if (canRevoke(row)) {
+                <button type="button" class="font-medium text-red-700 hover:underline" (click)="pending.set({ kind: 'revoke', row })">Retirar</button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5" class="px-4 py-10 text-center text-gray-500">{{ loading() ? 'Cargando…' : 'Sin asignaciones.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if ((data()?.invitations ?? []).length > 0) {
+    <div class="card">
+      <h2 class="mb-3 text-lg font-semibold text-gray-900">Invitaciones pendientes</h2>
+      <ul class="divide-y divide-gray-100 text-sm">
+        @for (inv of data()?.invitations ?? []; track inv.id) {
+          <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+            <span><span class="font-medium text-gray-900">{{ inv.email }}</span>
+              <span class="text-gray-500"> · {{ inv.role_label }} · vence {{ inv.expires_at | date:'mediumDate' }}</span></span>
+            @if (assignable().includes(inv.role)) {
+              <button type="button" class="font-medium text-red-700 hover:underline" (click)="pending.set({ kind: 'revoke-invite', inv })">Cancelar</button>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (data()?.can_transfer_owner) {
+    <div class="card space-y-3 border-red-200">
+      <h2 class="text-lg font-semibold text-gray-900">Transferir propiedad de la plataforma</h2>
+      <p class="text-sm text-gray-600">La otra persona se vuelve dueña en el mismo momento en que tú dejas de serlo; la plataforma nunca queda sin dueño.</p>
+      <div class="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+        <div>
+          <label for="transfer-email" class="form-label">Correo del nuevo dueño (cuenta existente)</label>
+          <input id="transfer-email" class="form-control" type="email" [(ngModel)]="transferEmail" maxlength="254">
+        </div>
+        <button type="button" class="btn-secondary !text-red-700" [disabled]="!transferEmail.trim()" (click)="pending.set({ kind: 'transfer' })">Transferir…</button>
+      </div>
+      <label class="flex items-center gap-2 text-sm font-normal"><input type="checkbox" [(ngModel)]="keepAdmin"> Conservar mi rol de administrador de plataforma</label>
+    </div>
+  }
+
+  <p class="text-xs text-gray-500">Roles reservados para más adelante: Soporte, Finanzas y Auditoría (aún sin permisos asignables).</p>
+
+  @if (pending(); as action) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+        @switch (action.kind) {
+          @case ('revoke') {
+            <h2 id="confirm-title" class="text-lg font-bold text-gray-900">¿Retirar el rol?</h2>
+            <p class="mt-2 text-sm text-gray-600">La persona pierde ese acceso de inmediato. Sus otros roles no cambian.</p>
+          }
+          @case ('revoke-invite') {
+            <h2 id="confirm-title" class="text-lg font-bold text-gray-900">¿Cancelar la invitación?</h2>
+          }
+          @default {
+            <h2 id="confirm-title" class="text-lg font-bold text-gray-900">¿Transferir la propiedad?</h2>
+            <p class="mt-2 text-sm text-gray-600">{{ transferEmail }} será el nuevo dueño. Esta acción queda en la auditoría.</p>
+          }
+        }
+        @if (error()) { <p role="alert" class="alert-error mt-3">{{ error() }}</p> }
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" class="btn-secondary" (click)="pending.set(null); error.set('')" [disabled]="busy()">Volver</button>
+          <button type="button" class="btn-primary !bg-red-600" (click)="confirm()" [disabled]="busy()">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  }
+</section>

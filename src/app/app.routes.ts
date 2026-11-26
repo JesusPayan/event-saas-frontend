@@ -5,8 +5,8 @@ import {
   authGuard,
   tenantGuard,
   permissionGuard,
-  operatorGuard,
-  landingGuard
+  landingGuard,
+  platformGuard
 } from './services/auth.guard';
 
 import { AdminLayoutComponent } from './layout/sidebar/admin-layout/admin-layout.component';
@@ -62,6 +62,73 @@ export const routes: Routes = [
   },
 
   // =====================================
+  // PANEL DE PLATAFORMA (alcance global: no requiere elegir empresa)
+  // =====================================
+  {
+    path: 'platform',
+    component: AdminLayoutComponent,
+    canActivate: [authGuard],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'organizations' },
+      {
+        path: 'organizations',
+        loadComponent: () => import('./pages/platform/platform-organizations/platform-organizations.component')
+          .then(m => m.PlatformOrganizationsComponent),
+        canActivate: [platformGuard('platform.orgs.manage')]
+      },
+      {
+        path: 'roles',
+        loadComponent: () => import('./pages/platform/platform-roles/platform-roles.component')
+          .then(m => m.PlatformRolesComponent),
+        canActivate: [platformGuard('platform.roles.manage_admins', 'platform.roles.manage_promoters')]
+      },
+      {
+        path: 'categories',
+        loadComponent: () => import('./pages/platform/platform-categories/platform-categories.component')
+          .then(m => m.PlatformCategoriesComponent),
+        canActivate: [platformGuard('platform.catalog.manage')]
+      },
+      {
+        path: 'audit',
+        loadComponent: () => import('./pages/platform/platform-audit/platform-audit.component')
+          .then(m => m.PlatformAuditComponent),
+        canActivate: [platformGuard('platform.audit.read')]
+      },
+      {
+        path: 'prices',
+        loadComponent: () =>
+          import('./pages/billing/billing-admin-prices/billing-admin-prices.component')
+            .then(m => m.BillingAdminPricesComponent),
+        canActivate: [platformGuard('platform.plans.manage')]
+      },
+      {
+        path: 'subscriptions',
+        loadComponent: () =>
+          import('./pages/billing/billing-admin-subscriptions/billing-admin-subscriptions.component')
+            .then(m => m.BillingAdminSubscriptionsComponent),
+        canActivate: [platformGuard('platform.billing.operate')]
+      },
+    ]
+  },
+  {
+    path: 'promoter',
+    component: AdminLayoutComponent,
+    canActivate: [authGuard, platformGuard('promoter.referrals')],
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./pages/platform/promoter-dashboard/promoter-dashboard.component')
+          .then(m => m.PromoterDashboardComponent)
+      },
+    ]
+  },
+  {
+    path: 'platform-invite',
+    loadComponent: () => import('./pages/platform/platform-invite/platform-invite.component')
+      .then(m => m.PlatformInviteComponent)
+  },
+
+  // =====================================
   // LAYOUT ADMINISTRATIVO
   // =====================================
   {
@@ -69,6 +136,43 @@ export const routes: Routes = [
     component: AdminLayoutComponent,
     canActivate: [authGuard, tenantGuard],
     children: [
+      // CAT-01: catálogo de productos y servicios
+      {
+        path: 'catalog',
+        loadComponent: () => import('./pages/catalog/catalog-list/catalog-list.component')
+          .then(m => m.CatalogListComponent),
+        canActivate: [permissionGuard('catalog.read')]
+      },
+      {
+        path: 'catalog/new',
+        loadComponent: () => import('./pages/catalog/catalog-offer-form/catalog-offer-form.component')
+          .then(m => m.CatalogOfferFormComponent),
+        canActivate: [permissionGuard('catalog.manage')]
+      },
+      {
+        path: 'catalog/:id/edit',
+        loadComponent: () => import('./pages/catalog/catalog-offer-form/catalog-offer-form.component')
+          .then(m => m.CatalogOfferFormComponent),
+        canActivate: [permissionGuard('catalog.manage')]
+      },
+      {
+        path: 'providers',
+        loadComponent: () => import('./pages/catalog/providers/providers.component')
+          .then(m => m.ProvidersComponent),
+        canActivate: [permissionGuard('catalog.read')]
+      },
+      {
+        path: 'network/requests',
+        loadComponent: () => import('./pages/catalog/network-requests/network-requests.component')
+          .then(m => m.NetworkRequestsComponent),
+        canActivate: [permissionGuard('catalog.read')]
+      },
+      {
+        path: 'provider/items',
+        loadComponent: () => import('./pages/catalog/provider-items/provider-items.component')
+          .then(m => m.ProviderItemsComponent),
+        canActivate: [permissionGuard('provider.items')]
+      },
       {
         path: 'dashboard',
         loadComponent: () =>
@@ -354,27 +458,10 @@ export const routes: Routes = [
         canActivate: [permissionGuard('tenant.read')]
       },
 
-      // =====================================
-      // PANEL GLOBAL DEL OPERADOR (no es permiso de tenant)
-      // =====================================
-      {
-        path: 'platform/prices',
-        loadComponent: () =>
-          import('./pages/billing/billing-admin-prices/billing-admin-prices.component')
-            .then(m => m.BillingAdminPricesComponent),
-        canActivate: [operatorGuard]
-      },
-      {
-        path: 'platform/subscriptions',
-        loadComponent: () =>
-          import('./pages/billing/billing-admin-subscriptions/billing-admin-subscriptions.component')
-            .then(m => m.BillingAdminSubscriptionsComponent),
-        canActivate: [operatorGuard]
-      },
       {
         path: 'billing/admin/prices',
         pathMatch: 'full',
-        redirectTo: 'platform/prices'
+        redirectTo: '/platform/prices'
       }
 
     ] // Fin de children de AdminLayoutComponent
