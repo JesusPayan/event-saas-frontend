@@ -98,6 +98,10 @@
       <lucide-icon [img]="icons.clients" [size]="18" />
       <span>Proveedores</span>
     </a>
+    <a routerLink="/network/requests" routerLinkActive="active" (click)="closeMobile()">
+      <lucide-icon [img]="icons.quotes" [size]="18" />
+      <span>Solicitudes de la red</span>
+    </a>
     }
 
     @if (auth.hasPermission('contracts.read')) {

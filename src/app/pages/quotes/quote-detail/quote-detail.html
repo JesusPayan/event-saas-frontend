@@ -134,8 +134,15 @@
                   <p class="text-xs text-gray-500">
                     {{ item.category_name ?? itemTypeLabel(item.item_type) }}
                     @if (item.offer_id) { · {{ item.provider_name ?? 'Mi empresa' }} · {{ pricingLabel(item.pricing_mode) }} }
+                    @if (item.network_offer_id) {
+                      · <span class="font-medium text-purple-700">{{ item.supplier_name }} (red)</span> · {{ pricingLabel(item.pricing_mode) }} ·
+                      costo @if (item.cost_status === 'pending') { por cotizar } @else { {{ money(item.cost_unit_price) }} }
+                      @if (item.cost_status === 'confirmed' && item.price_status === 'confirmed') {
+                        · margen {{ money((+item.total) - (+item.cost_unit_price! * +item.quantity)) }}
+                      }
+                    }
                   </p>
-                  @if (item.offer_id || item.price_status === 'pending') {
+                  @if (item.offer_id || item.network_offer_id || item.price_status === 'pending') {
                     <div class="mt-2 flex flex-wrap gap-1 text-xs">
                       <span class="rounded-full px-2 py-0.5 font-semibold"
                         [class]="item.price_status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'">
@@ -160,14 +167,17 @@
                       <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
                         @if (item.price_status === 'pending') {
                           <label class="sr-only" [attr.for]="'agreed-' + item.id">Importe acordado de {{ item.description }}</label>
-                          <input [id]="'agreed-' + item.id" type="number" min="0" step="0.01" placeholder="Importe acordado"
+                          <input [id]="'agreed-' + item.id" type="number" min="0" step="0.01" [placeholder]="item.network_offer_id ? 'Precio de venta' : 'Importe acordado'"
                             class="w-32 rounded border border-gray-300 px-2 py-1" [(ngModel)]="agreedPrices[item.id]">
                           <button type="button" class="font-semibold text-blue-700 hover:underline"
-                            [disabled]="itemBusy() === item.id" (click)="saveAgreedPrice(item)">Registrar importe</button>
+                            [disabled]="itemBusy() === item.id" (click)="saveAgreedPrice(item)">{{ item.network_offer_id ? 'Fijar precio de venta' : 'Registrar importe' }}</button>
                         }
-                        @if (item.fulfillment_status === 'pending_confirmation' || item.fulfillment_status === 'available' || item.fulfillment_status === 'unavailable') {
+                        @if (!item.network_offer_id && (item.fulfillment_status === 'pending_confirmation' || item.fulfillment_status === 'available' || item.fulfillment_status === 'unavailable')) {
                           <button type="button" class="font-semibold text-green-700 hover:underline"
                             [disabled]="itemBusy() === item.id" (click)="updateItem(item, { fulfillment_status: 'confirmed' })">Confirmar con proveedor</button>
+                        }
+                        @if (item.network_offer_id && item.fulfillment_status !== 'confirmed') {
+                          <span class="text-gray-500">La fecha la confirma {{ item.supplier_name }}.</span>
                         }
                         @if (item.compliance_status === 'pending') {
                           <button type="button" class="font-semibold text-green-700 hover:underline"
@@ -238,7 +248,9 @@
           </div>
           @if ((q.pending?.blocking ?? 0) > 0) {
             <p class="text-sm text-amber-700">
-              {{ q.pending?.price_pending }} con precio pendiente · {{ q.pending?.confirmation_pending }} por confirmar ·
+              {{ q.pending?.price_pending }} con precio pendiente ·
+              @if (q.pending?.cost_pending) { {{ q.pending?.cost_pending }} con costo por cotizar de la red · }
+              {{ q.pending?.confirmation_pending }} por confirmar ·
               {{ q.pending?.compliance_pending }} con documentos por revisar. Se requieren antes de aceptar.
             </p>
           }

@@ -38,6 +38,14 @@
             <option value="archived">Archivada</option>
           </select>
         </div>
+        <div class="md:col-span-2">
+          <label class="flex items-start gap-2 text-sm font-normal">
+            <input type="checkbox" class="mt-1" name="shared" [(ngModel)]="form.shared">
+            <span><span class="font-medium text-gray-900">Compartir en el catálogo de la red</span>
+              <span class="block text-xs text-gray-500">Otras organizaciones podrán agregarla a sus eventos. Tu precio será su costo;
+                recibirás la solicitud con los datos del evento y del cliente para confirmarla.</span></span>
+          </label>
+        </div>
       </div>
     </div>
 

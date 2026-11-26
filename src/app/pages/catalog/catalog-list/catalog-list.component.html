@@ -7,6 +7,16 @@
 
   @if (error()) { <p role="alert" class="alert-error">{{ error() }}</p> }
 
+  <div class="inline-flex rounded-lg border border-gray-300 bg-white p-1" role="tablist" aria-label="Origen del catálogo">
+    <button type="button" role="tab" class="rounded-md px-4 py-1.5 text-sm font-medium" [attr.aria-selected]="source() === 'mine'"
+      [class]="source() === 'mine' ? 'bg-blue-600 !text-white' : 'text-gray-700 hover:bg-gray-50'" (click)="setSource('mine')">Mi catálogo</button>
+    <button type="button" role="tab" class="rounded-md px-4 py-1.5 text-sm font-medium" [attr.aria-selected]="source() === 'network'"
+      [class]="source() === 'network' ? 'bg-blue-600 !text-white' : 'text-gray-700 hover:bg-gray-50'" (click)="setSource('network')">Catálogo de la red</button>
+  </div>
+  @if (source() === 'network') {
+    <p class="text-sm text-gray-600">Servicios que otras organizaciones comparten. Su precio es tu costo: al cotizar defines tu precio de venta.</p>
+  }
+
   <nav aria-label="Categorías" class="flex flex-wrap gap-2">
     <button type="button" class="rounded-full border px-3 py-1.5 text-sm font-medium"
       [class]="selected() === null ? 'border-blue-600 bg-blue-600 !text-white' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'"
@@ -32,6 +42,7 @@
       <label for="cat-search" class="form-label">Buscar</label>
       <input id="cat-search" class="form-control" name="search" [(ngModel)]="search" placeholder="Nombre, descripción o SKU">
     </div>
+    @if (source() === 'mine') {
     <div>
       <label for="cat-status" class="form-label">Estado</label>
       <select id="cat-status" class="form-control" name="status" [(ngModel)]="status" (ngModelChange)="load()">
@@ -41,6 +52,7 @@
         <option value="archived">Archivados</option>
       </select>
     </div>
+    }
     <button type="submit" class="btn-secondary">Buscar</button>
   </form>
 
@@ -63,17 +75,24 @@
             <td class="px-4 py-3">
               <span class="font-medium text-gray-900">{{ o.name }}</span>
               @if (o.kind === 'inventory') { <span class="block text-xs text-gray-500">Inventario · {{ o.sku }}</span> }
+              @if (o.shared && o.kind !== 'network') {
+                <span class="mt-1 mr-1 inline-block rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-800">Compartida en la red</span>
+              }
               @if (o.requires_special_permits) {
                 <span class="mt-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">Requiere permisos</span>
               }
             </td>
             <td class="px-4 py-3">{{ o.category_name }}</td>
-            <td class="px-4 py-3">{{ o.provider_name ?? 'Mi empresa' }}</td>
+            <td class="px-4 py-3">
+              @if (o.kind === 'network') { {{ o.supplier_name }} <span class="block text-xs text-purple-700">Organización de la red</span> }
+              @else { {{ o.provider_name ?? 'Mi empresa' }} }
+            </td>
             <td class="whitespace-nowrap px-4 py-3">
               @if (o.price_pending) {
                 <span class="font-medium text-amber-700">Precio pendiente</span>
               } @else {
                 {{ o.unit_price | currency:'MXN':'symbol-narrow' }} <span class="text-xs text-gray-500">{{ o.pricing_label }}</span>
+                @if (o.kind === 'network') { <span class="block text-xs text-gray-500">tu costo</span> }
               }
             </td>
             <td class="px-4 py-3 text-xs">

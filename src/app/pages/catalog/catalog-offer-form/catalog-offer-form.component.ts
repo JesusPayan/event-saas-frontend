@@ -26,6 +26,7 @@ interface OfferForm {
   inventory_item_id: number | null; duration_hours: string; min_guests: number | null; max_guests: number | null;
   coverage: string; min_notice_days: number | null; setup_requirements: string; daily_capacity: number | null;
   requires_provider_confirmation: boolean; venue_restrictions: string; required_documents: string;
+  shared: boolean;
 }
 
 /** CAT-01: alta y edición de una oferta del catálogo. */
@@ -58,7 +59,7 @@ export class CatalogOfferFormComponent {
     name: '', description: '', category_id: null, provider_id: null, status: 'published', pricing_mode: 'per_event',
     unit_price: '', fulfillment_type: 'manual', inventory_item_id: null, duration_hours: '', min_guests: null,
     max_guests: null, coverage: '', min_notice_days: null, setup_requirements: '', daily_capacity: null,
-    requires_provider_confirmation: false, venue_restrictions: '', required_documents: '',
+    requires_provider_confirmation: false, venue_restrictions: '', required_documents: '', shared: false,
   };
 
   constructor() {
@@ -93,6 +94,7 @@ export class CatalogOfferFormComponent {
         daily_capacity: offer.daily_capacity ?? null,
         requires_provider_confirmation: offer.requires_provider_confirmation ?? false,
         venue_restrictions: offer.venue_restrictions ?? '', required_documents: offer.required_documents ?? '',
+        shared: offer.shared ?? false,
       };
       this.categoryId.set(offer.category_id);
     } catch {
@@ -116,6 +118,7 @@ export class CatalogOfferFormComponent {
       daily_capacity: f.fulfillment_type === 'schedule' ? num(f.daily_capacity) : null,
       requires_provider_confirmation: f.requires_provider_confirmation,
       venue_restrictions: text(f.venue_restrictions), required_documents: text(f.required_documents),
+      shared: f.shared,
     };
   }
 

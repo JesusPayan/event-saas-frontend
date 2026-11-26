@@ -30,8 +30,15 @@ export class CatalogListComponent {
   });
   readonly fulfillmentLabels = FULFILLMENT_LABELS;
   readonly canManage = computed(() => this.auth.hasPermission('catalog.manage'));
+  /** NET-01: mi catálogo o el de la red (ofertas compartidas por otras organizaciones). */
+  readonly source = signal<'mine' | 'network'>('mine');
   search = '';
   status = '';
+
+  setSource(source: 'mine' | 'network'): void {
+    this.source.set(source);
+    void this.load();
+  }
 
   constructor() {
     firstValueFrom(this.platform.categories()).then(r => this.categories.set(r.items)).catch(() => undefined);
@@ -52,8 +59,10 @@ export class CatalogListComponent {
     this.loading.set(true);
     this.error.set('');
     try {
-      const r = await firstValueFrom(this.catalog.offers({
-        categoryId: this.selected(), search: this.search.trim(), status: this.status }));
+      const r = this.source() === 'network'
+        ? await firstValueFrom(this.catalog.network({ categoryId: this.selected(), search: this.search.trim() }))
+        : await firstValueFrom(this.catalog.offers({
+          categoryId: this.selected(), search: this.search.trim(), status: this.status }));
       this.items.set(r.items);
     } catch {
       this.error.set('No se pudo cargar el catálogo.');

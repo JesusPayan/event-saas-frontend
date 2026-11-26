@@ -5,7 +5,7 @@ export type PricingMode = 'unit' | 'per_person' | 'per_hour' | 'package' | 'per_
 export type FulfillmentType = 'inventory' | 'schedule' | 'manual';
 
 export interface CatalogEntry {
-  kind: 'offer' | 'inventory'; id: number; name: string; description: string | null;
+  kind: 'offer' | 'inventory' | 'network'; id: number; name: string; description: string | null;
   status: 'draft' | 'published' | 'archived'; category_id: number; category_name: string | null;
   provider_id: number | null; provider_name: string | null; pricing_mode: PricingMode; pricing_label: string;
   unit_price: string | null; price_pending: boolean; fulfillment_type: FulfillmentType;
@@ -14,6 +14,21 @@ export interface CatalogEntry {
   setup_requirements?: string | null; daily_capacity?: number | null; requires_provider_confirmation?: boolean;
   venue_restrictions?: string | null; required_documents?: string | null; requires_special_permits: boolean;
   unit?: string | null; sku?: string | null;
+  /** NET-01: compartida en el catálogo de la red. */
+  shared?: boolean;
+  supplier_tenant_id?: number; supplier_name?: string; cost_unit_price?: string | null;
+}
+
+/** NET-01: partida que otra organización solicitó a la mía. */
+export interface NetworkRequest {
+  id: number; description: string; quantity: string; pricing_mode: string | null; category_name: string | null;
+  cost_unit_price: string | null; cost_total: string | null; cost_status: 'confirmed' | 'pending' | null;
+  fulfillment_status: string; compliance_status: string; service_details: Record<string, string> | null;
+  quote_number: string; quote_status: string; requester_name: string; event_name: string;
+  event_starts_at: string | null; event_ends_at: string | null; event_location: string | null;
+  estimated_guests: number | null;
+  client: { name: string | null; business_name: string | null; email: string | null; phone: string | null;
+            whatsapp: string | null };
 }
 export interface Provider {
   id: number; name: string; contact_name: string | null; contact_email: string | null; phone: string | null;
@@ -75,6 +90,17 @@ export class CatalogService {
   }
   updateProvider(id: number, body: Partial<Provider>) {
     return this.http.patch<{ provider: Provider }>(`${this.api}/providers/${id}`, body);
+  }
+
+  network(filters: { categoryId?: number | null; search?: string } = {}) {
+    let params = new HttpParams().set('per_page', 100);
+    if (filters.categoryId) params = params.set('category_id', filters.categoryId);
+    if (filters.search) params = params.set('search', filters.search);
+    return this.http.get<{ items: CatalogEntry[]; total: number }>(`${this.api}/catalog/network`, { params });
+  }
+  networkRequests() { return this.http.get<{ items: NetworkRequest[] }>(`${this.api}/network/requests`); }
+  respondNetworkRequest(id: number, body: { cost_unit_price?: string; fulfillment_status?: string; notes?: string }) {
+    return this.http.patch<{ item: NetworkRequest }>(`${this.api}/network/requests/${id}`, body);
   }
 
   myItems() { return this.http.get<{ items: ProviderItem[] }>(`${this.api}/provider/items`); }
