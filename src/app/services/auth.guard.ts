@@ -35,3 +35,24 @@ export const platformGuard = (...permissions: string[]): CanActivateFn => () => 
   if (!auth.authenticated()) return router.createUrlTree(['/login']);
   return auth.hasAnyPlatformPermission(...permissions) ? true : router.createUrlTree(['/forbidden']);
 };
+
+/**
+ * MOD-01: ruta de un módulo. Se permite consultar módulos deshabilitados o fuera del plan
+ * (datos históricos, solo lectura); se bloquean los no disponibles. El servidor valida siempre.
+ */
+export const moduleGuard = (code: string): CanActivateFn => () => {
+  const auth = inject(AuthService); const router = inject(Router);
+  const status = auth.moduleStatus(code);
+  if (status === null || status === 'unavailable') {
+    return auth.capabilities() === null ? true : router.createUrlTree(['/settings/modules']);
+  }
+  return true;
+};
+
+/** Empresas nuevas: el propietario completa el onboarding antes de usar el panel. */
+export const onboardingGuard: CanActivateFn = () => {
+  const auth = inject(AuthService); const router = inject(Router);
+  const caps = auth.capabilities();
+  const pending = caps?.onboarding === 'pending' || caps?.onboarding === 'in_progress';
+  return pending && auth.hasPermission('members.manage') ? router.createUrlTree(['/onboarding']) : true;
+};

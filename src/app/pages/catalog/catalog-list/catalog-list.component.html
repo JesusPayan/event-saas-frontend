@@ -42,6 +42,15 @@
       <label for="cat-search" class="form-label">Buscar</label>
       <input id="cat-search" class="form-control" name="search" [(ngModel)]="search" placeholder="Nombre, descripción o SKU">
     </div>
+    @if (source() === 'network') {
+    <div>
+      <label for="net-type" class="form-label">Giro del proveedor</label>
+      <select id="net-type" class="form-control" name="businessType" [(ngModel)]="businessType" (ngModelChange)="load()">
+        <option value="">Todos</option>
+        @for (t of businessTypes(); track t.code) { <option [value]="t.code">{{ t.name }}</option> }
+      </select>
+    </div>
+    }
     @if (source() === 'mine') {
     <div>
       <label for="cat-status" class="form-label">Estado</label>
@@ -84,7 +93,7 @@
             </td>
             <td class="px-4 py-3">{{ o.category_name }}</td>
             <td class="px-4 py-3">
-              @if (o.kind === 'network') { {{ o.supplier_name }} <span class="block text-xs text-purple-700">Organización de la red</span> }
+              @if (o.kind === 'network') { {{ o.supplier_name }} <span class="block text-xs text-purple-700">{{ (o.supplier_business_types ?? []).join(', ') || 'Organización de la red' }}</span> }
               @else { {{ o.provider_name ?? 'Mi empresa' }} }
             </td>
             <td class="whitespace-nowrap px-4 py-3">

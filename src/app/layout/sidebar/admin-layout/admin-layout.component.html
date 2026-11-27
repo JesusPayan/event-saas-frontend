@@ -113,6 +113,12 @@
       <!-- Contenido del módulo -->
       <main class="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
         <div class="mx-auto w-full max-w-screen-2xl">
+          @if (readOnlyModule(); as ro) {
+            <div role="status" class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              {{ ro.name }} está {{ ro.status === 'plan_locked' ? 'fuera de tu plan' : 'inactivo' }}: puedes consultar la información, pero no modificarla.
+              <a routerLink="/settings/modules" class="font-semibold underline">Giros y módulos</a>
+            </div>
+          }
           @if (billingNotice.notice(); as notice) {
           <div role="alert" class="mx-4 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 md:mx-6">
             <span>{{ billingNotice.message(notice) }}</span>

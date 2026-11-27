@@ -6,7 +6,9 @@ import {
   tenantGuard,
   permissionGuard,
   landingGuard,
-  platformGuard
+  platformGuard,
+  moduleGuard,
+  onboardingGuard
 } from './services/auth.guard';
 
 import { AdminLayoutComponent } from './layout/sidebar/admin-layout/admin-layout.component';
@@ -89,6 +91,18 @@ export const routes: Routes = [
         canActivate: [platformGuard('platform.catalog.manage')]
       },
       {
+        path: 'business-types',
+        loadComponent: () => import('./pages/platform/platform-business-types/platform-business-types.component')
+          .then(m => m.PlatformBusinessTypesComponent),
+        canActivate: [platformGuard('platform.catalog.manage')]
+      },
+      {
+        path: 'modules',
+        loadComponent: () => import('./pages/platform/platform-modules/platform-modules.component')
+          .then(m => m.PlatformModulesComponent),
+        canActivate: [platformGuard('platform.catalog.manage')]
+      },
+      {
         path: 'audit',
         loadComponent: () => import('./pages/platform/platform-audit/platform-audit.component')
           .then(m => m.PlatformAuditComponent),
@@ -122,6 +136,13 @@ export const routes: Routes = [
       },
     ]
   },
+  // MOD-01: asistente de configuración inicial (pantalla completa, por empresa)
+  {
+    path: 'onboarding',
+    loadComponent: () => import('./pages/onboarding/onboarding-wizard.component')
+      .then(m => m.OnboardingWizardComponent),
+    canActivate: [authGuard, tenantGuard, permissionGuard('members.manage')]
+  },
   {
     path: 'platform-invite',
     loadComponent: () => import('./pages/platform/platform-invite/platform-invite.component')
@@ -141,50 +162,59 @@ export const routes: Routes = [
         path: 'catalog',
         loadComponent: () => import('./pages/catalog/catalog-list/catalog-list.component')
           .then(m => m.CatalogListComponent),
-        canActivate: [permissionGuard('catalog.read')]
+        canActivate: [moduleGuard('COMMERCIAL_CATALOG'), permissionGuard('catalog.read')]
       },
       {
         path: 'catalog/new',
         loadComponent: () => import('./pages/catalog/catalog-offer-form/catalog-offer-form.component')
           .then(m => m.CatalogOfferFormComponent),
-        canActivate: [permissionGuard('catalog.manage')]
+        canActivate: [moduleGuard('COMMERCIAL_CATALOG'), permissionGuard('catalog.manage')]
       },
       {
         path: 'catalog/:id/edit',
         loadComponent: () => import('./pages/catalog/catalog-offer-form/catalog-offer-form.component')
           .then(m => m.CatalogOfferFormComponent),
-        canActivate: [permissionGuard('catalog.manage')]
+        canActivate: [moduleGuard('COMMERCIAL_CATALOG'), permissionGuard('catalog.manage')]
       },
       {
         path: 'providers',
         loadComponent: () => import('./pages/catalog/providers/providers.component')
           .then(m => m.ProvidersComponent),
-        canActivate: [permissionGuard('catalog.read')]
+        canActivate: [moduleGuard('SUPPLIERS'), permissionGuard('catalog.read')]
       },
       {
         path: 'network/requests',
         loadComponent: () => import('./pages/catalog/network-requests/network-requests.component')
           .then(m => m.NetworkRequestsComponent),
-        canActivate: [permissionGuard('catalog.read')]
+        canActivate: [moduleGuard('ORGANIZATION_NETWORK'), permissionGuard('catalog.read')]
       },
       {
         path: 'provider/items',
         loadComponent: () => import('./pages/catalog/provider-items/provider-items.component')
           .then(m => m.ProviderItemsComponent),
-        canActivate: [permissionGuard('provider.items')]
+        canActivate: [moduleGuard('SUPPLIERS'), permissionGuard('provider.items')]
       },
       {
         path: 'dashboard',
         loadComponent: () =>
           import('./pages/dashboard-component/dashboard.component')
-            .then(m => m.DashboardComponent)
+            .then(m => m.DashboardComponent),
+        canActivate: [onboardingGuard]
       },
+      // MOD-01: configuración de giros y módulos de la empresa
+      {
+        path: 'settings/modules',
+        loadComponent: () => import('./pages/settings/business-settings/business-settings.component')
+          .then(m => m.BusinessSettingsComponent),
+        canActivate: [permissionGuard('tenant.read')]
+      },
+      { path: 'settings/business', pathMatch: 'full', redirectTo: 'settings/modules' },
       {
         path: 'company/receipt-settings',
         loadComponent: () => 
           import('./pages/company-settings/company-receipt-settings.component')
         .then(m => m.CompanyReceiptSettingsComponent),
-        canActivate: [permissionGuard('contracts.read')]
+        canActivate: [moduleGuard('COMMERCIAL_CONTRACTS'), permissionGuard('contracts.read')]
       },
       {
         path: 'members',
@@ -292,59 +322,59 @@ export const routes: Routes = [
       {
         path: 'inventory',
         loadComponent: () => import('./pages/inventory/inventory.component').then(m => m.InventoryComponent),
-        canActivate: [permissionGuard('inventory.read')]
+        canActivate: [moduleGuard('INVENTORY'), permissionGuard('inventory.read')]
       },
       {
         path: 'inventory/new',
         loadComponent: () => import('./pages/inventory/inventory-form.component').then(m => m.InventoryFormComponent),
-        canActivate: [permissionGuard('inventory.create')]
+        canActivate: [moduleGuard('INVENTORY'), permissionGuard('inventory.create')]
       },
       {
         path: 'inventory/categories',
         loadComponent: () => import('./pages/inventory/inventory-categories.component').then(m => m.InventoryCategoriesComponent),
-        canActivate: [permissionGuard('inventory.read')]
+        canActivate: [moduleGuard('INVENTORY'), permissionGuard('inventory.read')]
       },
       {
         path: 'inventory/operations',
         loadComponent: () =>
           import('./pages/inventory/inventory-operations/inventory-operations.component')
             .then(m => m.InventoryOperationsComponent),
-        canActivate: [permissionGuard('inventory.read')]
+        canActivate: [moduleGuard('INVENTORY'), permissionGuard('inventory.read')]
       },
       {
         path: 'inventory/incidents',
         loadComponent: () =>
           import('./pages/inventory/inventory-incidents/inventory-incidents.component')
             .then(m => m.InventoryIncidentsComponent),
-        canActivate: [permissionGuard('inventory.read')]
+        canActivate: [moduleGuard('INVENTORY'), permissionGuard('inventory.read')]
       },
       {
         path: 'inventory/charges',
         loadComponent: () =>
           import('./pages/inventory/inventory-charges/inventory-charges.component')
             .then(m => m.InventoryChargesComponent),
-        canActivate: [permissionGuard('inventory.read')]
+        canActivate: [moduleGuard('INVENTORY'), permissionGuard('inventory.read')]
       },
       {
         path: 'inventory/capacity',
         loadComponent: () =>
           import('./pages/inventory/inventory-capacity/inventory-capacity.component')
             .then(m => m.InventoryCapacityComponent),
-        canActivate: [permissionGuard('inventory.read')]
+        canActivate: [moduleGuard('INVENTORY'), permissionGuard('inventory.read')]
       },
       {
         path: 'inventory/replenishments',
         loadComponent: () =>
           import('./pages/inventory-replenishments/inventory-replenishments.component')
             .then(m => m.InventoryReplenishmentsComponent),
-        canActivate: [permissionGuard('inventory.read')]
+        canActivate: [moduleGuard('INVENTORY'), permissionGuard('inventory.read')]
       },
       {
         path: 'inventory/capacity-alerts',
         loadComponent: () =>
           import('./pages/inventory-capacity-alerts/inventory-capacity-alerts.component')
             .then(m => m.InventoryCapacityAlertsComponent),
-        canActivate: [permissionGuard('inventory.read')]
+        canActivate: [moduleGuard('INVENTORY'), permissionGuard('inventory.read')]
       },
       
       // =====================================
@@ -355,7 +385,7 @@ export const routes: Routes = [
   loadComponent: () =>
     import('./pages/inventory/inventory-dashboard/inventory-dashboard.component')
       .then(m => m.InventoryDashboardComponent),
-  canActivate: [permissionGuard('inventory.read')]
+  canActivate: [moduleGuard('INVENTORY'), permissionGuard('inventory.read')]
 },
 {
   path: 'inventory/reports',
@@ -363,7 +393,7 @@ export const routes: Routes = [
     import(
       './pages/inventory/inventory-reports/inventory-reports.component'
     ).then(m => m.InventoryReportsComponent),
-  canActivate: [
+  canActivate: [moduleGuard('REPORTS'), 
     permissionGuard('inventory.read')
   ]
 },
@@ -375,21 +405,21 @@ export const routes: Routes = [
   loadComponent: () =>
     import('./pages/logistics/logistics-list.component/logistics-list.component')
       .then(m => m.LogisticsListComponent),
-  canActivate: [permissionGuard('inventory.read')]
+  canActivate: [moduleGuard('LOGISTICS'), permissionGuard('inventory.read')]
 },
 {
   path: 'logistics/new',
   loadComponent: () =>
     import('./pages/logistics/logistics-create.component/logistics-create.component')
       .then(m => m.LogisticsCreateComponent),
-  canActivate: [permissionGuard('inventory.create')]
+  canActivate: [moduleGuard('LOGISTICS'), permissionGuard('inventory.create')]
 },
 {
   path: 'logistics/:id',
   loadComponent: () =>
     import('./pages/logistics/logistics-detail.component/logistics-detail.component')
       .then(m => m.LogisticsDetailComponent),
-  canActivate: [permissionGuard('inventory.read')]
+  canActivate: [moduleGuard('LOGISTICS'), permissionGuard('inventory.read')]
 },
 
       // =====================================
@@ -398,13 +428,13 @@ export const routes: Routes = [
       {
         path: 'inventory/:id/edit',
         loadComponent: () => import('./pages/inventory/inventory-form.component').then(m => m.InventoryFormComponent),
-        canActivate: [
+        canActivate: [moduleGuard('INVENTORY'), 
           permissionGuard('inventory.update')
         ]
       },
 {
   path: 'contracts',
-  canActivate: [
+  canActivate: [moduleGuard('COMMERCIAL_CONTRACTS'), 
     permissionGuard('contracts.read')
   ],
   children: [
@@ -428,7 +458,7 @@ export const routes: Routes = [
   loadComponent: () =>
     import('./pages/contract-payments/contract-payments.component')
       .then(m => m.ContractPaymentsComponent),
-  canActivate: [permissionGuard('contracts.read')]
+  canActivate: [moduleGuard('COMMERCIAL_PAYMENTS'), permissionGuard('contracts.read')]
 }
   ]
 },

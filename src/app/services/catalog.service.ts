@@ -17,6 +17,7 @@ export interface CatalogEntry {
   /** NET-01: compartida en el catálogo de la red. */
   shared?: boolean;
   supplier_tenant_id?: number; supplier_name?: string; cost_unit_price?: string | null;
+  supplier_business_types?: string[];
 }
 
 /** NET-01: partida que otra organización solicitó a la mía. */
@@ -92,8 +93,9 @@ export class CatalogService {
     return this.http.patch<{ provider: Provider }>(`${this.api}/providers/${id}`, body);
   }
 
-  network(filters: { categoryId?: number | null; search?: string } = {}) {
+  network(filters: { categoryId?: number | null; search?: string; businessType?: string | null } = {}) {
     let params = new HttpParams().set('per_page', 100);
+    if (filters.businessType) params = params.set('business_type', filters.businessType);
     if (filters.categoryId) params = params.set('category_id', filters.categoryId);
     if (filters.search) params = params.set('search', filters.search);
     return this.http.get<{ items: CatalogEntry[]; total: number }>(`${this.api}/catalog/network`, { params });

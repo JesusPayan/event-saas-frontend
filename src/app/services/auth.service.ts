@@ -1,7 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, catchError, firstValueFrom, map, switchMap, tap, throwError } from 'rxjs';
+import { Observable, catchError, firstValueFrom, map, of, switchMap, tap, throwError } from 'rxjs';
+import { CapabilitiesResponse, ModuleStatus } from '../core/capabilities/capability.models';
 
 export interface TenantRef { id: number; name?: string; slug?: string; }
 export interface TenantSummary {
@@ -53,6 +54,9 @@ export class AuthService {
   readonly providerId = signal<number | null>(null);
   /** La empresa actual se consulta con un acceso delegado de solo lectura. */
   readonly delegatedAccess = signal(false);
+  /** MOD-01: módulos y onboarding de la empresa actual (el servidor los valida siempre). */
+  readonly capabilities = signal<CapabilitiesResponse | null>(null);
+  readonly effectiveModules = computed(() => new Set(this.capabilities()?.effective_modules ?? []));
   /** Motivo del último cierre de sesión forzado (para mostrarlo en el login). */
   readonly endedReason = signal<'expired' | null>(null);
   readonly authenticated = computed(() => this.accessToken() !== null && this.me() !== null);
@@ -96,8 +100,10 @@ export class AuthService {
     this.tenantId.set(id);
     this.tenant.set(null);
     this.permissions.set([]);
+    this.capabilities.set(null);
     return this.http.get<TenantRef>(`${this.hostUrl}/tenants/current`).pipe(
       switchMap(tenant => this.loadPermissions().pipe(
+        switchMap(() => this.loadCapabilities()),
         tap(() => { this.tenant.set(tenant); this.persist(); }),
         map(() => tenant),
       )),
@@ -123,6 +129,20 @@ export class AuthService {
   }
 
   hasPermission(code: string): boolean { return this.permissions().includes(code); }
+
+  /** Módulo activo para la empresa (sin datos aún, no se oculta nada esencial). */
+  hasModule(code: string): boolean { return this.effectiveModules().has(code); }
+
+  moduleStatus(code: string): ModuleStatus | null {
+    return this.capabilities()?.modules.find(m => m.code === code)?.status ?? null;
+  }
+
+  loadCapabilities(): Observable<CapabilitiesResponse | null> {
+    return this.http.get<CapabilitiesResponse>(`${this.hostUrl}/tenants/current/capabilities`).pipe(
+      tap(c => this.capabilities.set(c)),
+      catchError(() => { this.capabilities.set(null); return of(null); }),
+    );
+  }
 
   /**
    * Restaura la sesión guardada al arrancar la app (tras recargar la página).
@@ -195,6 +215,7 @@ export class AuthService {
     this.tenantId.set(null);
     this.tenant.set(null);
     this.permissions.set([]);
+    this.capabilities.set(null);
     this.isOperator.set(false);
     this.clearStorage();
   }
