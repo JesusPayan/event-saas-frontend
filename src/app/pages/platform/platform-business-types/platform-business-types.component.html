@@ -1,0 +1,99 @@
+<section class="space-y-6 p-4 md:p-6">
+  <app-page-header title="Giros comerciales" description="Catálogo de giros y módulos que se recomiendan a cada uno.">
+    <button type="button" class="btn-primary" (click)="open(null)">+ Nuevo giro</button>
+  </app-page-header>
+  @if (error() && !editing()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+  @if (message()) { <p role="status" class="alert-success">{{ message() }}</p> }
+
+  <div class="relative overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm" [attr.aria-busy]="loading()">
+    <table class="w-full text-left text-sm text-gray-700">
+      <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+        <tr>
+          <th scope="col" class="px-4 py-3">Giro</th>
+          <th scope="col" class="px-4 py-3">Módulos recomendados</th>
+          <th scope="col" class="px-4 py-3">Empresas</th>
+          <th scope="col" class="px-4 py-3">Estado</th>
+          <th scope="col" class="px-4 py-3"><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (t of items(); track t.id) {
+          <tr class="border-b border-gray-100 align-top">
+            <td class="px-4 py-3">
+              <span class="font-medium text-gray-900">{{ t.name }}</span>
+              <span class="block text-xs text-gray-500">{{ t.code }} · plantilla v{{ t.template_version }}
+                @if (t.is_internal) { · <span class="text-purple-700">interno</span> }</span>
+            </td>
+            <td class="max-w-md px-4 py-3 text-xs">{{ moduleNames(t.recommended_modules) || '—' }}</td>
+            <td class="px-4 py-3">{{ t.organizations ?? 0 }}</td>
+            <td class="px-4 py-3">
+              <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" [class]="t.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'">{{ t.is_active ? 'Activo' : 'Inactivo' }}</span>
+            </td>
+            <td class="whitespace-nowrap px-4 py-3 text-right">
+              @if (!t.is_internal) {
+                <button type="button" class="font-medium text-blue-700 hover:underline" (click)="openTemplate(t)">Plantilla</button>
+                <button type="button" class="ml-4 font-medium text-blue-700 hover:underline" (click)="open(t)">Editar</button>
+                <button type="button" class="ml-4 font-medium text-gray-600 hover:underline" (click)="toggleActive(t)">{{ t.is_active ? 'Desactivar' : 'Activar' }}</button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5" class="px-4 py-10 text-center text-gray-500">{{ loading() ? 'Cargando…' : 'Sin giros.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (editing(); as target) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="bt-title">
+      <form class="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl" (ngSubmit)="save()" #f="ngForm">
+        <h2 id="bt-title" class="text-lg font-bold text-gray-900">{{ target === 'new' ? 'Nuevo giro' : 'Editar giro' }}</h2>
+        @if (target === 'new') {
+          <div>
+            <label for="bt-code" class="form-label">Código (inmutable)</label>
+            <input id="bt-code" class="form-control font-mono" name="code" [(ngModel)]="form.code" required pattern="[A-Z0-9_]{3,40}" placeholder="PHOTO_BOOTH">
+          </div>
+        }
+        <div>
+          <label for="bt-name" class="form-label">Nombre</label>
+          <input id="bt-name" class="form-control" name="name" [(ngModel)]="form.name" required maxlength="120">
+        </div>
+        <div>
+          <label for="bt-desc" class="form-label">Descripción</label>
+          <input id="bt-desc" class="form-control" name="description" [(ngModel)]="form.description" maxlength="500">
+        </div>
+        <div>
+          <label for="bt-order" class="form-label">Orden</label>
+          <input id="bt-order" class="form-control w-32" type="number" name="sort_order" [(ngModel)]="form.sort_order">
+        </div>
+        <label class="flex items-center gap-2 text-sm font-normal"><input type="checkbox" name="custom" [(ngModel)]="form.allows_custom_description"> Pide una descripción libre (como «Otro giro»)</label>
+        @if (error()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+        <div class="flex justify-end gap-3">
+          <button type="button" class="btn-secondary" (click)="editing.set(null)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="busy() || f.invalid">Guardar</button>
+        </div>
+      </form>
+    </div>
+  }
+
+  @if (template(); as t) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="tpl-title">
+      <div class="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl">
+        <h2 id="tpl-title" class="text-lg font-bold text-gray-900">Plantilla de «{{ t.name }}»</h2>
+        <p class="text-sm text-gray-600">Se guardará como versión {{ t.template_version + 1 }}. Solo afecta a empresas que configuren este giro después; las dependencias se agregan solas.</p>
+        <ul class="space-y-2">
+          @for (m of modules(); track m.code) {
+            <li><label class="flex items-start gap-2 text-sm font-normal">
+              <input type="checkbox" class="mt-1" [(ngModel)]="templateSelection[m.code]"> <span><span class="font-medium">{{ m.name }}</span>
+              @if (m.depends_on.length) { <span class="block text-xs text-gray-500">Requiere: {{ moduleNames(m.depends_on) }}</span> }</span>
+            </label></li>
+          }
+        </ul>
+        <div class="flex justify-end gap-3">
+          <button type="button" class="btn-secondary" (click)="template.set(null)">Cancelar</button>
+          <button type="button" class="btn-primary" (click)="saveTemplate()" [disabled]="busy()">Guardar nueva versión</button>
+        </div>
+      </div>
+    </div>
+  }
+</section>

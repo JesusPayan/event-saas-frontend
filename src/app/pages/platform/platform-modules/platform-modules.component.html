@@ -1,0 +1,112 @@
+<section class="space-y-6 p-4 md:p-6">
+  <app-page-header title="Módulos y planes" description="Módulos implementados, interruptores globales, módulos por plan y adopción." />
+  @if (error()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+  @if (message()) { <p role="status" class="alert-success">{{ message() }}</p> }
+
+  @if (adoption(); as a) {
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div class="card !p-4"><p class="text-sm text-gray-500">Organizaciones</p><p class="text-2xl font-bold">{{ a.organizations }}</p></div>
+      <div class="card !p-4"><p class="text-sm text-gray-500">Onboarding completo</p><p class="text-2xl font-bold">{{ a.onboarding['completed'] ?? 0 }}</p></div>
+      <div class="card !p-4"><p class="text-sm text-gray-500">Onboarding pendiente</p><p class="text-2xl font-bold">{{ (a.onboarding['pending'] ?? 0) + (a.onboarding['in_progress'] ?? 0) }}</p>
+        <p class="text-xs text-gray-500">{{ a.onboarding_stale }} sin avanzar en 7 días</p></div>
+      <div class="card !p-4"><p class="text-sm text-gray-500">Anteriores a v1.3.0</p><p class="text-2xl font-bold">{{ a.onboarding['legacy'] ?? 0 }}</p></div>
+    </div>
+    <div class="grid gap-4 lg:grid-cols-2">
+      <div class="card">
+        <h2 class="mb-3 text-lg font-semibold text-gray-900">Organizaciones por giro</h2>
+        <ul class="space-y-1 text-sm">
+          @for (row of a.by_business_type; track row.code) { <li class="flex justify-between"><span>{{ row.name }}</span><span class="font-semibold">{{ row.organizations }}</span></li> }
+          @empty { <li class="text-gray-500">Aún no hay datos suficientes.</li> }
+        </ul>
+      </div>
+      <div class="card">
+        <h2 class="mb-3 text-lg font-semibold text-gray-900">Módulos más habilitados</h2>
+        <ul class="space-y-1 text-sm">
+          @for (row of a.modules_enabled; track row.code) { <li class="flex justify-between"><span>{{ moduleName(row.code) }}</span><span class="font-semibold">{{ row.organizations }}</span></li> }
+          @empty { <li class="text-gray-500">Aún no hay datos suficientes.</li> }
+        </ul>
+      </div>
+    </div>
+  }
+
+  <div class="relative overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm" [attr.aria-busy]="loading()">
+    <table class="w-full text-left text-sm text-gray-700">
+      <caption class="px-4 pt-4 text-left text-lg font-semibold text-gray-900">Catálogo de módulos</caption>
+      <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+        <tr>
+          <th scope="col" class="px-4 py-3">Módulo</th>
+          <th scope="col" class="px-4 py-3">Dependencias</th>
+          <th scope="col" class="px-4 py-3">Empresas</th>
+          <th scope="col" class="px-4 py-3">Planes que lo incluyen</th>
+          <th scope="col" class="px-4 py-3">Estado global</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (m of modules(); track m.code) {
+          <tr class="border-b border-gray-100 align-top">
+            <td class="px-4 py-3"><span class="font-medium text-gray-900">{{ m.name }}</span>
+              <span class="block text-xs text-gray-500">{{ m.code }} · {{ m.essential ? 'esencial' : m.availability === 'coming_soon' ? 'próximamente' : 'opcional' }}</span></td>
+            <td class="px-4 py-3 text-xs">{{ moduleNames(m.depends_on) || '—' }}</td>
+            <td class="px-4 py-3">{{ m.organizations }}</td>
+            <td class="px-4 py-3 text-xs">{{ m.plans.join(', ') || 'Todos (sin restricción)' }}</td>
+            <td class="px-4 py-3">
+              @if (m.essential || m.availability === 'coming_soon') {
+                <span class="text-xs text-gray-500">{{ m.essential ? 'Siempre activo' : 'No disponible' }}</span>
+              } @else {
+                <button type="button" class="font-medium hover:underline" [class]="m.is_active ? 'text-red-700' : 'text-blue-700'"
+                  (click)="toggleModule(m)" [disabled]="busy()">{{ m.is_active ? 'Apagar' : 'Encender' }}</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (canPlans()) {
+    <div class="card space-y-3">
+      <h2 class="text-lg font-semibold text-gray-900">Módulos por plan</h2>
+      <p class="text-sm text-gray-500">Un plan sin módulos configurados no restringe nada (condiciones actuales). Los límites solo se aplican con la facturación activada y nunca borran datos.</p>
+      <ul class="divide-y divide-gray-100 text-sm">
+        @for (p of plans(); track p.id) {
+          <li class="flex items-center justify-between py-2">
+            <span><span class="font-medium">{{ p.name }}</span> <span class="text-xs text-gray-500">({{ p.code }}) · {{ p.restricted_modules ? p.restricted_modules + ' módulos' : 'sin restricción' }}</span></span>
+            <button type="button" class="font-medium text-blue-700 hover:underline" (click)="openPlan(p)">Configurar</button>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (canFlags()) {
+    <div class="card space-y-3">
+      <h2 class="text-lg font-semibold text-gray-900">Activación progresiva (feature flags)</h2>
+      <ul class="divide-y divide-gray-100 text-sm">
+        @for (f of flags(); track f.code) {
+          <li class="flex flex-wrap items-center justify-between gap-3 py-2">
+            <span><span class="font-mono text-xs">{{ f.code }}</span><span class="block text-xs text-gray-500">{{ f.description }}</span></span>
+            <button type="button" class="btn-secondary !py-1.5" (click)="toggleFlag(f)" [disabled]="busy()">{{ f.enabled ? 'Desactivar' : 'Activar' }}</button>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (planEditing(); as p) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="plan-title">
+      <div class="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl">
+        <h2 id="plan-title" class="text-lg font-bold text-gray-900">Módulos del plan «{{ p.name }}»</h2>
+        <p class="text-sm text-gray-600">Los esenciales siempre se incluyen. No cambia precios ni cobros.</p>
+        <ul class="space-y-2">
+          @for (m of configurable(); track m.code) {
+            <li><label class="flex items-center gap-2 text-sm font-normal"><input type="checkbox" [(ngModel)]="planSelection[m.code]"> {{ m.name }}</label></li>
+          }
+        </ul>
+        <div class="flex justify-end gap-3">
+          <button type="button" class="btn-secondary" (click)="planEditing.set(null)">Cancelar</button>
+          <button type="button" class="btn-primary" (click)="savePlan()" [disabled]="busy()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  }
+</section>

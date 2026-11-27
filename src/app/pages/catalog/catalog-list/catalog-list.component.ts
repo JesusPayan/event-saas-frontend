@@ -7,6 +7,8 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { CatalogEntry, CatalogService, FULFILLMENT_LABELS } from '../../../services/catalog.service';
 import { Category, PlatformService } from '../../../services/platform.service';
+import { ModulesApiService } from '../../../core/capabilities/modules-api.service';
+import { BusinessType } from '../../../core/capabilities/capability.models';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header';
 
 /** CAT-01: catálogo de productos y servicios de la organización. */
@@ -34,9 +36,16 @@ export class CatalogListComponent {
   readonly source = signal<'mine' | 'network'>('mine');
   search = '';
   status = '';
+  /** MOD-01: filtrar la red por giro comercial de la organización proveedora. */
+  businessType = '';
+  readonly businessTypes = signal<BusinessType[]>([]);
+  private readonly modulesApi = inject(ModulesApiService);
 
   setSource(source: 'mine' | 'network'): void {
     this.source.set(source);
+    if (source === 'network' && !this.businessTypes().length) {
+      firstValueFrom(this.modulesApi.businessTypes()).then(r => this.businessTypes.set(r.items)).catch(() => undefined);
+    }
     void this.load();
   }
 
@@ -60,7 +69,8 @@ export class CatalogListComponent {
     this.error.set('');
     try {
       const r = this.source() === 'network'
-        ? await firstValueFrom(this.catalog.network({ categoryId: this.selected(), search: this.search.trim() }))
+        ? await firstValueFrom(this.catalog.network({ categoryId: this.selected(), search: this.search.trim(),
+          businessType: this.businessType || null }))
         : await firstValueFrom(this.catalog.offers({
           categoryId: this.selected(), search: this.search.trim(), status: this.status }));
       this.items.set(r.items);

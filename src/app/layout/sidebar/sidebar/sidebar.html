@@ -36,7 +36,7 @@
     </p>
     }
 
-    @if (auth.hasPermission('provider.items')) {
+    @if (auth.hasPermission('provider.items') && auth.hasModule('SUPPLIERS')) {
     <div class="menu-heading">Proveedor</div>
     <a routerLink="/provider/items" routerLinkActive="active" (click)="closeMobile()">
       <span>Mis partidas</span>
@@ -89,22 +89,26 @@
     </a>
     }
 
-    @if (auth.hasPermission('catalog.read')) {
+    @if (auth.hasPermission('catalog.read') && auth.hasModule('COMMERCIAL_CATALOG')) {
     <a routerLink="/catalog" routerLinkActive="active" (click)="closeMobile()">
       <lucide-icon [img]="icons.quotes" [size]="18" />
       <span>Catálogo de servicios</span>
     </a>
+    @if (auth.hasModule('SUPPLIERS')) {
     <a routerLink="/providers" routerLinkActive="active" (click)="closeMobile()">
       <lucide-icon [img]="icons.clients" [size]="18" />
       <span>Proveedores</span>
     </a>
+    }
+    @if (auth.hasModule('ORGANIZATION_NETWORK')) {
     <a routerLink="/network/requests" routerLinkActive="active" (click)="closeMobile()">
       <lucide-icon [img]="icons.quotes" [size]="18" />
       <span>Solicitudes de la red</span>
     </a>
     }
+    }
 
-    @if (auth.hasPermission('contracts.read')) {
+    @if (auth.hasPermission('contracts.read') && auth.hasModule('COMMERCIAL_CONTRACTS')) {
     <a routerLink="/contracts" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }"
       (click)="closeMobile()">
       <lucide-icon [img]="icons.contracts" [size]="18" />
@@ -113,7 +117,7 @@
     }
 
     <!-- Inventario -->
-    @if (auth.hasPermission('inventory.read')) {
+    @if (auth.hasPermission('inventory.read') && auth.hasModule('INVENTORY')) {
 
     <div class="menu-heading">
       Gestión de inventario
@@ -169,9 +173,11 @@
         Alertas de capacidad
       </a>
 
+      @if (auth.hasModule('REPORTS')) {
       <a routerLink="/inventory/reports" routerLinkActive="active" (click)="closeMobile()">
         Reportes de inventario
       </a>
+      }
 
     </div>
     }
@@ -179,8 +185,8 @@
 
     <!-- Logística -->
     @if (
-    auth.hasPermission('inventory.read') ||
-    auth.hasPermission('inventory.create')
+    (auth.hasPermission('inventory.read') ||
+    auth.hasPermission('inventory.create')) && auth.hasModule('LOGISTICS')
     ) {
 
     <div class="menu-heading">
@@ -217,8 +223,13 @@
     }
     }
 
-    @if (auth.hasPermission('contracts.read')) {
-    <div class="menu-heading">Empresa</div>
+    @if (hasTenant() && !providerOnly()) {
+    <div class="menu-heading">Configuración</div>
+    <a routerLink="/settings/modules" routerLinkActive="active" (click)="closeMobile()">
+      <span>Giros y módulos</span>
+    </a>
+    }
+    @if (auth.hasPermission('contracts.read') && auth.hasModule('COMMERCIAL_CONTRACTS')) {
     <a routerLink="/company/receipt-settings" routerLinkActive="active" (click)="closeMobile()">
       <span>Configuración de comprobantes</span>
     </a>
@@ -242,6 +253,8 @@
     <a routerLink="/platform/roles" routerLinkActive="active" (click)="closeMobile()">Roles de plataforma</a>
     }
     @if (auth.hasPlatformPermission('platform.catalog.manage')) {
+    <a routerLink="/platform/business-types" routerLinkActive="active" (click)="closeMobile()">Giros comerciales</a>
+    <a routerLink="/platform/modules" routerLinkActive="active" (click)="closeMobile()">Módulos y planes</a>
     <a routerLink="/platform/categories" routerLinkActive="active" (click)="closeMobile()">Categorías del catálogo</a>
     }
     @if (auth.hasPlatformPermission('platform.billing.operate')) {

@@ -5,9 +5,16 @@
     }
   </app-page-header>
 
+  @if (suggestSetup()) {
+    <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+      <span>Indica a qué se dedica tu empresa y te recomendamos los módulos que te sirven. Tus datos y módulos actuales no cambian.</span>
+      <a routerLink="/onboarding" class="btn-secondary !py-1.5">Configurar giros</a>
+    </div>
+  }
+
   <!-- Indicadores -->
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    @if (auth.hasPermission('clients.read')) {
+    @if (show('clients')) {
       <a routerLink="/clients" class="card block hover:border-blue-400 hover:no-underline">
         <p class="text-sm text-gray-500">Clientes</p>
         <p class="mt-2 text-3xl font-bold text-gray-900">{{ loading() ? '—' : (clientsTotal() ?? '—') }}</p>
@@ -24,6 +31,20 @@
         <p class="text-sm text-gray-500">Eventos en los próximos 30 días</p>
         <p class="mt-2 text-3xl font-bold text-gray-900">{{ loading() ? '—' : upcoming().length }}</p>
         <p class="mt-1 text-xs text-blue-700">Ver calendario →</p>
+      </a>
+    }
+    @if (show('quotes_sent') && quotesSent() !== null) {
+      <a routerLink="/quotes" class="card block hover:border-blue-400 hover:no-underline">
+        <p class="text-sm text-gray-500">Cotizaciones enviadas sin respuesta</p>
+        <p class="mt-2 text-3xl font-bold text-gray-900">{{ quotesSent() }}</p>
+        <p class="mt-1 text-xs text-blue-700">Ver cotizaciones →</p>
+      </a>
+    }
+    @if (show('network_requests') && networkPending() !== null) {
+      <a routerLink="/network/requests" class="card block hover:border-blue-400 hover:no-underline">
+        <p class="text-sm text-gray-500">Solicitudes de la red por confirmar</p>
+        <p class="mt-2 text-3xl font-bold text-gray-900">{{ networkPending() }}</p>
+        <p class="mt-1 text-xs text-blue-700">Responder →</p>
       </a>
     }
     @if (subscription(); as sub) {
@@ -80,9 +101,10 @@
       <div class="grid gap-2">
         @if (auth.hasPermission('clients.create')) { <a routerLink="/clients/new" class="btn-secondary justify-start">Nuevo cliente</a> }
         @if (auth.hasPermission('quotes.create')) { <a routerLink="/quotes/new" class="btn-secondary justify-start">Nueva cotización</a> }
-        @if (auth.hasPermission('inventory.read')) { <a routerLink="/inventory" class="btn-secondary justify-start">Inventario</a> }
-        @if (auth.hasPermission('inventory.read')) { <a routerLink="/logistics" class="btn-secondary justify-start">Órdenes logísticas</a> }
-        @if (auth.hasPermission('contracts.read')) { <a routerLink="/contracts" class="btn-secondary justify-start">Contratos</a> }
+        @if (show('catalog')) { <a routerLink="/catalog" class="btn-secondary justify-start">Catálogo de servicios</a> }
+        @if (show('inventory')) { <a routerLink="/inventory" class="btn-secondary justify-start">Inventario</a> }
+        @if (show('logistics')) { <a routerLink="/logistics" class="btn-secondary justify-start">Órdenes logísticas</a> }
+        @if (show('contracts')) { <a routerLink="/contracts" class="btn-secondary justify-start">Contratos</a> }
         @if (auth.hasPermission('members.read')) { <a routerLink="/members" class="btn-secondary justify-start">Miembros de la empresa</a> }
       </div>
     </div>

@@ -3,6 +3,16 @@
 La versión técnica **1.1.0** corresponde al lanzamiento comercial **EasiAcc Events 1.0**.
 Detalle conjunto con el backend, estado y riesgos: repositorio backend, `CHANGELOG.md` y `docs/PROJECT_STATUS.md`.
 
+## [1.3.0] — Sin publicar
+
+### Añadido
+- Asistente de configuración inicial en 6 pasos (`/onboarding`) con borrador, giros múltiples y vista previa del menú.
+- Configuración → **Giros y módulos** (`/settings/modules`): giros, sugerencias, activar/desactivar módulos con
+  aviso de operaciones en curso y dependencias.
+- Menú lateral y panel adaptados a los módulos activos; aviso de solo lectura en módulos inactivos o fuera del plan.
+- Plataforma: **Giros comerciales** (plantillas) y **Módulos y planes** (adopción, interruptor global, módulos por plan, banderas).
+- Filtro por giro en Solicitudes de la red / catálogo de la red.
+
 ## [1.2.0] — 2026-11-27
 
 ### Añadido
