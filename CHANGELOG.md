@@ -3,7 +3,7 @@
 La versión técnica **1.1.0** corresponde al lanzamiento comercial **EasiAcc Events 1.0**.
 Detalle conjunto con el backend, estado y riesgos: repositorio backend, `CHANGELOG.md` y `docs/PROJECT_STATUS.md`.
 
-## [Sin publicar]
+## [1.2.0] — 2026-11-27
 
 ### Añadido
 - Panel de plataforma sin necesidad de elegir empresa: Organizaciones, Roles de plataforma (con transferencia de
@@ -18,12 +18,21 @@ Detalle conjunto con el backend, estado y riesgos: repositorio backend, `CHANGEL
   «Solicitudes de la red» (`/network/requests`).
 
 ### Cambiado
+- El panel global de plataforma ya no exige elegir empresa; cada página exige su permiso de plataforma.
+
+## [1.1.2] — 2026-11-25
+
+### Cambiado
 - Calendario de eventos con el diseño estándar: encabezado y botones comunes, navegación del mes con flechas,
   día actual resaltado y eventos coloreados por estado; «+ Nuevo evento» solo con permiso de creación.
+
+## [1.1.1] — 2026-11-25
+
+### Cambiado
 - Correo comercial `contacto@easiacc.com` en `BRAND.contactEmail`: activa «Solicitar una demostración» en la
   landing y el enlace «Contacto» en el pie y en las páginas legales.
 
-## [1.1.0] — EasiAcc Events 1.0 (versión candidata)
+## [1.1.0] — 2026-11-24 — EasiAcc Events 1.0
 
 ### Añadido
 - Identidad visual EasiAcc Events: logos SVG, favicon, íconos, manifiesto y `docs/BRAND_GUIDELINES.md` (#21).
