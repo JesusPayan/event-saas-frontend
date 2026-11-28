@@ -3,7 +3,7 @@
     <button type="button" class="btn-primary" (click)="openCreate()">+ Nueva organización</button>
   </app-page-header>
 
-  @if (error() && !createOpen() && !statusTarget()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+  @if (error() && !createOpen() && !detail()) { <p role="alert" class="alert-error">{{ error() }}</p> }
   @if (message()) { <p role="status" class="alert-success">{{ message() }}</p> }
 
   <form class="card flex flex-wrap items-end gap-3 !p-4" (ngSubmit)="load()">
@@ -14,9 +14,10 @@
     <div>
       <label for="org-status" class="form-label">Estado</label>
       <select id="org-status" class="form-control" name="status" [(ngModel)]="status" (ngModelChange)="load()">
-        <option value="">Todos</option>
+        <option value="">Activas y desactivadas</option>
         <option value="active">Activas</option>
-        <option value="suspended">Suspendidas</option>
+        <option value="suspended">Desactivadas</option>
+        <option value="archived">Archivadas</option>
       </select>
     </div>
     <button type="submit" class="btn-secondary">Buscar</button>
@@ -46,16 +47,13 @@
             <td class="px-4 py-3">{{ org.members }}</td>
             <td class="px-4 py-3">{{ subscriptionLabel(org.subscription_status) }}</td>
             <td class="px-4 py-3">
-              <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                [class]="org.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-                {{ org.status === 'active' ? 'Activa' : 'Suspendida' }}
+              <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" [class]="statusClass(org.status)">
+                {{ statusLabel(org.status) }}
               </span>
             </td>
             <td class="whitespace-nowrap px-4 py-3 text-right">
-              <button type="button" class="font-medium hover:underline"
-                [class]="org.status === 'active' ? 'text-red-700' : 'text-blue-700'" (click)="askStatus(org)">
-                {{ org.status === 'active' ? 'Suspender' : 'Reactivar' }}
-              </button>
+              <button type="button" class="font-medium text-blue-700 hover:underline" (click)="openDetail(org)"
+                [attr.aria-label]="'Administrar ' + org.name">Administrar</button>
             </td>
           </tr>
         } @empty {
@@ -113,23 +111,84 @@
     </div>
   }
 
-  @if (statusTarget(); as org) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="status-title">
-      <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-        <h2 id="status-title" class="text-lg font-bold text-gray-900">
-          {{ org.status === 'active' ? '¿Suspender ' + org.name + '?' : '¿Reactivar ' + org.name + '?' }}
-        </h2>
-        <p class="mt-2 text-sm text-gray-600">
-          @if (org.status === 'active') { Sus usuarios no podrán operar hasta que la reactives. Los datos se conservan. }
-          @else { Sus usuarios recuperarán el acceso con sus roles actuales. }
-        </p>
-        <label for="status-reason" class="form-label mt-4">Motivo (queda en la auditoría)</label>
-        <input id="status-reason" class="form-control" maxlength="500" [(ngModel)]="reason">
-        @if (error()) { <p role="alert" class="alert-error mt-3">{{ error() }}</p> }
-        <div class="mt-6 flex justify-end gap-3">
-          <button type="button" class="btn-secondary" (click)="statusTarget.set(null)" [disabled]="busy()">Volver</button>
-          <button type="button" class="btn-primary" [class.!bg-red-600]="org.status === 'active'" (click)="applyStatus()" [disabled]="busy()">Confirmar</button>
+  @if (detail(); as d) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+      <div class="max-h-full w-full max-w-2xl space-y-4 overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h2 id="detail-title" class="text-lg font-bold text-gray-900">{{ d.name }}</h2>
+            <p class="text-xs text-gray-500">{{ d.slug }} · #{{ d.id }} · alta {{ d.created_at | date:'mediumDate' }}</p>
+          </div>
+          <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" [class]="statusClass(d.status)">{{ statusLabel(d.status) }}</span>
         </div>
+
+        <dl class="grid gap-3 rounded-lg bg-gray-50 p-4 text-sm sm:grid-cols-2">
+          <div><dt class="text-gray-500">Propietario(s)</dt><dd class="font-medium text-gray-900">{{ d.owners.join(', ') || '—' }}</dd></div>
+          <div><dt class="text-gray-500">Miembros activos</dt><dd class="font-medium text-gray-900">{{ d.members }}</dd></div>
+          <div><dt class="text-gray-500">Zona horaria</dt><dd class="font-medium text-gray-900">{{ d.timezone }}</dd></div>
+          <div>
+            <dt class="text-gray-500">Estado administrativo</dt>
+            <dd class="font-medium text-gray-900">{{ statusLabel(d.status) }}
+              @if (d.status_changed_at) { <span class="block text-xs font-normal text-gray-500">{{ d.status_changed_at | date:'medium' }} · {{ d.status_changed_by ?? '—' }}</span> }
+              @if (d.status_reason) { <span class="block text-xs font-normal text-gray-500">Motivo: {{ d.status_reason }}</span> }
+            </dd>
+          </div>
+        </dl>
+
+        <div class="rounded-lg border border-gray-200 p-4 text-sm">
+          <h3 class="font-semibold text-gray-900">Suscripción (estado de cobro, independiente)</h3>
+          @if (d.subscription; as sub) {
+            <p class="mt-1 text-gray-700">{{ sub.plan ?? 'Plan' }} · {{ subscriptionLabel(sub.status) }}
+              @if (sub.amount) { · {{ sub.amount }} {{ sub.currency }} / {{ sub.interval === 'year' ? 'año' : 'mes' }} }</p>
+            @if (sub.current_period_end) { <p class="text-xs text-gray-500">Pagado hasta {{ sub.current_period_end | date:'mediumDate' }}</p> }
+            <p class="mt-1 text-xs" [class]="sub.renews_automatically ? 'text-amber-700' : 'text-gray-500'">
+              {{ sub.renews_automatically ? 'Renovación automática activa con ' + (sub.provider ?? 'el proveedor') + '.' : 'Sin renovación automática.' }}</p>
+          } @else {
+            <p class="mt-1 text-gray-500">Sin suscripción (plan gratuito).</p>
+          }
+          <p class="mt-2 text-xs text-gray-500">{{ d.actions.suspend.effect }}</p>
+        </div>
+
+        @if (!action()) {
+          <div class="flex flex-wrap gap-2">
+            @if (can('suspend')) { <button type="button" class="btn-secondary !text-red-700" (click)="startAction('suspend')">Desactivar</button> }
+            @if (can('activate')) { <button type="button" class="btn-secondary" (click)="startAction('activate')">Reactivar</button> }
+            @if (can('restore')) { <button type="button" class="btn-secondary" (click)="startAction('restore')">Restaurar desde el archivo</button> }
+            @if (can('archive')) { <button type="button" class="btn-secondary !text-red-700" (click)="startAction('archive')">Eliminar (archivar)</button> }
+          </div>
+          @if (d.status !== 'archived' && d.actions.archive.blocked_reason === 'subscription_renewal_active') {
+            <p class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              No se puede archivar mientras tenga renovación automática. Primero debe cancelarse la suscripción (Mi suscripción → Cancelar);
+              archivar no cancela cobros ni emite reembolsos.
+              @if (auth.hasPlatformPermission('platform.billing.operate')) { <a routerLink="/platform/subscriptions" class="underline">Ver suscripciones</a> }
+            </p>
+          }
+        } @else if (action(); as a) {
+          <div class="space-y-3 rounded-lg border p-4" [class]="a === 'archive' || a === 'suspend' ? 'border-red-200 bg-red-50' : 'border-blue-200 bg-blue-50'">
+            <h3 class="font-semibold text-gray-900">{{ actionText[a].title }}</h3>
+            <p class="text-sm text-gray-700">{{ actionText[a].body }}</p>
+            @if (needsReason(a)) {
+              <div>
+                <label for="action-reason" class="form-label">Motivo (obligatorio, queda en la auditoría)</label>
+                <input id="action-reason" class="form-control" maxlength="500" [(ngModel)]="reason">
+              </div>
+            }
+            @if (a === 'archive') {
+              <div>
+                <label for="confirm-slug" class="form-label">Escribe <span class="font-mono">{{ d.slug }}</span> para confirmar</label>
+                <input id="confirm-slug" class="form-control font-mono" autocomplete="off" [(ngModel)]="confirmSlug">
+              </div>
+            }
+            @if (error()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+            <div class="flex justify-end gap-3">
+              <button type="button" class="btn-secondary" (click)="action.set(null)" [disabled]="busy()">Volver</button>
+              <button type="button" class="btn-primary" [class.!bg-red-600]="a === 'archive' || a === 'suspend'"
+                (click)="applyAction()" [disabled]="busy() || !ready(a)">{{ busy() ? 'Aplicando…' : actionText[a].ok }}</button>
+            </div>
+          </div>
+        }
+        @if (error() && !action()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+        <div class="flex justify-end"><button type="button" class="btn-primary" (click)="detail.set(null)">Cerrar</button></div>
       </div>
     </div>
   }

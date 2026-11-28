@@ -1,0 +1,283 @@
+<section class="space-y-6 p-4 md:p-6">
+  <app-page-header [title]="title" [description]="description">
+    <div class="flex flex-wrap gap-2">
+      <button type="button" class="btn-secondary" (click)="exportCsv()" [disabled]="busy() || loading()">Exportar CSV</button>
+      @if (canManage()) {
+        <button type="button" class="btn-primary" (click)="openCreate()">+ Registrar egreso</button>
+      }
+    </div>
+  </app-page-header>
+
+  @if (error()) { <p role="alert" class="alert-error">{{ error() }}</p> }
+  @if (message()) { <p role="status" class="alert-success">{{ message() }}</p> }
+
+  <!-- Filtros -->
+  <form class="card grid gap-3 !p-4 sm:grid-cols-2 lg:grid-cols-6" (ngSubmit)="load(1)" aria-label="Filtros de finanzas">
+    <div>
+      <label for="fin-from" class="form-label">Desde</label>
+      <input id="fin-from" type="date" class="form-control" name="from" [(ngModel)]="filters.from" required>
+    </div>
+    <div>
+      <label for="fin-to" class="form-label">Hasta</label>
+      <input id="fin-to" type="date" class="form-control" name="to" [(ngModel)]="filters.to" required>
+    </div>
+    <div>
+      <label for="fin-type" class="form-label">Tipo</label>
+      <select id="fin-type" class="form-control" name="type" [(ngModel)]="filters.type">
+        <option value="">Todos</option>
+        @for (t of options()?.types ?? []; track t.code) { <option [value]="t.code">{{ t.name }}</option> }
+      </select>
+    </div>
+    <div>
+      <label for="fin-category" class="form-label">Categoría</label>
+      <select id="fin-category" class="form-control" name="category" [(ngModel)]="filters.category">
+        <option value="">Todas</option>
+        @for (c of categories(); track c.code) { <option [value]="c.code">{{ c.name }}</option> }
+      </select>
+    </div>
+    <div>
+      <label for="fin-currency" class="form-label">Moneda</label>
+      <select id="fin-currency" class="form-control" name="currency" [(ngModel)]="filters.currency">
+        <option value="">Todas</option>
+        @for (c of options()?.currencies ?? []; track c) { <option [value]="c">{{ c }}</option> }
+      </select>
+    </div>
+    @if (scope === 'tenant') {
+      <div>
+        <label for="fin-event" class="form-label">Evento</label>
+        <select id="fin-event" class="form-control" name="event_id" [(ngModel)]="filters.event_id">
+          <option value="">Todos</option>
+          @for (e of eventOptions(); track e.id) { <option [value]="e.id">{{ e.name }}</option> }
+        </select>
+      </div>
+    } @else {
+      <div class="flex items-end">
+        @if (tenantFilter(); as t) {
+          <span class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-2 text-sm text-blue-900">
+            Empresa: {{ t.name }}
+            <button type="button" class="font-semibold" (click)="clearTenant()" aria-label="Quitar filtro de empresa">×</button>
+          </span>
+        } @else {
+          <p class="text-xs text-gray-500">Para filtrar por empresa, elige su nombre en la tabla.</p>
+        }
+      </div>
+    }
+    <div class="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-6 lg:justify-end">
+      <button type="button" class="btn-secondary" (click)="clearFilters()">Limpiar</button>
+      <button type="submit" class="btn-primary" [disabled]="loading()">Aplicar filtros</button>
+    </div>
+  </form>
+
+  <!-- Totales por moneda -->
+  <div class="space-y-3" aria-live="polite">
+    @for (cur of currencies(); track cur) {
+      @if (totals()[cur]; as t) {
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="card !p-4"><p class="text-sm text-gray-500">Ingresos cobrados ({{ cur }})</p>
+            <p class="text-2xl font-bold text-green-700">{{ t.income | number:'1.2-2' }}</p></div>
+          <div class="card !p-4"><p class="text-sm text-gray-500">Egresos pagados ({{ cur }})</p>
+            <p class="text-2xl font-bold text-red-700">{{ t.expenses | number:'1.2-2' }}</p></div>
+          <div class="card !p-4"><p class="text-sm text-gray-500">Reembolsos ({{ cur }})</p>
+            <p class="text-2xl font-bold text-gray-900">{{ t.refunds | number:'1.2-2' }}</p>
+            <p class="text-xs text-gray-500">{{ scope === 'platform' ? 'Devueltos a empresas' : 'Recibidos de EasiAcc' }}</p></div>
+          <div class="card !p-4"><p class="text-sm text-gray-500">Flujo neto registrado ({{ cur }})</p>
+            <p class="text-2xl font-bold" [class]="t.net.startsWith('-') ? 'text-red-700' : 'text-gray-900'">{{ t.net | number:'1.2-2' }}</p>
+            <p class="text-xs text-gray-500">No es utilidad contable</p></div>
+        </div>
+      }
+    } @empty {
+      @if (!loading()) { <p class="card !p-4 text-sm text-gray-500">Sin movimientos en el periodo seleccionado.</p> }
+    }
+  </div>
+
+  @if (scope === 'tenant' && receivableCurrencies().length) {
+    <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+      <p class="font-medium">Información separada (no forma parte del flujo)</p>
+      <ul class="mt-1 list-disc pl-5">
+        @for (cur of receivableCurrencies(); track cur) {
+          @if (receivables()[cur].receivable) { <li>Saldo por cobrar de contratos activos: {{ receivables()[cur].receivable | number:'1.2-2' }} {{ cur }}</li> }
+          @if (receivables()[cur].pending_confirmation) { <li>Pagos registrados por confirmar: {{ receivables()[cur].pending_confirmation | number:'1.2-2' }} {{ cur }}</li> }
+        }
+      </ul>
+    </div>
+  }
+
+  <!-- Movimientos -->
+  <div class="relative overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm" [attr.aria-busy]="loading()">
+    <table class="w-full text-left text-sm text-gray-700">
+      <caption class="sr-only">Movimientos del periodo</caption>
+      <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+        <tr>
+          <th scope="col" class="px-4 py-3">Fecha</th>
+          <th scope="col" class="px-4 py-3">Tipo</th>
+          <th scope="col" class="px-4 py-3">Descripción</th>
+          <th scope="col" class="px-4 py-3">{{ scope === 'platform' ? 'Empresa' : 'Evento' }}</th>
+          <th scope="col" class="px-4 py-3 text-right">Importe</th>
+          <th scope="col" class="px-4 py-3"><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (m of items(); track m.id) {
+          <tr class="border-b border-gray-100">
+            <td class="whitespace-nowrap px-4 py-3">{{ m.effective_date | date:'mediumDate':'UTC' }}</td>
+            <td class="px-4 py-3">
+              <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                [class]="m.type === 'income' ? 'bg-green-100 text-green-800' : m.type === 'expense' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'">
+                {{ typeLabels[m.type] }}</span>
+              <span class="block pt-1 text-xs text-gray-500">{{ m.category_label }}</span>
+            </td>
+            <td class="px-4 py-3">
+              <span class="text-gray-900">{{ m.description }}</span>
+              @if (m.original) { <span class="block text-xs text-gray-500">Movimiento original: #{{ m.original.provider_payment_id ?? m.original.source_id }}</span> }
+              @if (m.provider_payment_id) { <span class="block text-xs text-gray-500">Pago Mercado Pago #{{ m.provider_payment_id }}</span> }
+              @if (m.contract) { <a class="block text-xs text-blue-700 hover:underline" [routerLink]="['/contracts', m.contract.id, 'payments']">Contrato {{ m.contract.number }}</a> }
+            </td>
+            <td class="px-4 py-3">
+              @if (scope === 'platform') {
+                @if (m.tenant) { <button type="button" class="text-blue-700 hover:underline" (click)="filterTenant(m.tenant)">{{ m.tenant.name }}</button> }
+                @else { <span class="text-gray-400">EasiAcc</span> }
+              } @else {
+                @if (m.event) { <a class="text-blue-700 hover:underline" [routerLink]="['/events', m.event.id]">{{ m.event.name }}</a> }
+                @else { <span class="text-gray-400">—</span> }
+              }
+            </td>
+            <td class="whitespace-nowrap px-4 py-3 text-right font-semibold" [class]="m.direction === 'in' ? 'text-green-700' : 'text-red-700'">
+              {{ signed(m) }} {{ m.currency }}
+            </td>
+            <td class="whitespace-nowrap px-4 py-3 text-right">
+              @if (m.source === 'expense') {
+                <button type="button" class="font-medium text-gray-700 hover:underline" (click)="openHistory(m)">Historial</button>
+                @if (canManage()) {
+                  <button type="button" class="ml-3 font-medium text-blue-700 hover:underline" (click)="openEdit(m)">Corregir</button>
+                  <button type="button" class="ml-3 font-medium text-red-700 hover:underline" (click)="askVoid(m)">Anular</button>
+                }
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6" class="px-4 py-10 text-center text-gray-500">{{ loading() ? 'Cargando…' : 'Sin movimientos con estos filtros.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (pages() > 1) {
+    <nav class="flex items-center justify-end gap-3 text-sm" aria-label="Paginación">
+      <button type="button" class="btn-secondary !px-3 !py-1.5" [disabled]="page() <= 1 || loading()" (click)="load(page() - 1)">Anterior</button>
+      <span>Página {{ page() }} de {{ pages() }} · {{ total() }} movimientos</span>
+      <button type="button" class="btn-secondary !px-3 !py-1.5" [disabled]="page() >= pages() || loading()" (click)="load(page() + 1)">Siguiente</button>
+    </nav>
+  }
+
+  @if (notes(); as n) {
+    <details class="card !p-4 text-sm text-gray-600">
+      <summary class="cursor-pointer font-medium text-gray-900">Fuentes de los datos</summary>
+      <ul class="mt-2 list-disc space-y-1 pl-5">
+        <li>{{ n.metric }}</li>
+        <li>{{ n.income_source }} @if (n.available_since) { Disponible desde {{ n.available_since | date:'mediumDate':'UTC' }}. }</li>
+        @if (n.fees) { <li>{{ n.fees }}</li> }
+        @if (n.partial_refunds) { <li>{{ n.partial_refunds }}</li> }
+        @if (n.client_refunds) { <li>{{ n.client_refunds }}</li> }
+        @if (n.undated_reversals) { <li>{{ n.undated_reversals }} reembolso(s) anteriores a v1.4.0 no tienen fecha registrada y no se incluyen en los totales.</li> }
+      </ul>
+    </details>
+  }
+
+  <!-- Alta / corrección de egreso -->
+  @if (form(); as f) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="exp-title">
+      <form class="max-h-full w-full max-w-lg space-y-4 overflow-y-auto rounded-xl bg-white p-6 shadow-xl" (ngSubmit)="saveExpense()">
+        <h2 id="exp-title" class="text-lg font-bold text-gray-900">{{ f.id === null ? 'Registrar egreso' : 'Corregir egreso' }}</h2>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label for="exp-date" class="form-label">Fecha de pago</label>
+            <input id="exp-date" type="date" class="form-control" name="expense_date" [max]="todayStr"
+              [ngModel]="f.expense_date" (ngModelChange)="patchForm({ expense_date: $event })" required>
+          </div>
+          <div>
+            <label for="exp-amount" class="form-label">Importe</label>
+            <input id="exp-amount" class="form-control" name="amount" inputmode="decimal" placeholder="0.00"
+              [ngModel]="f.amount" (ngModelChange)="patchForm({ amount: $event })" required pattern="\d{1,10}(\.\d{1,2})?">
+          </div>
+          <div>
+            <label for="exp-currency" class="form-label">Moneda</label>
+            <select id="exp-currency" class="form-control" name="currency" [ngModel]="f.currency" (ngModelChange)="patchForm({ currency: $event })">
+              @for (c of options()?.currencies ?? ['MXN']; track c) { <option [value]="c">{{ c }}</option> }
+            </select>
+          </div>
+          <div>
+            <label for="exp-category" class="form-label">Categoría</label>
+            <select id="exp-category" class="form-control" name="category" [ngModel]="f.category" (ngModelChange)="patchForm({ category: $event })" required>
+              <option value="" disabled>Elige…</option>
+              @for (c of options()?.expense_categories ?? []; track c.code) { <option [value]="c.code">{{ c.name }}</option> }
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="exp-desc" class="form-label">Descripción</label>
+          <input id="exp-desc" class="form-control" name="description" maxlength="500" [ngModel]="f.description"
+            (ngModelChange)="patchForm({ description: $event })" required>
+        </div>
+        @if (scope === 'tenant') {
+          <div>
+            <label for="exp-event" class="form-label">Evento (opcional)</label>
+            <select id="exp-event" class="form-control" name="event_id" [ngModel]="f.event_id" (ngModelChange)="patchForm({ event_id: $event })">
+              <option [ngValue]="null">Sin evento</option>
+              @for (e of eventOptions(); track e.id) { <option [ngValue]="e.id">{{ e.name }}</option> }
+            </select>
+          </div>
+        }
+        @if (f.id !== null) {
+          <div>
+            <label for="exp-reason" class="form-label">Motivo de la corrección</label>
+            <input id="exp-reason" class="form-control" name="reason" maxlength="500" [ngModel]="f.reason"
+              (ngModelChange)="patchForm({ reason: $event })" required minlength="3">
+            <p class="form-hint">Queda en el historial junto con los valores anteriores.</p>
+          </div>
+        }
+        @if (formError()) { <p role="alert" class="alert-error">{{ formError() }}</p> }
+        <div class="flex justify-end gap-3">
+          <button type="button" class="btn-secondary" (click)="form.set(null)" [disabled]="busy()">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="busy()">{{ busy() ? 'Guardando…' : 'Guardar' }}</button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- Anular -->
+  @if (voidTarget(); as m) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="void-title">
+      <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+        <h2 id="void-title" class="text-lg font-bold text-gray-900">¿Anular este egreso?</h2>
+        <p class="mt-2 text-sm text-gray-600">{{ m.description }} · {{ m.amount }} {{ m.currency }}. Deja de sumar en los totales y se conserva en el historial.</p>
+        <label for="void-reason" class="form-label mt-4">Motivo</label>
+        <input id="void-reason" class="form-control" maxlength="500" [(ngModel)]="voidReason">
+        @if (formError()) { <p role="alert" class="alert-error mt-3">{{ formError() }}</p> }
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" class="btn-secondary" (click)="voidTarget.set(null)" [disabled]="busy()">Volver</button>
+          <button type="button" class="btn-primary !bg-red-600" (click)="confirmVoid()" [disabled]="busy() || voidReason.trim().length < 3">Anular</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Historial -->
+  @if (history(); as h) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="hist-title">
+      <div class="max-h-full w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+        <h2 id="hist-title" class="text-lg font-bold text-gray-900">Historial del egreso</h2>
+        <p class="text-sm text-gray-600">{{ h.expense.description }} · {{ h.expense.amount }} {{ h.expense.currency }}
+          @if (h.expense.status === 'voided') { · <span class="font-semibold text-red-700">Anulado</span> }</p>
+        <ol class="mt-4 space-y-3 border-l border-gray-200 pl-4 text-sm">
+          @for (r of h.history; track r.id) {
+            <li>
+              <p class="font-medium text-gray-900">{{ revisionText(r) }}</p>
+              <p class="text-xs text-gray-500">{{ r.created_at | date:'medium' }} · {{ r.actor_email ?? 'Usuario' }}
+                @if (r.reason) { · Motivo: {{ r.reason }} }</p>
+            </li>
+          }
+        </ol>
+        <div class="mt-6 flex justify-end"><button type="button" class="btn-primary" (click)="history.set(null)">Cerrar</button></div>
+      </div>
+    </div>
+  }
+</section>

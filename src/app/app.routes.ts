@@ -103,6 +103,12 @@ export const routes: Routes = [
         canActivate: [platformGuard('platform.catalog.manage')]
       },
       {
+        path: 'finance',
+        loadComponent: () => import('./pages/finance/finance-page.component').then(m => m.FinancePageComponent),
+        canActivate: [platformGuard('platform.finance.read')],
+        data: { scope: 'platform' }
+      },
+      {
         path: 'audit',
         loadComponent: () => import('./pages/platform/platform-audit/platform-audit.component')
           .then(m => m.PlatformAuditComponent),
@@ -209,6 +215,13 @@ export const routes: Routes = [
         canActivate: [permissionGuard('tenant.read')]
       },
       { path: 'settings/business', pathMatch: 'full', redirectTo: 'settings/modules' },
+      // FIN-01: finanzas de la empresa (consulta con finance.read; registro con finance.manage)
+      {
+        path: 'finance',
+        loadComponent: () => import('./pages/finance/finance-page.component').then(m => m.FinancePageComponent),
+        canActivate: [permissionGuard('finance.read')],
+        data: { scope: 'tenant' }
+      },
       {
         path: 'company/receipt-settings',
         loadComponent: () => 

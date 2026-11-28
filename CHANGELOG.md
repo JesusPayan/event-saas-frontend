@@ -3,6 +3,14 @@
 La versión técnica **1.1.0** corresponde al lanzamiento comercial **EasiAcc Events 1.0**.
 Detalle conjunto con el backend, estado y riesgos: repositorio backend, `CHANGELOG.md` y `docs/PROJECT_STATUS.md`.
 
+## [1.4.0] — Sin publicar
+
+### Añadido
+- **Finanzas** de la empresa (`/finance`) y **Finanzas de EasiAcc** (`/platform/finance`): totales por moneda,
+  flujo neto registrado, filtros, paginación, exportación CSV, registro, corrección con motivo, anulación e historial de egresos.
+- Organizaciones: detalle con estado administrativo y suscripción, desactivar/reactivar con motivo, eliminar (archivar)
+  con confirmación del identificador, restaurar y filtro de archivadas.
+
 ## [1.3.0] — Sin publicar
 
 ### Añadido

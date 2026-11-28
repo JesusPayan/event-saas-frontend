@@ -223,6 +223,12 @@
     }
     }
 
+    @if (auth.hasPermission('finance.read')) {
+    <div class="menu-heading">Finanzas</div>
+    <a routerLink="/finance" routerLinkActive="active" (click)="closeMobile()">
+      <span>Ingresos y egresos</span>
+    </a>
+    }
     @if (hasTenant() && !providerOnly()) {
     <div class="menu-heading">Configuración</div>
     <a routerLink="/settings/modules" routerLinkActive="active" (click)="closeMobile()">
@@ -256,6 +262,9 @@
     <a routerLink="/platform/business-types" routerLinkActive="active" (click)="closeMobile()">Giros comerciales</a>
     <a routerLink="/platform/modules" routerLinkActive="active" (click)="closeMobile()">Módulos y planes</a>
     <a routerLink="/platform/categories" routerLinkActive="active" (click)="closeMobile()">Categorías del catálogo</a>
+    }
+    @if (auth.hasPlatformPermission('platform.finance.read')) {
+    <a routerLink="/platform/finance" routerLinkActive="active" (click)="closeMobile()">Finanzas de EasiAcc</a>
     }
     @if (auth.hasPlatformPermission('platform.billing.operate')) {
     <a routerLink="/platform/subscriptions" routerLinkActive="active" (click)="closeMobile()">Suscripciones</a>
