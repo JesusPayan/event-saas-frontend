@@ -9,9 +9,24 @@ export interface PlatformInvitation { id: number; email: string; role: string; r
 export interface RolesResponse {
   items: RoleAssignment[]; invitations: PlatformInvitation[]; assignable: string[]; can_transfer_owner: boolean;
 }
+export type OrganizationStatus = 'active' | 'suspended' | 'archived';
 export interface Organization {
-  id: number; name: string; slug: string; status: 'active' | 'suspended'; created_at: string | null;
+  id: number; name: string; slug: string; status: OrganizationStatus; created_at: string | null;
   members: number; subscription_status: string | null; referred: boolean;
+}
+export interface OrganizationAction {
+  allowed: boolean; requires_reason: boolean; effect: string; blocked_reason?: string | null;
+}
+/** TEN-ADM: detalle administrativo (estado y suscripción por separado). */
+export interface OrganizationDetail extends Organization {
+  timezone: string; owners: string[]; status_reason: string | null; status_changed_at: string | null;
+  status_changed_by: string | null; archived_at: string | null;
+  subscription: {
+    id: number; status: string; provider: string | null; plan: string | null; amount: string | null;
+    currency: string | null; interval: string | null; current_period_end: string | null; canceled_at: string | null;
+    renews_automatically: boolean;
+  } | null;
+  actions: { suspend: OrganizationAction; activate: OrganizationAction; archive: OrganizationAction; restore: OrganizationAction };
 }
 export interface Page<T> { items: T[]; total: number; page: number; per_page: number; }
 export interface AuditEvent {
@@ -78,8 +93,11 @@ export class PlatformService {
     return this.http.post<{ organization: Organization; invite_url: string; email_sent: boolean }>(
       `${this.api}/platform/organizations`, body);
   }
-  setOrganizationStatus(id: number, status: 'active' | 'suspended', reason: string) {
-    return this.http.patch<{ organization: Organization }>(`${this.api}/platform/organizations/${id}/status`,
+  organization(id: number) {
+    return this.http.get<{ organization: OrganizationDetail }>(`${this.api}/platform/organizations/${id}`);
+  }
+  setOrganizationStatus(id: number, status: OrganizationStatus, reason: string) {
+    return this.http.patch<{ organization: Organization; changed: boolean }>(`${this.api}/platform/organizations/${id}/status`,
       { status, reason: reason || null });
   }
   audit(page = 1, action = '', tenantId: number | null = null) {
